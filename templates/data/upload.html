@@ -1,0 +1,718 @@
+{% extends "base.html" %}
+{% block title %}
+    Upload Data - Waskita
+{% endblock title %}
+{% block page_title %}
+    Upload Data Manual
+{% endblock page_title %}
+{% block breadcrumb %}
+    <li class="breadcrumb-item">
+        <a href="{{ url_for("dashboard") }}">Home</a>
+    </li>
+    <li class="breadcrumb-item">Data Source</li>
+    <li class="breadcrumb-item active">Upload Manual</li>
+{% endblock breadcrumb %}
+{% block content %}
+        <!-- Main content -->
+        <section class="content">
+            <div class="container-fluid">
+                <!-- Upload Form Card -->
+                <div class="card card-primary">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-upload mr-2"></i>
+                            Upload File Data Media Sosial
+                        </h3>
+                    </div>
+                    <form id="uploadForm" enctype="multipart/form-data">
+                        <div class="card-body">
+                            <div class="row">
+
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="file">File Data</label>
+                                        <div class="input-group">
+                                            <div class="custom-file">
+                                                <input type="file"
+                                                       class="custom-file-input"
+                                                       id="file"
+                                                       name="file"
+                                                       accept=".csv,.xlsx,.xls"
+                                                       required>
+                                                <label class="custom-file-label" for="file">Pilih file...</label>
+                                            </div>
+                                        </div>
+                                        <small class="form-text text-muted">Format yang didukung: CSV, Excel (.xlsx, .xls). Maksimal 10MB.</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="dataset_name">Nama Dataset</label>
+                                        <input type="text"
+                                               class="form-control"
+                                               id="dataset_name"
+                                               name="dataset_name"
+                                               placeholder="Masukkan nama dataset (opsional)"
+                                               maxlength="255">
+                                        <small class="form-text text-muted">Nama untuk mengelompokkan data ini. Jika kosong, akan menggunakan nama file.</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- File Format Info -->
+                            <div class="alert alert-info">
+                                <h5>
+                                    <i class="icon fas fa-info"></i> Format File yang Diperlukan:
+                                </h5>
+                                <p>File harus memiliki kolom berikut:</p>
+                                <ul>
+                                    <li>
+                                        <strong>username</strong> - Username pengguna media sosial
+                                    </li>
+                                    <li>
+                                        <strong>content</strong> - Konten/teks postingan
+                                    </li>
+                                    <li>
+                                        <strong>url</strong> - URL postingan (opsional)
+                                    </li>
+                                </ul>
+                                <p class="mb-0">Contoh format CSV:</p>
+                                <code>username,content,url
+                                    <br>
+                                user123,"Ini adalah contoh konten postingan","https://twitter.com/user123/status/123"</code>
+                            </div>
+                            <!-- Upload Progress -->
+                            <div id="uploadProgress" class="progress hidden">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated progress-bar-initial"
+                                     role="progressbar"></div>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <button type="submit" class="btn btn-primary" id="uploadBtn">
+                                <i class="fas fa-upload mr-2"></i>
+                                Upload Data
+                            </button>
+                            <button type="button" class="btn btn-secondary ml-2" onclick="resetForm()">
+                                <i class="fas fa-redo mr-2"></i>
+                                Reset
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <!-- Recent Uploads -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-history mr-2"></i>
+                            Upload Terbaru
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped" id="recentUploadsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Dataset</th>
+                                        <th>Jumlah Data</th>
+                                        <th>Tanggal Upload</th>
+                                        <th>Status</th>
+                                        <th>Diupload Oleh</th>
+                                        <th>Waktu Dibuat</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data will be loaded via AJAX -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <!-- Upload Statistics -->
+                <div class="row">
+                    <div class="col-lg-3 col-6">
+                        <div class="small-box bg-info">
+                            <div class="inner">
+                                <h3 id="totalUploads">0</h3>
+                                <p>Total Upload</p>
+                            </div>
+                            <div class="icon">
+                                <i class="fas fa-upload"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-6">
+                        <div class="small-box bg-success">
+                            <div class="inner">
+                                <h3 id="totalRecords">0</h3>
+                                <p>Total Records</p>
+                            </div>
+                            <div class="icon">
+                                <i class="fas fa-database"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-6">
+                        <div class="small-box bg-warning">
+                            <div class="inner">
+                                <h3 id="todayUploads">0</h3>
+                                <p>Upload Hari Ini</p>
+                            </div>
+                            <div class="icon">
+                                <i class="fas fa-calendar-day"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-6">
+                        <div class="small-box bg-info">
+                            <div class="inner">
+                                <h3 id="avgFileSize">0</h3>
+                                <p>Rata-rata File Size</p>
+                            </div>
+                            <div class="icon">
+                                <i class="fas fa-file-alt"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+<!-- Column Mapping Modal -->
+<div class="modal fade" id="columnMappingModal" tabindex="-1" role="dialog" aria-labelledby="columnMappingModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="columnMappingModalLabel">Mapping Kolom</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    Silakan pilih kolom dari file yang akan dipetakan ke field yang diperlukan. Kolom <strong>Content</strong> wajib dipilih.
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Mapping Kolom</h6>
+                        <div class="form-group">
+                            <label for="contentColumnSelect">Kolom Content <span class="text-danger">*</span></label>
+                            <select class="form-control" id="contentColumnSelect" required>
+                                <option value="">-- Pilih Kolom Content --</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="usernameColumnSelect">Kolom Username (Opsional)</label>
+                            <select class="form-control" id="usernameColumnSelect">
+                                <option value="">-- Pilih Kolom Username --</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="urlColumnSelect">Kolom URL (Opsional)</label>
+                            <select class="form-control" id="urlColumnSelect">
+                                <option value="">-- Pilih Kolom URL --</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6>Preview Data</h6>
+                        <div class="table-responsive preview-table-container">
+                            <table class="table table-sm table-bordered" id="previewTable">
+                                <thead class="thead-light">
+                                    <tr id="previewTableHeader"></tr>
+                                </thead>
+                                <tbody id="previewTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                <button type="button" class="btn btn-primary" id="processMappingBtn">Proses Data</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}
+{% block scripts %}
+{% endblock scripts %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    if (typeof $ === 'undefined') {
+        console.error('jQuery is not loaded');
+        return;
+    }
+    
+    // Wait for DOM to be fully ready before loading data
+    setTimeout(function() {
+        loadRecentUploads();
+        updateStatistics();
+    }, 100);
+    
+    // File input change event
+    $('.custom-file-input').on('change', function() {
+        let fileName = $(this).val().split('\\').pop();
+        $(this).siblings('.custom-file-label').addClass('selected').html(fileName);
+    });
+    
+    // Form validation and submission
+    $('#uploadForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        let formData = new FormData(this);
+        let fileInput = $('#file')[0];
+        
+        if (!fileInput.files.length) {
+            showAlert('error', 'Error', 'Silakan pilih file untuk diupload');
+            return;
+        }
+        
+        // Validate file type
+        let fileName = fileInput.files[0].name;
+        let fileExtension = fileName.split('.').pop().toLowerCase();
+        
+        if (!['csv', 'xlsx', 'xls'].includes(fileExtension)) {
+            showAlert('error', 'Error', 'Format file tidak didukung. Gunakan CSV atau Excel.');
+            return;
+        }
+        
+        showLoading();
+        
+        // Add CSRF token to FormData
+        const csrfToken = $('meta[name=csrf-token]').attr('content');
+        if (csrfToken) {
+            formData.append('csrf_token', csrfToken);
+        }
+        
+        $.ajax({
+            url: '/upload_data',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'X-CSRFToken': csrfToken
+            },
+            success: function(response) {
+                hideLoading();
+                if (response.success) {
+                    if (response.show_mapping) {
+                        // Show column mapping modal
+                        showColumnMappingModal(response.columns, response.sample_data, response.filename);
+                    } else {
+                        showAlert('success', 'Berhasil', response.message);
+                        resetForm();
+                        loadRecentUploads();
+                        updateStatistics();
+                    }
+                } else {
+                    showAlert('error', 'Error', response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                hideLoading();
+                console.error('Upload error:', xhr.responseText);
+                showAlert('error', 'Error', 'Terjadi kesalahan saat mengupload file');
+            }
+        });
+    });
+    
+    // Drag and drop functionality
+    let dropArea = $('.card-body');
+    
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropArea[0].addEventListener(eventName, preventDefaults, false);
+    });
+    
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropArea[0].addEventListener(eventName, highlight, false);
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropArea[0].addEventListener(eventName, unhighlight, false);
+    });
+    
+    function highlight(e) {
+        dropArea.addClass('drag-over');
+    }
+    
+    function unhighlight(e) {
+        dropArea.removeClass('drag-over');
+    }
+    
+    dropArea[0].addEventListener('drop', handleDrop, false);
+    
+    function handleDrop(e) {
+        let dt = e.dataTransfer;
+        let files = dt.files;
+        
+        if (files.length > 0) {
+            $('#file')[0].files = files;
+            $('.custom-file-label').addClass('selected').html(files[0].name);
+        }
+    }
+    
+    // Load initial data
+    // loadRecentUploads already called above, no need to call again
+    // updateStatistics already called above, no need to call again
+});
+
+function resetForm() {
+    $('#uploadForm')[0].reset();
+    $('.custom-file-label').removeClass('selected').html('Pilih file...');
+}
+
+function initializeDataTable() {
+    // Destroy existing DataTable if it exists
+    if ($.fn.DataTable.isDataTable('#recentUploadsTable')) {
+        $('#recentUploadsTable').DataTable().destroy();
+    }
+    
+    // Check if table exists and has proper structure
+    const table = $('#recentUploadsTable');
+    const hasHeaders = table.find('thead th').length === 7;
+    const hasRows = table.find('tbody tr').length > 0;
+    
+    if (table.length > 0 && hasHeaders && hasRows) {
+        try {
+            table.DataTable({
+            "responsive": true,
+            "lengthChange": false,
+            "autoWidth": false,
+            "pageLength": 5,
+            "searching": true,
+            "ordering": true,
+            "info": true,
+            "paging": true,
+            "language": {
+                "decimal": "",
+                "emptyTable": "Tidak ada data yang tersedia pada tabel ini",
+                "info": "Menampilkan _START_ sampai _END_ dari _TOTAL_ entri",
+                "infoEmpty": "Menampilkan 0 sampai 0 dari 0 entri",
+                "infoFiltered": "(disaring dari _MAX_ entri keseluruhan)",
+                "infoPostFix": "",
+                "thousands": ",",
+                "lengthMenu": "Tampilkan _MENU_ entri",
+                "loadingRecords": "Sedang memuat...",
+                "processing": "Sedang memproses...",
+                "search": "Cari:",
+                "zeroRecords": "Tidak ditemukan data yang sesuai",
+                "paginate": {
+                    "first": "Pertama",
+                    "last": "Terakhir",
+                    "next": "Selanjutnya",
+                    "previous": "Sebelumnya"
+                },
+                "aria": {
+                    "sortAscending": ": aktifkan untuk mengurutkan kolom naik",
+                    "sortDescending": ": aktifkan untuk mengurutkan kolom turun"
+                }
+            }
+        });
+        } catch (error) {
+            console.warn('DataTable initialization failed:', error);
+        }
+    }
+}
+
+function loadRecentUploads(page = 1, limit = 10) {
+    // Destroy existing DataTable if it exists
+    if ($.fn.DataTable.isDataTable('#recentUploadsTable')) {
+        $('#recentUploadsTable').DataTable().clear().destroy();
+        $('#recentUploadsTable').removeClass('dataTable');
+    }
+    
+    // Clear only tbody, keep thead structure intact
+    $('#recentUploadsTable tbody').empty();
+    
+    // Remove any DataTable wrapper elements that might cause issues
+    $('#recentUploadsTable_wrapper').remove();
+    
+    // Remove any DataTable classes that might interfere
+    $('#recentUploadsTable').removeClass('dataTable no-footer');
+    $('#recentUploadsTable thead tr').removeClass();
+    $('#recentUploadsTable thead th').removeClass();
+    
+    $.get('/api/recent-uploads', { page: page, limit: limit }, function(response) {
+        if (response.success && response.data.length > 0) {
+            // Only clear and populate tbody, don't rebuild entire table structure
+            
+            // Add new data
+            response.data.forEach(function(upload) {
+                const row = `
+                    <tr>
+                        <td>${upload.dataset_name || upload.filename}</td>
+                        <td>${upload.records_count}</td>
+                        <td>${upload.created_at}</td>
+                        <td><span class="badge ${upload.status === 'Mentah' ? 'bg-gradient-secondary' : upload.status === 'Dibersihkan' ? 'bg-gradient-success' : 'bg-gradient-primary'}">${upload.status}</span></td>
+                        <td>${upload.username}</td>
+                        <td>${upload.created_at}</td>
+                    </tr>
+                `;
+                $('#recentUploadsTable tbody').append(row);
+            });
+            
+            // Store pagination info for future use
+            window.uploadsPagination = response.pagination;
+            
+            // Initialize DataTable after DOM is fully updated
+            setTimeout(function() {
+                // Double check that rows exist before initializing
+                if ($('#recentUploadsTable tbody tr').length > 0) {
+                    initializeDataTable();
+                }
+            }, 200);
+        } else {
+            // Only populate tbody for empty state, keep thead intact
+            $('#recentUploadsTable tbody').html(`
+                <tr><td colspan="6" class="text-center text-muted"><i class="fas fa-info-circle mr-2"></i>Belum ada data yang diupload</td></tr>
+            `);
+            
+            // Don't initialize DataTable for empty state - just show regular table
+        }
+    }).fail(function() {
+        // Only populate tbody for error state, keep thead intact
+        $('#recentUploadsTable tbody').html(`
+            <tr><td colspan="6" class="text-center text-danger"><i class="fas fa-exclamation-triangle mr-2"></i>Error memuat data upload terbaru</td></tr>
+        `);
+        
+        // Don't initialize DataTable for error state - just show regular table
+    });
+}
+
+function updateStatistics() {
+    $.get('/api/upload-statistics', function(response) {
+        if (response.success) {
+            $('#totalUploads').text(response.data.total);
+            $('#totalRecords').text(response.data.totalRecords);
+            $('#todayUploads').text(response.data.todayUploads);
+            if (response.data.avgFileSize !== 'N/A') {
+                $('#avgFileSize').text(response.data.avgFileSize + ' KB');
+            } else {
+                $('#avgFileSize').text('N/A');
+            }
+        }
+    }).fail(function() {
+        console.error('Error loading upload statistics');
+    });
+}
+
+function showColumnMappingModal(columns, sampleData, filename) {
+    console.log('DEBUG: showColumnMappingModal called with:', {
+        columns: columns,
+        sampleData: sampleData,
+        filename: filename
+    });
+    
+    // Clear previous options
+    $('#contentColumnSelect, #usernameColumnSelect, #urlColumnSelect').empty();
+    
+    // Add default options
+    $('#contentColumnSelect').append('<option value="">-- Pilih Kolom Content --</option>');
+    $('#usernameColumnSelect').append('<option value="">-- Pilih Kolom Username --</option>');
+    $('#urlColumnSelect').append('<option value="">-- Pilih Kolom URL --</option>');
+    
+    // Populate column options
+    columns.forEach(function(column) {
+        $('#contentColumnSelect, #usernameColumnSelect, #urlColumnSelect').append(
+            '<option value="' + column + '">' + column + '</option>'
+        );
+    });
+    
+    // Auto-suggest columns based on common names
+    autoSuggestColumns(columns);
+    
+    // Populate preview table
+    populatePreviewTable(columns, sampleData);
+    
+    // Update modal title with filename
+    $('#columnMappingModalLabel').text('Mapping Kolom - ' + filename);
+    
+    // Show modal
+    console.log('DEBUG: Modal element found:', $('#columnMappingModal').length > 0);
+    $('#columnMappingModal').modal('show');
+    console.log('DEBUG: Modal show command executed');
+    
+    // Fix aria-hidden accessibility issue
+    $('#columnMappingModal').on('shown.bs.modal', function() {
+        // Remove aria-hidden from wrapper and modal to prevent focus issues
+        $('.wrapper').removeAttr('aria-hidden');
+        $(this).removeAttr('aria-hidden');
+    });
+    
+    $('#columnMappingModal').on('hide.bs.modal', function() {
+        $(this).attr('aria-hidden', 'true');
+    });
+    
+    $('#columnMappingModal').on('hidden.bs.modal', function() {
+        // Restore wrapper state after modal is completely hidden
+        $('.wrapper').removeAttr('aria-hidden');
+    });
+}
+
+function autoSuggestColumns(columns) {
+    // Auto-suggest content column
+    const contentSuggestions = ['content', 'text', 'message', 'post', 'tweet', 'caption', 'description'];
+    for (let suggestion of contentSuggestions) {
+        const matchedColumn = columns.find(col => col.toLowerCase().includes(suggestion.toLowerCase()));
+        if (matchedColumn) {
+            $('#contentColumnSelect').val(matchedColumn);
+            break;
+        }
+    }
+    
+    // Auto-suggest username column
+    const usernameSuggestions = ['username', 'user', 'author', 'name', 'user_name'];
+    for (let suggestion of usernameSuggestions) {
+        const matchedColumn = columns.find(col => col.toLowerCase().includes(suggestion.toLowerCase()));
+        if (matchedColumn) {
+            $('#usernameColumnSelect').val(matchedColumn);
+            break;
+        }
+    }
+    
+    // Auto-suggest URL column
+    const urlSuggestions = ['url', 'link', 'permalink', 'post_url'];
+    for (let suggestion of urlSuggestions) {
+        const matchedColumn = columns.find(col => col.toLowerCase().includes(suggestion.toLowerCase()));
+        if (matchedColumn) {
+            $('#urlColumnSelect').val(matchedColumn);
+            break;
+        }
+    }
+}
+
+function populatePreviewTable(columns, sampleData) {
+    // Clear previous data
+    $('#previewTableHeader, #previewTableBody').empty();
+    
+    // Add headers
+    columns.forEach(function(column) {
+        $('#previewTableHeader').append('<th>' + column + '</th>');
+    });
+    
+    // Add sample data rows
+    sampleData.forEach(function(row) {
+        let rowHtml = '<tr>';
+        columns.forEach(function(column) {
+            let cellValue = row[column] || '';
+            // Truncate long text for preview
+            if (cellValue.length > 50) {
+                cellValue = cellValue.substring(0, 50) + '...';
+            }
+            rowHtml += '<td>' + cellValue + '</td>';
+        });
+        rowHtml += '</tr>';
+        $('#previewTableBody').append(rowHtml);
+    });
+}
+
+// Handle process mapping button click
+$(document).on('click', '#processMappingBtn', function() {
+    const contentColumn = $('#contentColumnSelect').val();
+    const usernameColumn = $('#usernameColumnSelect').val();
+    const urlColumn = $('#urlColumnSelect').val();
+    
+    if (!contentColumn) {
+        showAlert('error', 'Error', 'Kolom Content harus dipilih');
+        return;
+    }
+    
+    showLoading();
+    
+    $.ajax({
+        url: '/process_column_mapping',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            content_column: contentColumn,
+            username_column: usernameColumn || null,
+            url_column: urlColumn || null
+        }),
+        headers: {
+            'X-CSRFToken': $('meta[name=csrf-token]').attr('content')
+        },
+        success: function(response) {
+            hideLoading();
+            $('#columnMappingModal').modal('hide');
+            
+            if (response.success) {
+                showAlert('success', 'Berhasil', response.message);
+                resetForm();
+                loadRecentUploads();
+                updateStatistics();
+            } else {
+                showAlert('error', 'Error', response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            hideLoading();
+            showAlert('error', 'Error', 'Terjadi kesalahan saat memproses data');
+        }
+    });
+
+// Handle modal close - clean up session if needed
+$('#columnMappingModal').on('hidden.bs.modal', function() {
+    // Optional: Add cleanup logic here if needed
+});
+
+}); // Close $(document).ready
+
+
+</script>
+{% endblock extra_js %}
+
+{% block extra_css %}
+    <style>
+.drag-over {
+    border: 2px dashed #007bff !important;
+    background-color: #f8f9fa;
+}
+
+.custom-file-label::after {
+    content: "Browse";
+}
+
+.progress {
+    height: 20px;
+    margin-top: 10px;
+}
+
+.small-box .icon {
+    font-size: 70px;
+}
+
+.table th {
+    background-color: #f8f9fa;
+}
+
+.alert-info {
+    border-left: 4px solid #17a2b8;
+}
+
+code {
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 4px;
+    display: block;
+    margin-top: 5px;
+}
+
+.preview-table-container {
+    max-height: 300px;
+    overflow-y: auto;
+}
+    </style>
+{% endblock extra_css %}

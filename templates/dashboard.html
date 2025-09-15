@@ -1,0 +1,329 @@
+{% extends "base.html" %}
+{% block title %}
+    Dashboard - Waskita
+{% endblock title %}
+{% block page_title %}
+    Dashboard
+{% endblock page_title %}
+{% block breadcrumb %}
+    <li class="breadcrumb-item">
+        <a href="{{ url_for("dashboard") }}">Home</a>
+    </li>
+    <li class="breadcrumb-item active">Dashboard</li>
+{% endblock breadcrumb %}
+{% block content %}
+    <!-- Info boxes -->
+    <div class="row">
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="info-box">
+                <span class="info-box-icon bg-info elevation-1"><i class="fas fa-upload"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text">Data Upload</span>
+                    <span class="info-box-number">{{ stats.total_raw_upload or 0 }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="info-box mb-3">
+                <span class="info-box-icon bg-success elevation-1"><i class="fas fa-spider"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text">Data Scraping</span>
+                    <span class="info-box-number">{{ stats.total_raw_scraper or 0 }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="info-box mb-3">
+                <span class="info-box-icon bg-warning elevation-1"><i class="fas fa-broom"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text">Data Cleaned</span>
+                    <span class="info-box-number">{{ (stats.total_clean_upload or 0) + (stats.total_clean_scraper or 0) }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="info-box mb-3">
+                <span class="info-box-icon bg-danger elevation-1"><i class="fas fa-brain"></i></span>
+                <div class="info-box-content">
+                    <span class="info-box-text">Terklasifikasi</span>
+                    <span class="info-box-number">{{ stats.total_classified or 0 }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+
+    
+    <!-- Charts Row -->
+    <div class="row">
+        <!-- Data Source Chart -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-chart-pie mr-1"></i>
+                        Distribusi Sumber Data
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <canvas id="dataSourceChart" class="chart-canvas-250"></canvas>
+                </div>
+            </div>
+        </div>
+        <!-- Classification Results Chart -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-chart-bar mr-1"></i>
+                        Hasil Klasifikasi
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <canvas id="classificationChart" class="chart-canvas-250"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Platform Distribution -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-chart-line mr-1"></i>
+                        Distribusi Platform Media Sosial
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <canvas id="platformChart" class="chart-canvas-300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Recent Activity -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-clock mr-1"></i>
+                        Aktivitas Terbaru
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        {% if recent_activities %}
+                            {% for activity in recent_activities %}
+                                <div class="time-label">
+                                    <span class="bg-blue">{{ activity.date }}</span>
+                                </div>
+                                <div>
+                                    <i class="fas {{ activity.icon }} bg-{{ activity.color }}"></i>
+                                    <div class="timeline-item">
+                                        <span class="time"><i class="fas fa-clock"></i> {{ activity.time }}</span>
+                                        <h3 class="timeline-header">{{ activity.title }}</h3>
+                                        <div class="timeline-body">{{ activity.description }}</div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center text-muted">
+                                <i class="fas fa-info-circle fa-2x mb-2"></i>
+                                <p>Belum ada aktivitas terbaru</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Quick Actions -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-bolt mr-1"></i>
+                        Aksi Cepat
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <a href="{{ url_for("data_upload") }}" class="btn btn-primary btn-block">
+                                <i class="fas fa-upload"></i>
+                                <br>
+                                Upload Data
+                            </a>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <a href="{{ url_for("data_scraping") }}"
+                               class="btn btn-success btn-block">
+                                <i class="fas fa-spider"></i>
+                                <br>
+                                Scraping Data
+                            </a>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <a href="{{ url_for("dataset_management") }}"
+                               class="btn btn-warning btn-block">
+                                <i class="fas fa-table"></i>
+                                <br>
+                                Kelola Dataset
+                            </a>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <a href="{{ url_for("classification") }}"
+                               class="btn btn-danger btn-block">
+                                <i class="fas fa-brain"></i>
+                                <br>
+                                Klasifikasi
+                            </a>
+                        </div>
+                    </div>
+                    <!-- System Status -->
+                    <div class="mt-4">
+                        <h5>Status Sistem</h5>
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="progress-group">
+                                    Word2Vec Model
+                                    <span class="float-right"><b>{{ model_status.word2vec }}</b></span>
+                                    <div class="progress progress-sm">
+                                        <div class="progress-bar bg-{{ 'success' if model_status.word2vec == 'Loaded' else 'danger' }}"
+                                             style="width: {{ '100' if model_status.word2vec == 'Loaded' else '0' }}%">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="progress-group">
+                                    Naive Bayes Models
+                                    <span class="float-right"><b>{{ model_status.naive_bayes_count }}/3</b></span>
+                                    <div class="progress progress-sm">
+                                        <div class="progress-bar bg-{{ 'success' if model_status.naive_bayes_count == 3 else 'warning' }}"
+                                             style="width: {{ (model_status.naive_bayes_count / 3 * 100) }}%"></div>
+                                    </div>
+                                </div>
+                                <div class="progress-group">
+                                    Database Connection
+                                    <span class="float-right"><b>{{ model_status.database }}</b></span>
+                                    <div class="progress progress-sm">
+                                        <div class="progress-bar bg-{{ 'success' if model_status.database == 'Connected' else 'danger' }}"
+                                             style="width: {{ '100' if model_status.database == 'Connected' else '0' }}%">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}
+{% block extra_js %}
+    <script>
+$(document).ready(function() {
+    // Pastikan Chart.js sudah dimuat
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js belum dimuat');
+        return;
+    }
+    
+    // Data Source Chart
+    const dataSourceCtx = document.getElementById('dataSourceChart').getContext('2d');
+    new Chart(dataSourceCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Upload', 'Scraping'],
+            datasets: [{
+                data: [{{ stats.total_raw_upload or 0 }}, {{ stats.total_raw_scraper or 0 }}],
+                backgroundColor: ['#17a2b8', '#28a745'],
+                borderWidth: 2,
+                borderColor: '#ffffff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    
+    // Classification Results Chart
+    const classificationCtx = document.getElementById('classificationChart').getContext('2d');
+    new Chart(classificationCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Radikal', 'Non-Radikal'],
+            datasets: [{
+                label: 'Jumlah',
+                data: [{{ stats.total_radikal or 0 }}, {{ stats.total_non_radikal or 0 }}],
+                backgroundColor: ['#dc3545', '#28a745'],
+                borderColor: ['#dc3545', '#28a745'],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+    
+    // Platform Distribution Chart
+    const platformCtx = document.getElementById('platformChart').getContext('2d');
+    new Chart(platformCtx, {
+        type: 'line',
+        data: {
+            labels: ['Twitter', 'TikTok', 'Facebook', 'Instagram'],
+            datasets: [{
+                label: 'Upload',
+                data: [{{ platform_stats.twitter_upload or 0 }}, {{ platform_stats.tiktok_upload or 0 }}, {{ platform_stats.facebook_upload or 0 }}, {{ platform_stats.instagram_upload or 0 }}],
+                borderColor: '#17a2b8',
+                backgroundColor: 'rgba(23, 162, 184, 0.1)',
+                tension: 0.4
+            }, {
+                label: 'Scraping',
+                data: [{{ platform_stats.twitter_scraper or 0 }}, {{ platform_stats.tiktok_scraper or 0 }}, {{ platform_stats.facebook_scraper or 0 }}, {{ platform_stats.instagram_scraper or 0 }}],
+                borderColor: '#28a745',
+                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top'
+                }
+            }
+        }
+    });
+    
+
+    
+    // Auto refresh every 30 seconds
+    setInterval(function() {
+        location.reload();
+    }, 30000);
+});
+    </script>
+{% endblock extra_js %}

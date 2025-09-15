@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="id">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description"
+              content="Login ke Waskita - Sistem Klasifikasi Konten Radikal menggunakan Machine Learning">
+        <meta name="keywords"
+              content="login, waskita, klasifikasi konten, machine learning, sistem autentikasi">
+        <title>Login - Waskita</title>
+        <!-- Google Font: Source Sans Pro -->
+        <link rel="stylesheet"
+              href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+        <!-- Font Awesome -->
+        <link rel="stylesheet"
+              href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        <!-- AdminLTE CSS -->
+        <link rel="stylesheet"
+              href="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/css/adminlte.min.css">
+        <!-- SweetAlert2 CSS -->
+        <link rel="stylesheet"
+              href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+        <style>
+        .login-page {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .login-box {
+            width: 400px;
+        }
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+        }
+        .card-header {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+            border-radius: 15px 15px 0 0;
+            text-align: center;
+            padding: 2rem 1rem;
+        }
+        .card-header h1 {
+            margin: 0;
+            font-size: 2rem;
+            font-weight: 300;
+        }
+        .card-body {
+            padding: 2rem;
+        }
+        .form-control {
+            border-radius: 25px;
+            padding: 12px 20px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+        .form-control:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 123, 255, 0.4);
+        }
+        .input-group-text {
+            background-color: transparent;
+            border: 2px solid #e9ecef;
+            border-right: none;
+            border-radius: 25px 0 0 25px;
+        }
+        .input-group .form-control {
+            border-left: none;
+            border-radius: 0 25px 25px 0;
+        }
+        .brand-logo {
+            font-size: 3rem;
+            color: white;
+            margin-bottom: 1rem;
+        }
+        .register-link {
+            text-align: center;
+            margin-top: 1rem;
+        }
+        .register-link a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .register-link a:hover {
+            text-decoration: underline;
+        }
+        </style>
+    </head>
+    <body class="hold-transition login-page">
+        <div class="login-box">
+            <div class="card card-outline card-primary">
+                <div class="card-header">
+                    <div class="brand-logo">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h1>Waskita</h1>
+                    <p class="mb-0">Sistem Klasifikasi Konten</p>
+                </div>
+                <div class="card-body">
+                    <p class="login-box-msg">Silakan login untuk melanjutkan</p>
+                    <!-- Flash messages -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show"
+                                     role="alert">
+                                    {{ message }}
+                                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                        <span aria-hidden="true">×</span>
+                                    </button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    <form method="post" id="loginForm">
+                        {{ form.hidden_tag() if form }}
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">
+                                    <i class="fas fa-user"></i>
+                                </span>
+                            </div>
+                            <input type="text"
+                                   name="username"
+                                   class="form-control"
+                                   placeholder="Username"
+                                   required>
+                        </div>
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">
+                                    <i class="fas fa-lock"></i>
+                                </span>
+                            </div>
+                            <input type="password"
+                                   name="password"
+                                   class="form-control"
+                                   placeholder="Password"
+                                   required>
+                        </div>
+                        <div class="row">
+                            <div class="col-8">
+                                <div class="icheck-primary">
+                                    <input type="checkbox" id="remember" name="remember">
+                                    <label for="remember">Ingat saya</label>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <button type="submit" class="btn btn-primary btn-block">Login</button>
+                            </div>
+                        </div>
+                    </form>
+                    <div class="register-link">
+                        <p>
+                            Belum punya akun? <a href="{{ url_for("register") }}">Daftar di sini</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- jQuery -->
+        <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+        <!-- Bootstrap 4 -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+        <!-- AdminLTE App -->
+        <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
+        <!-- SweetAlert2 -->
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script>
+        $(document).ready(function() {
+            $('#loginForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                const username = $('input[name="username"]').val();
+                const password = $('input[name="password"]').val();
+                
+                if (!username || !password) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Username dan password harus diisi!',
+                        confirmButtonColor: '#007bff'
+                    });
+                    return;
+                }
+                
+                // Show loading
+                Swal.fire({
+                    title: 'Memproses...',
+                    text: 'Sedang memverifikasi login',
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    willOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+                
+                // Submit form
+                this.submit();
+            });
+        });
+        </script>
+    </body>
+</html>

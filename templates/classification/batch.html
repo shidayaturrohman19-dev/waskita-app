@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title %} Klasifikasi Batch {% endblock title %}
+
+{% block stylesheets %}
+<style>
+    .data-card {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        transition: all 0.3s ease;
+    }
+    .data-card:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        border-color: #007bff;
+    }
+    .data-card.selected {
+        border-color: #007bff;
+        background-color: #f8f9fa;
+    }
+    .content-preview {
+        max-height: 100px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .batch-actions {
+        position: sticky;
+        top: 20px;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock stylesheets %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header pb-0">
+                    <div class="d-lg-flex">
+                        <div>
+                            <h5 class="mb-0">Klasifikasi Batch</h5>
+                            <p class="text-sm mb-0">
+                                Pilih data yang ingin diklasifikasi secara batch menggunakan model machine learning.
+                            </p>
+                        </div>
+                        <div class="ms-auto my-auto mt-lg-0 mt-4">
+                            <div class="ms-auto my-auto">
+                                <a href="{{ url_for('classification') }}" class="btn btn-outline-primary btn-sm mb-0">
+                                    <i class="fas fa-arrow-left mr-1"></i> Kembali
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body px-0 pb-0">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="px-4">
+                                {% if unclassified_data %}
+                                    <div class="mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="selectAll">
+                                            <label class="form-check-label" for="selectAll">
+                                                <strong>Pilih Semua ({{ unclassified_data|length }} data)</strong>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div id="dataList">
+                                        {% for data in unclassified_data %}
+                                        <div class="data-card p-3" data-id="{{ data.id }}" data-type="{{ data.data_type }}">
+                                            <div class="form-check">
+                                                <input class="form-check-input data-checkbox" type="checkbox" 
+                                                       id="data_{{ data.data_type }}_{{ data.id }}" 
+                                                       value="{{ data.data_type }}_{{ data.id }}">
+                                                <label class="form-check-label w-100" for="data_{{ data.data_type }}_{{ data.id }}">
+                                                    <div class="row">
+                                                        <div class="col-md-8">
+                                                            <div class="content-preview">
+                                                                <strong>{{ data.username or 'Unknown' }}</strong><br>
+                                                                <small class="text-muted">{{ data.data_type|title }} Data</small><br>
+                                                                {{ data.cleaned_content[:200] }}{% if data.cleaned_content|length > 200 %}...{% endif %}
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-4 text-end">
+                                                            <small class="text-muted">
+                                                                {{ data.created_at.strftime('%d/%m/%Y %H:%M') if data.created_at else 'N/A' }}
+                                                            </small>
+                                                            {% if data.url %}
+                                                            <br><small><a href="{{ data.url }}" target="_blank" class="text-primary">Lihat Sumber</a></small>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <div class="text-center py-5">
+                                        <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                                        <h5>Semua Data Sudah Diklasifikasi</h5>
+                                        <p class="text-muted">Tidak ada data yang perlu diklasifikasi. Semua data telah diproses.</p>
+                                        <a href="{{ url_for('classification_results') }}" class="btn btn-primary">
+                                            <i class="fas fa-eye mr-1"></i> Lihat Hasil Klasifikasi
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        {% if unclassified_data %}
+                        <div class="col-md-4">
+                            <div class="batch-actions">
+                                <h6><i class="fas fa-cogs mr-2"></i>Aksi Batch</h6>
+                                <div class="mb-3">
+                                    <small class="text-muted">Data terpilih: <span id="selectedCount">0</span></small>
+                                </div>
+                                
+                                <button type="button" class="btn btn-primary w-100 mb-2" id="classifySelected" disabled>
+                                    <i class="fas fa-play mr-2"></i>Klasifikasi Data Terpilih
+                                </button>
+                                
+                                <div class="alert alert-info">
+                                    <small>
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        Klasifikasi akan menggunakan 3 model Naive Bayes untuk menganalisis konten radikal/non-radikal.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Handle select all checkbox
+    $('#selectAll').change(function() {
+        $('.data-checkbox').prop('checked', this.checked);
+        $('.data-card').toggleClass('selected', this.checked);
+        updateSelectedCount();
+    });
+    
+    // Handle individual checkbox changes
+    $('.data-checkbox').change(function() {
+        $(this).closest('.data-card').toggleClass('selected', this.checked);
+        updateSelectedCount();
+        
+        // Update select all checkbox
+        const totalCheckboxes = $('.data-checkbox').length;
+        const checkedCheckboxes = $('.data-checkbox:checked').length;
+        $('#selectAll').prop('checked', totalCheckboxes === checkedCheckboxes);
+    });
+    
+    // Update selected count and button state
+    function updateSelectedCount() {
+        const selectedCount = $('.data-checkbox:checked').length;
+        $('#selectedCount').text(selectedCount);
+        $('#classifySelected').prop('disabled', selectedCount === 0);
+    }
+    
+    // Handle batch classification
+    $('#classifySelected').click(function() {
+        const selectedData = [];
+        $('.data-checkbox:checked').each(function() {
+            const value = $(this).val().split('_');
+            selectedData.push({
+                data_type: value[0],
+                data_id: value[1]
+            });
+        });
+        
+        if (selectedData.length === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Tidak Ada Data Terpilih',
+                text: 'Silakan pilih minimal satu data untuk diklasifikasi.'
+            });
+            return;
+        }
+        
+        Swal.fire({
+            title: 'Konfirmasi Klasifikasi Batch',
+            text: `Anda akan mengklasifikasi ${selectedData.length} data. Proses ini mungkin memakan waktu beberapa menit.`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Klasifikasi',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                processBatchClassification(selectedData);
+            }
+        });
+    });
+    
+    // Process batch classification
+    function processBatchClassification(selectedData) {
+        let processed = 0;
+        const total = selectedData.length;
+        
+        Swal.fire({
+            title: 'Memproses Klasifikasi...',
+            html: `Progress: <b>0</b>/${total}`,
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+        
+        // Process each data item
+        selectedData.forEach((item, index) => {
+            setTimeout(() => {
+                $.get(`/classification/classify/${item.data_type}/${item.data_id}`)
+                    .done(function() {
+                        processed++;
+                        Swal.update({
+                            html: `Progress: <b>${processed}</b>/${total}`
+                        });
+                        
+                        if (processed === total) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Klasifikasi Selesai!',
+                                text: `${total} data berhasil diklasifikasi.`,
+                                confirmButtonText: 'Lihat Hasil'
+                            }).then(() => {
+                                window.location.href = '/classification/results';
+                            });
+                        }
+                    })
+                    .fail(function() {
+                        processed++;
+                        if (processed === total) {
+                            Swal.fire({
+                                icon: 'warning',
+                                title: 'Klasifikasi Selesai dengan Error',
+                                text: 'Beberapa data mungkin gagal diklasifikasi. Silakan cek hasil klasifikasi.',
+                                confirmButtonText: 'Lihat Hasil'
+                            }).then(() => {
+                                window.location.href = '/classification/results';
+                            });
+                        }
+                    });
+            }, index * 500); // Delay 500ms between requests
+        });
+    }
+});
+</script>
+{% endblock scripts %}

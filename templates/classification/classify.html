@@ -1,0 +1,794 @@
+{% extends "base.html" %}
+{% block title %}
+    Klasifikasi Data - Waskita
+{% endblock title %}
+{% block page_title %}
+    Klasifikasi Data
+{% endblock page_title %}
+{% block breadcrumb %}
+    <li class="breadcrumb-item">
+        <a href="{{ url_for("dashboard") }}">Home</a>
+    </li>
+    <li class="breadcrumb-item active">Klasifikasi</li>
+{% endblock breadcrumb %}
+{% block content %}
+        <!-- Main content -->
+        <section class="content">
+            <div class="container-fluid">
+                <!-- Classification Overview -->
+                <div class="row">
+                    <div class="col-lg-3 col-6">
+                        <div class="small-box bg-primary">
+                            <div class="inner">
+                                <h3 id="totalCleanData">{{ clean_data_count }}</h3>
+                                <p>Data Siap Klasifikasi</p>
+                            </div>
+                            <div class="icon">
+                                <i class="fas fa-database"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-6">
+                        <div class="small-box bg-success">
+                            <div class="inner">
+                                <h3 id="classifiedData">{{ classified_count }}</h3>
+                                <p>Sudah Diklasifikasi</p>
+                            </div>
+                            <div class="icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-6">
+                        <div class="small-box bg-warning">
+                            <div class="inner">
+                                <h3 id="radicalCount">{{ radical_count }}</h3>
+                                <p>Konten Radikal</p>
+                            </div>
+                            <div class="icon">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-6">
+                        <div class="small-box bg-info">
+                            <div class="inner">
+                                <h3 id="nonRadicalCount">{{ non_radical_count }}</h3>
+                                <p>Konten Non-Radikal</p>
+                            </div>
+                            <div class="icon">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Model Status -->
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card card-info">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <i class="fas fa-brain mr-2"></i>Status Model AI
+                                </h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <div class="info-box bg-gradient-primary">
+                                            <span class="info-box-icon"><i class="fas fa-vector-square"></i></span>
+                                            <div class="info-box-content">
+                                                <span class="info-box-text">Word2Vec Model</span>
+                                                <span class="info-box-number">{{ 'Aktif' if word2vec_status else 'Tidak Aktif' }}</span>
+                                                <div class="progress">
+                                                    <div class="progress-bar"
+                                                         style="width: {{ '100' if word2vec_status else '0' }}%"></div>
+                                                </div>
+                                                <span class="progress-description">{{ word2vec_info if word2vec_status else 'Model tidak ditemukan' }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="info-box bg-gradient-success">
+                                            <span class="info-box-icon"><i class="fas fa-brain"></i></span>
+                                            <div class="info-box-content">
+                                                <span class="info-box-text">Naive Bayes Model 1</span>
+                                                <span class="info-box-number">{{ 'Aktif' if nb1_status else 'Tidak Aktif' }}</span>
+                                                <div class="progress">
+                                                    <div class="progress-bar bg-success"
+                                                         style="width: {{ '100' if nb1_status else '0' }}%"></div>
+                                                </div>
+                                                <span class="progress-description">{{ nb1_info if nb1_status else 'Model tidak ditemukan' }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="info-box bg-gradient-warning">
+                                            <span class="info-box-icon"><i class="fas fa-brain"></i></span>
+                                            <div class="info-box-content">
+                                                <span class="info-box-text">Naive Bayes Model 2</span>
+                                                <span class="info-box-number">{{ 'Aktif' if nb2_status else 'Tidak Aktif' }}</span>
+                                                <div class="progress">
+                                                    <div class="progress-bar bg-warning"
+                                                         style="width: {{ '100' if nb2_status else '0' }}%"></div>
+                                                </div>
+                                                <span class="progress-description">{{ nb2_info if nb2_status else 'Model tidak ditemukan' }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="info-box bg-gradient-danger">
+                                            <span class="info-box-icon"><i class="fas fa-brain"></i></span>
+                                            <div class="info-box-content">
+                                                <span class="info-box-text">Naive Bayes Model 3</span>
+                                                <span class="info-box-number">{{ 'Aktif' if nb3_status else 'Tidak Aktif' }}</span>
+                                                <div class="progress">
+                                                    <div class="progress-bar bg-danger"
+                                                         style="width: {{ '100' if nb3_status else '0' }}%"></div>
+                                                </div>
+                                                <span class="progress-description">{{ nb3_info if nb3_status else 'Model tidak ditemukan' }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Classification Interface -->
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="card card-primary">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <i class="fas fa-cogs mr-2"></i>Klasifikasi Data
+                                </h3>
+                                <div class="card-tools">
+                                    <a href="{{ url_for('classification_results') }}" class="btn btn-info btn-sm">
+                                        <i class="fas fa-list mr-1"></i>Lihat Hasil Klasifikasi
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <!-- Data Selection -->
+                                <div class="form-group">
+                                    <label for="dataSource">Pilih Sumber Data:</label>
+                                    <select class="form-control" id="dataSource" onchange="loadDataBySource()">
+                                        <option value="">-- Pilih Sumber Data --</option>
+                                        <option value="clean-upload">Data Upload Bersih ({{ clean_upload_count }} data)</option>
+                                        <option value="clean-scraper">Data Scraper Bersih ({{ clean_scraper_count }} data)</option>
+                                    </select>
+                                </div>
+                                <!-- Data Table -->
+                                <div id="dataTableContainer" class="hidden">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h5 id="dataTableTitle">Data Siap Klasifikasi</h5>
+                                        <div>
+                                            <button class="btn btn-success" onclick="classifySelected()">
+                                                <i class="fas fa-brain mr-2"></i>Klasifikasi Terpilih
+                                            </button>
+                                            <button class="btn btn-primary" onclick="classifyAll()">
+                                                <i class="fas fa-magic mr-2"></i>Klasifikasi Semua
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-striped" id="classificationTable">
+                                            <thead>
+                                                <tr>
+                                                    <th>
+                                                        <input type="checkbox" id="selectAllData">
+                                                    </th>
+                                                    <th>ID</th>
+                                                    <th>Platform</th>
+                                                    <th>Username</th>
+                                                    <th>Konten Bersih</th>
+                                                    <th>Status Klasifikasi</th>
+                                                    <th>Aksi</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="classificationTableBody">
+                                                <!-- Data will be loaded dynamically -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <!-- Single Text Classification -->
+                                <div class="mt-4">
+                                    <h5>
+                                        <i class="fas fa-edit mr-2"></i>Klasifikasi Teks Manual
+                                    </h5>
+                                    <div class="form-group">
+                                        <label for="manualText">Masukkan Teks:</label>
+                                        <textarea class="form-control"
+                                                  id="manualText"
+                                                  rows="4"
+                                                  placeholder="Masukkan teks yang ingin diklasifikasi..."></textarea>
+                                    </div>
+                                    <button class="btn btn-info" onclick="classifyManualText()">
+                                        <i class="fas fa-search mr-2"></i>Klasifikasi Teks
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Classification Progress -->
+                    <div class="col-md-4">
+                        <div class="card card-success">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <i class="fas fa-chart-line mr-2"></i>Progress Klasifikasi
+                                </h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="progress-group">
+                                    <span class="progress-text">Model 1 (Naive Bayes)</span>
+                                    <span class="float-right"><b id="model1Progress">0</b>/{{ clean_data_count }}</span>
+                                    <div class="progress progress-sm">
+                                        <div class="progress-bar bg-primary progress-bar-initial"
+                                             id="model1ProgressBar"></div>
+                                    </div>
+                                </div>
+                                <div class="progress-group">
+                                    <span class="progress-text">Model 2 (Naive Bayes)</span>
+                                    <span class="float-right"><b id="model2Progress">0</b>/{{ clean_data_count }}</span>
+                                    <div class="progress progress-sm">
+                                        <div class="progress-bar bg-success progress-bar-initial"
+                                             id="model2ProgressBar"></div>
+                                    </div>
+                                </div>
+                                <div class="progress-group">
+                                    <span class="progress-text">Model 3 (Naive Bayes)</span>
+                                    <span class="float-right"><b id="model3Progress">0</b>/{{ clean_data_count }}</span>
+                                    <div class="progress progress-sm">
+                                        <div class="progress-bar bg-warning progress-bar-initial"
+                                             id="model3ProgressBar"></div>
+                                    </div>
+                                </div>
+                                <div class="mt-3">
+                                    <h6>Statistik Real-time:</h6>
+                                    <ul class="list-unstyled">
+                                        <li>
+                                            <i class="fas fa-circle text-danger mr-2"></i>Radikal: <span id="realtimeRadical">0</span>
+                                        </li>
+                                        <li>
+                                            <i class="fas fa-circle text-success mr-2"></i>Non-Radikal: <span id="realtimeNonRadical">0</span>
+                                        </li>
+                                        <li>
+                                            <i class="fas fa-circle text-info mr-2"></i>Diproses: <span id="realtimeProcessed">0</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Recent Classifications -->
+                        <div class="card card-info">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <i class="fas fa-history mr-2"></i>Klasifikasi Terbaru
+                                </h3>
+                            </div>
+                            <div class="card-body p-0">
+                                <ul class="list-group list-group-flush" id="recentClassifications">
+                                    {% for result in recent_classifications %}
+                                        <li class="list-group-item">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <small class="text-muted">{{ result.platform.title() }}</small>
+                                                    <br>
+                                                    <span class="text-truncate text-truncate-content">{{ result.content[:30] }}...</span>
+                                                </div>
+                                                <div class="text-right">
+                                                    <span class="badge badge-{{ 'danger' if result.final_prediction == 'radikal' else 'success' }}">
+                                                        {{ result.final_prediction.title() }}
+                                                    </span>
+                                                    <br>
+                                                    <small class="text-muted">{{ result.created_at | format_datetime('time') }}</small>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    {% endfor %}
+                                    {% if not recent_classifications %}
+                                        <li class="list-group-item text-center text-muted">
+                                            <i class="fas fa-info-circle mr-2"></i>
+                                            Belum ada klasifikasi
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+{% endblock content %}
+{% block scripts %}
+    <script>
+let currentDataSource = '';
+let classificationInProgress = false;
+
+$(document).ready(function() {
+    // Initialize tooltips
+    $('[data-toggle="tooltip"]').tooltip();
+    
+    // Select all checkbox handler
+    $('#selectAllData').change(function() {
+        $('#classificationTable .row-checkbox').prop('checked', this.checked);
+    });
+});
+
+function loadDataBySource() {
+    const dataSource = $('#dataSource').val();
+    if (!dataSource) {
+        $('#dataTableContainer').hide();
+        return;
+    }
+    
+    currentDataSource = dataSource;
+    
+    // Show loading
+    $('#dataTableContainer').show();
+    $('#dataTableTitle').text('Memuat data...');
+    $('#classificationTableBody').html('<tr><td colspan="7" class="text-center"><i class="fas fa-spinner fa-spin mr-2"></i>Memuat data...</td></tr>');
+    
+    // Simulate loading data
+    setTimeout(() => {
+        loadMockData(dataSource);
+    }, 1000);
+}
+
+function loadMockData(dataSource) {
+    const mockData = [
+        {
+            id: 1,
+            platform: 'twitter',
+            username: 'user1',
+            content: 'ini adalah contoh konten yang sudah dibersihkan',
+            classified: false
+        },
+        {
+            id: 2,
+            platform: 'facebook',
+            username: 'user2',
+            content: 'contoh konten lainnya yang siap untuk diklasifikasi',
+            classified: true
+        },
+        {
+            id: 3,
+            platform: 'tiktok',
+            username: 'user3',
+            content: 'data bersih ketiga untuk proses klasifikasi',
+            classified: false
+        }
+    ];
+    
+    let tableHtml = '';
+    mockData.forEach(data => {
+        const platformBadge = data.platform === 'twitter' ? 'primary' : data.platform === 'facebook' ? 'info' : 'dark';
+        const statusBadge = data.classified ? 'success' : 'warning';
+        const statusText = data.classified ? 'Sudah Diklasifikasi' : 'Belum Diklasifikasi';
+        
+        tableHtml += `
+            <tr>
+                <td>
+                    <input type="checkbox" class="row-checkbox" value="${data.id}" ${data.classified ? 'disabled' : ''}>
+                </td>
+                <td>${data.id}</td>
+                <td>
+                    <span class="badge badge-${platformBadge}">
+                        <i class="fab fa-${data.platform}"></i> ${data.platform.charAt(0).toUpperCase() + data.platform.slice(1)}
+                    </span>
+                </td>
+                <td>${data.username}</td>
+                <td>
+                    <span class="content-preview" data-toggle="tooltip" title="${data.content}">
+                        ${data.content.substring(0, 40)}${data.content.length > 40 ? '...' : ''}
+                    </span>
+                </td>
+                <td>
+                    <span class="badge badge-${statusBadge}">${statusText}</span>
+                </td>
+                <td>
+                    <div class="btn-group" role="group">
+                        ${!data.classified ? `
+                            <button class="btn btn-sm btn-primary" onclick="classifySingle(${data.id})" title="Klasifikasi">
+                                <i class="fas fa-brain"></i>
+                            </button>
+                        ` : `
+                            <button class="btn btn-sm btn-info" onclick="viewClassificationResult(${data.id})" title="Lihat Hasil">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        `}
+                        <button class="btn btn-sm btn-secondary" onclick="viewDataDetail(${data.id})" title="Detail">
+                            <i class="fas fa-info-circle"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+    
+    $('#dataTableTitle').text(`Data ${dataSource === 'clean-upload' ? 'Upload' : 'Scraper'} Bersih`);
+    $('#classificationTableBody').html(tableHtml);
+    
+    // Reinitialize tooltips
+    $('[data-toggle="tooltip"]').tooltip();
+}
+
+function classifySelected() {
+    const selectedIds = [];
+    $('#classificationTable .row-checkbox:checked:not(:disabled)').each(function() {
+        selectedIds.push($(this).val());
+    });
+    
+    if (selectedIds.length === 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Tidak Ada Data Dipilih',
+            text: 'Silakan pilih data yang akan diklasifikasi'
+        });
+        return;
+    }
+    
+    startClassification(selectedIds);
+}
+
+function classifyAll() {
+    const allIds = [];
+    $('#classificationTable .row-checkbox:not(:disabled)').each(function() {
+        allIds.push($(this).val());
+    });
+    
+    if (allIds.length === 0) {
+        Swal.fire({
+            icon: 'info',
+            title: 'Tidak Ada Data',
+            text: 'Semua data sudah diklasifikasi atau tidak ada data tersedia'
+        });
+        return;
+    }
+    
+    startClassification(allIds);
+}
+
+function classifySingle(dataId) {
+    startClassification([dataId]);
+}
+
+function startClassification(dataIds) {
+    if (classificationInProgress) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Klasifikasi Sedang Berjalan',
+            text: 'Harap tunggu hingga proses selesai'
+        });
+        return;
+    }
+    
+    Swal.fire({
+        title: 'Mulai Klasifikasi?',
+        text: `${dataIds.length} data akan diklasifikasi menggunakan 3 model Naive Bayes`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Mulai',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            processClassification(dataIds);
+        }
+    });
+}
+
+function processClassification(dataIds) {
+    classificationInProgress = true;
+    
+    // Show progress modal
+    Swal.fire({
+        title: 'Mengklasifikasi Data...',
+        html: `
+            <div class="progress mb-3">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" id="overallProgress" style="width: 0%"></div>
+            </div>
+            <p id="progressText">Memulai klasifikasi...</p>
+            <div class="row text-center">
+                <div class="col-4">
+                    <h6>Model 1</h6>
+                    <div class="progress">
+                        <div class="progress-bar bg-primary" id="model1ProgressModal" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <h6>Model 2</h6>
+                    <div class="progress">
+                        <div class="progress-bar bg-success" id="model2ProgressModal" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <h6>Model 3</h6>
+                    <div class="progress">
+                        <div class="progress-bar bg-warning" id="model3ProgressModal" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        `,
+        allowOutsideClick: false,
+        showConfirmButton: false,
+        width: 600
+    });
+    
+    // Simulate classification process
+    let processed = 0;
+    const total = dataIds.length;
+    
+    dataIds.forEach((id, index) => {
+        setTimeout(() => {
+            processed++;
+            const percentage = (processed / total) * 100;
+            
+            // Update progress
+            $('#overallProgress').css('width', percentage + '%');
+            $('#progressText').text(`Memproses data ${processed} dari ${total}...`);
+            
+            // Update model progress (simulate)
+            $('#model1ProgressModal').css('width', percentage + '%');
+            $('#model2ProgressModal').css('width', percentage + '%');
+            $('#model3ProgressModal').css('width', percentage + '%');
+            
+            // Update sidebar progress
+            $('#model1Progress').text(processed);
+            $('#model2Progress').text(processed);
+            $('#model3Progress').text(processed);
+            $('#model1ProgressBar').css('width', percentage + '%');
+            $('#model2ProgressBar').css('width', percentage + '%');
+            $('#model3ProgressBar').css('width', percentage + '%');
+            
+            // Update real-time stats (random)
+            const isRadical = Math.random() > 0.7;
+            if (isRadical) {
+                $('#realtimeRadical').text(parseInt($('#realtimeRadical').text()) + 1);
+            } else {
+                $('#realtimeNonRadical').text(parseInt($('#realtimeNonRadical').text()) + 1);
+            }
+            $('#realtimeProcessed').text(processed);
+            
+            if (processed === total) {
+                setTimeout(() => {
+                    classificationInProgress = false;
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Klasifikasi Selesai!',
+                        text: `${total} data berhasil diklasifikasi`,
+                        confirmButtonText: 'Lihat Hasil'
+                    }).then(() => {
+                        // Redirect to results page
+                        window.location.href = '/classification/results';
+                    });
+                }, 500);
+            }
+        }, index * 1500); // 1.5 second delay between each data
+    });
+}
+
+function classifyManualText() {
+    const text = $('#manualText').val().trim();
+    if (!text) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Teks Kosong',
+            text: 'Silakan masukkan teks yang ingin diklasifikasi'
+        });
+        return;
+    }
+    
+    // Show loading
+    Swal.fire({
+        title: 'Mengklasifikasi Teks...',
+        html: 'Memproses dengan Word2Vec dan 3 Model Naive Bayes...',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    // Call API to classify text
+    const csrfToken = $('meta[name=csrf-token]').attr('content');
+    $.ajax({
+        url: '/api/classify_manual_text',
+        method: 'POST',
+        contentType: 'application/json',
+        headers: {
+            'X-CSRFToken': csrfToken
+        },
+        data: JSON.stringify({ text: text }),
+        success: function(response) {
+            if (response.success && response.results.length >= 3) {
+                const results = response.results;
+                
+                // Determine final prediction (majority vote)
+                const predictions = results.map(r => r.prediction);
+                const radicalCount = predictions.filter(p => p === 'radikal').length;
+                const finalPrediction = radicalCount >= 2 ? 'radikal' : 'non-radikal';
+                
+                Swal.fire({
+                    title: 'Hasil Klasifikasi',
+                    html: `
+                        <div class="text-left">
+                            <p><strong>Teks:</strong> "${response.text}"</p>
+                            <hr>
+                            <h6>Hasil Model:</h6>
+                            <div class="row">
+                                <div class="col-4">
+                                    <div class="card">
+                                        <div class="card-body text-center">
+                                            <h6>Model 1</h6>
+                                            <span class="badge badge-${results[0].prediction === 'radikal' ? 'danger' : 'success'} badge-lg">
+                                                ${results[0].prediction.toUpperCase()}
+                                            </span>
+                                            <small>Radikal: ${(results[0].probability_radikal * 100).toFixed(1)}%</small><br>
+                                            <small>Non-Radikal: ${(results[0].probability_non_radikal * 100).toFixed(1)}%</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="card">
+                                        <div class="card-body text-center">
+                                            <h6>Model 2</h6>
+                                            <span class="badge badge-${results[1].prediction === 'radikal' ? 'danger' : 'success'} badge-lg">
+                                                ${results[1].prediction.toUpperCase()}
+                                            </span>
+                                            <small>Radikal: ${(results[1].probability_radikal * 100).toFixed(1)}%</small><br>
+                                            <small>Non-Radikal: ${(results[1].probability_non_radikal * 100).toFixed(1)}%</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="card">
+                                        <div class="card-body text-center">
+                                            <h6>Model 3</h6>
+                                            <span class="badge badge-${results[2].prediction === 'radikal' ? 'danger' : 'success'} badge-lg">
+                                                ${results[2].prediction.toUpperCase()}
+                                            </span>
+                                            <small>Radikal: ${(results[2].probability_radikal * 100).toFixed(1)}%</small><br>
+                                            <small>Non-Radikal: ${(results[2].probability_non_radikal * 100).toFixed(1)}%</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="text-center">
+                                <h5>Prediksi Final (Majority Vote):</h5>
+                                <span class="badge badge-${finalPrediction === 'radikal' ? 'danger' : 'success'}" style="font-size: 1.2em; padding: 10px 20px;">
+                                    ${finalPrediction.toUpperCase()}
+                                </span>
+                            </div>
+                        </div>
+                    `,
+                    width: 800,
+                    showCloseButton: true,
+                    showConfirmButton: false
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: response.message || 'Tidak dapat mengklasifikasi teks'
+                });
+            }
+        },
+        error: function(xhr, status, error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Terjadi kesalahan saat mengklasifikasi teks'
+            });
+        },
+        complete: function() {
+            $('#manualText').val('');
+        }
+    });
+}
+
+function viewClassificationResult(dataId) {
+    // Mock classification result
+    Swal.fire({
+        title: 'Hasil Klasifikasi',
+        html: `
+            <div class="text-left">
+                <p><strong>ID Data:</strong> ${dataId}</p>
+                <p><strong>Konten:</strong> "Ini adalah contoh konten yang sudah diklasifikasi"</p>
+                <hr>
+                <div class="row">
+                    <div class="col-4 text-center">
+                        <h6>Model 1</h6>
+                        <span class="badge bg-success badge-lg">NON-RADIKAL</span>
+                    </div>
+                    <div class="col-4 text-center">
+                        <h6>Model 2</h6>
+                        <span class="badge badge-success badge-lg">NON-RADIKAL</span>
+                    </div>
+                    <div class="col-4 text-center">
+                        <h6>Model 3</h6>
+                        <span class="badge bg-danger badge-lg">RADIKAL</span>
+                    </div>
+                </div>
+                <hr>
+                <div class="text-center">
+                    <h5>Prediksi Final:</h5>
+                    <span class="badge bg-success" style="font-size: 1.2em; padding: 10px 20px;">NON-RADIKAL</span>
+                </div>
+            </div>
+        `,
+        width: 600,
+        showCloseButton: true,
+        showConfirmButton: false
+    });
+}
+
+function viewDataDetail(dataId) {
+    Swal.fire({
+        title: 'Detail Data',
+        html: `
+            <div class="text-left">
+                <p><strong>ID:</strong> ${dataId}</p>
+                <p><strong>Platform:</strong> Twitter</p>
+                <p><strong>Username:</strong> user_example</p>
+                <p><strong>Konten Asli:</strong> "Ini adalah contoh konten asli dengan emoji 😀"</p>
+                <p><strong>Konten Bersih:</strong> "ini adalah contoh konten asli dengan emoji"</p>
+                <p><strong>Tanggal:</strong> 2024-01-15 10:30:00</p>
+            </div>
+        `,
+        width: 600,
+        showCloseButton: true,
+        showConfirmButton: false
+    });
+}
+    </script>
+    <style>
+.info-box {
+    margin-bottom: 15px;
+}
+
+.progress-group {
+    margin-bottom: 15px;
+}
+
+.content-preview {
+    cursor: help;
+}
+
+.badge-lg {
+    font-size: 0.9em;
+    padding: 8px 12px;
+}
+
+.card-body .row .card {
+    margin-bottom: 10px;
+}
+
+.list-group-item {
+    border-left: none;
+    border-right: none;
+}
+
+.list-group-item:first-child {
+    border-top: none;
+}
+
+.list-group-item:last-child {
+    border-bottom: none;
+}
+
+.progress-bar-animated {
+    animation: progress-bar-stripes 1s linear infinite;
+}
+
+@keyframes progress-bar-stripes {
+    0% {
+        background-position: 1rem 0;
+    }
+    100% {
+        background-position: 0 0;
+    }
+}
+    </style>
+{% endblock scripts %}

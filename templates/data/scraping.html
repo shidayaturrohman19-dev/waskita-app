@@ -1,0 +1,1347 @@
+{% extends "base.html" %}
+{% block title %}
+    Scraping Data - Waskita
+{% endblock title %}
+{% block page_title %}
+    Scraping Data Media Sosial
+{% endblock page_title %}
+{% block breadcrumb %}
+    <li class="breadcrumb-item">
+        <a href="{{ url_for("dashboard") }}">Home</a>
+    </li>
+    <li class="breadcrumb-item">Data Source</li>
+    <li class="breadcrumb-item active">Scraping</li>
+{% endblock breadcrumb %}
+{% block content %}
+        <!-- Main content -->
+        <section class="content">
+            <div class="container-fluid">
+                <!-- Scraping Form Card -->
+                <div class="card card-success">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-search mr-2"></i>
+                            Setup Scraping Data
+                        </h3>
+                    </div>
+                    <form id="scrapingForm" method="post">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="form-group">
+                                        <label for="platform">Platform Media Sosial</label>
+                                        <select class="form-control" id="platform" name="platform" required>
+                                            <option value="">Pilih Platform</option>
+                                            <option value="twitter">Twitter</option>
+                                            <option value="facebook">Facebook</option>
+                                            <option value="instagram">Instagram</option>
+                                            <option value="tiktok">TikTok</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="keyword">Kata Kunci</label>
+                                        <input type="text"
+                                               class="form-control"
+                                               id="keyword"
+                                               name="keyword"
+                                               placeholder="Masukkan kata kunci pencarian"
+                                               required>
+                                        <small class="form-text text-muted">Gunakan kata kunci yang spesifik untuk hasil yang lebih akurat</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="date_from">Dari Tanggal</label>
+                                        <input type="date"
+                                               class="form-control"
+                                               id="date_from"
+                                               name="date_from"
+                                               required>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="date_to">Sampai Tanggal</label>
+                                        <input type="date"
+                                               class="form-control"
+                                               id="date_to"
+                                               name="date_to"
+                                               required>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="max_results">Maksimal Hasil</label>
+                                        <div class="input-group">
+                                            <input type="number" 
+                                                   class="form-control" 
+                                                   id="max_results" 
+                                                   name="max_results" 
+                                                   value="25" 
+                                                   min="1" 
+                                                   max="1000" 
+                                                   placeholder="Masukkan jumlah maksimal">
+                                            <div class="input-group-append">
+                                                <span class="input-group-text">postingan</span>
+                                            </div>
+                                        </div>
+                                        <small class="form-text text-muted">Masukkan jumlah maksimal data yang ingin di-scrape (1-1000)</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Language Setting (Hidden but set to Indonesian by default) -->
+                            <input type="hidden" id="language" name="language" value="id">
+
+                            <!-- Scraping Progress -->
+                            <div id="scrapingProgress" class="hidden">
+                                <div class="mb-2 d-flex justify-content-between align-items-center">
+                                    <span class="progress-text font-weight-bold">Memulai scraping...</span>
+                                    <span class="progress-percentage badge bg-primary">0%</span>
+                                </div>
+                                <div class="progress mb-2 custom-progress">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-gradient-success custom-progress-bar"
+                                         role="progressbar">
+                                        <span class="progress-inner-text font-weight-bold"></span>
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-md-3">
+                                        <div class="info-item">
+                                            <span class="info-label">Waktu:</span>
+                                            <span id="timeElapsed" class="info-value">0s</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="info-item">
+                                            <span class="info-label">Estimasi:</span>
+                                            <span id="timeEstimate" class="info-value">--</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="info-item">
+                                            <span class="info-label">Kecepatan:</span>
+                                            <span id="processingRate" class="info-value">-- data/s</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="info-item">
+                                            <span class="info-label">Data Ditemukan:</span>
+                                            <span id="dataFound" class="info-value">0</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            
+
+                        </div>
+                        <div class="card-footer">
+                            <button type="submit" class="btn btn-success" id="scrapingBtn">
+                                <i class="fas fa-search mr-2"></i>
+                                Mulai Scraping
+                            </button>
+                            <button type="button" class="btn btn-warning ml-2 hidden" id="stopBtn">
+                                <i class="fas fa-stop mr-2"></i>
+                                Stop Scraping
+                            </button>
+                            <button type="button" class="btn btn-secondary ml-2" onclick="resetForm()">
+                                <i class="fas fa-redo mr-2"></i>
+                                Reset
+                            </button>
+                            <button type="button" class="btn btn-info ml-2 d-none" id="viewResultsBtn" onclick="viewScrapingResults()">
+                                <i class="fas fa-eye mr-2"></i>
+                                Lihat Hasil
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <!-- Recent Scraping History -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-history mr-2"></i>
+                            Riwayat Scraping
+                        </h3>
+                        <div class="card-tools">
+                            <button type="button" class="btn btn-tool" onclick="refreshHistory()">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped" id="scrapingHistoryTable">
+                                <thead>
+                                    <tr>
+                                        <th>Platform</th>
+                                        <th>Kata Kunci</th>
+                                        <th>Dataset</th>
+                                        <th>Jumlah Data</th>
+                                        <th>Tanggal Scraping</th>
+                                        <th>Status</th>
+                                        <th>Dibuat Oleh</th>
+                                        <th>Waktu Dibuat</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data will be loaded via AJAX -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <!-- Scraping Statistics -->
+                <div class="row justify-content-center">
+                    <div class="col-lg-2 col-6">
+                        <div class="small-box bg-primary">
+                            <div class="inner">
+                                <h3 id="totalScraping">0</h3>
+                                <p>Total Scraping</p>
+                            </div>
+                            <div class="icon">
+                                <i class="fas fa-search"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-2 col-6">
+                        <div class="small-box bg-success">
+                            <div class="inner">
+                                <h3 id="twitterScraping">0</h3>
+                                <p>Twitter</p>
+                            </div>
+                            <div class="icon">
+                                <i class="fab fa-twitter"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-2 col-6">
+                        <div class="small-box bg-warning">
+                            <div class="inner">
+                                <h3 id="facebookScraping">0</h3>
+                                <p>Facebook</p>
+                            </div>
+                            <div class="icon">
+                                <i class="fab fa-facebook"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-2 col-6">
+                        <div class="small-box bg-info">
+                            <div class="inner">
+                                <h3 id="instagramScraping">0</h3>
+                                <p>Instagram</p>
+                            </div>
+                            <div class="icon">
+                                <i class="fab fa-instagram"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-2 col-6">
+                        <div class="small-box bg-danger">
+                            <div class="inner">
+                                <h3 id="tiktokScraping">0</h3>
+                                <p>TikTok</p>
+                            </div>
+                            <div class="icon">
+                                <i class="fab fa-tiktok"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+<!-- Column Mapping Modal for Scraping -->
+<div class="modal fade" id="scrapingColumnMappingModal" tabindex="-1" role="dialog" aria-labelledby="scrapingColumnMappingModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="scrapingColumnMappingModalLabel">Mapping Kolom Data Scraping</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    Pilih kolom yang sesuai untuk mapping data scraping. Kolom <strong>Content</strong> wajib dipilih.
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Mapping Kolom</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="scrapingContentColumn" class="form-label">Content <span class="text-danger">*</span></label>
+                                    <select class="form-control" id="scrapingContentColumn" required>
+                                        <option value="">Pilih kolom content...</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="scrapingUsernameColumn" class="form-label">Username</label>
+                                    <select class="form-control" id="scrapingUsernameColumn">
+                                        <option value="">Pilih kolom username...</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="scrapingUrlColumn" class="form-label">URL</label>
+                                    <select class="form-control" id="scrapingUrlColumn">
+                                        <option value="">Pilih kolom URL...</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Preview Data</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-sm" id="scrapingPreviewTable">
+                                        <thead>
+                                            <tr id="scrapingPreviewHeader">
+                                                <!-- Headers will be populated dynamically -->
+                                            </tr>
+                                        </thead>
+                                        <tbody id="scrapingPreviewBody">
+                                            <!-- Preview data will be populated dynamically -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" id="cancelScrapingMapping">Batal</button>
+                <button type="button" class="btn btn-primary" id="processScrapingMapping">Proses Data</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}
+{% block scripts %}
+    <script>
+// Set admin status for JavaScript access
+window.isAdmin = {{ 'true' if current_user.is_admin() else 'false' }};
+
+let scrapingInterval;
+let isScrapingActive = false;
+let lastScrapingDatasetId = null;
+
+// Function to initialize DataTable for scraping history
+function initializeScrapingHistoryTable() {
+    // Destroy existing DataTable if it exists
+    if ($.fn.DataTable.isDataTable('#scrapingHistoryTable')) {
+        $('#scrapingHistoryTable').DataTable().destroy();
+    }
+    
+    if ($('#scrapingHistoryTable tbody tr').length > 0 && !$('#scrapingHistoryTable tbody tr').first().find('td').hasClass('text-center')) {
+        const table = $('#scrapingHistoryTable').DataTable({
+            "responsive": true,
+            "lengthChange": false,
+            "autoWidth": false,
+            "pageLength": 10,
+            "order": [[7, "desc"]],
+            "searching": true,
+            "serverSide": false, // We handle search manually
+            "language": {
+                "decimal": "",
+                "emptyTable": "Tidak ada data yang tersedia pada tabel ini",
+                "info": "Menampilkan _START_ sampai _END_ dari _TOTAL_ entri",
+                "infoEmpty": "Menampilkan 0 sampai 0 dari 0 entri",
+                "infoFiltered": "(disaring dari _MAX_ entri keseluruhan)",
+                "infoPostFix": "",
+                "thousands": ",",
+                "lengthMenu": "Tampilkan _MENU_ entri",
+                "loadingRecords": "Sedang memuat...",
+                "processing": "Sedang memproses...",
+                "search": "Cari:",
+                "zeroRecords": "Tidak ditemukan data yang sesuai",
+                "paginate": {
+                    "first": "Pertama",
+                    "last": "Terakhir",
+                    "next": "Selanjutnya",
+                    "previous": "Sebelumnya"
+                },
+                "aria": {
+                    "sortAscending": ": aktifkan untuk mengurutkan kolom naik",
+                    "sortDescending": ": aktifkan untuk mengurutkan kolom turun"
+                }
+            }
+        });
+        
+        // Add custom search functionality that calls server-side search
+        let searchTimeout;
+        table.on('search.dt', function() {
+            clearTimeout(searchTimeout);
+            const searchValue = table.search();
+            
+            // Debounce search to avoid too many API calls
+            searchTimeout = setTimeout(function() {
+                if (searchValue.length >= 2 || searchValue.length === 0) {
+                    loadScrapingHistory(searchValue);
+                }
+            }, 500);
+        });
+    }
+}
+
+$(document).ready(function() {
+    // Initialize DataTable only if there are rows with data
+    initializeScrapingHistoryTable();
+    
+    // Set default date to today
+    $('#date_from').val(new Date().toISOString().split('T')[0]);
+    $('#date_to').val(new Date().toISOString().split('T')[0]);
+    
+
+    
+    // Form submission
+    $('#scrapingForm').on('submit', function(e) {
+        e.preventDefault();
+        startScraping();
+    });
+    
+    // Stop button
+    $('#stopBtn').on('click', function() {
+        stopScraping();
+    });
+    
+    // Load initial data
+    loadScrapingHistory(); // Load scraping history on page load
+    updateStatistics();
+});
+
+
+
+function startScraping() {
+    let platform = $('#platform').val();
+    let keyword = $('#keyword').val();
+    let maxResults = $('#max_results').val();
+    
+    // Validation
+    if (!platform || !keyword) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Data Tidak Lengkap',
+            text: 'Silakan lengkapi platform dan kata kunci'
+        });
+        return;
+    }
+    
+    // Validate max results
+    if (!maxResults || maxResults < 1 || maxResults > 1000) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Maksimal Hasil Tidak Valid',
+            text: 'Maksimal hasil harus antara 1-1000 postingan'
+        });
+        return;
+    }
+    
+    // Show confirmation
+    Swal.fire({
+        title: 'Konfirmasi Scraping',
+        text: `Mulai scraping ${maxResults} postingan dari ${platform} dengan kata kunci "${keyword}"?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Mulai',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            executeScrapingProcess();
+        }
+    });
+}
+
+function executeScrapingProcess() {
+    isScrapingActive = true;
+    
+    // Update UI
+    $('#scrapingBtn').hide();
+    $('#stopBtn').show();
+    $('#scrapingProgress').show();
+    
+    // Results will be shown in the history table
+    
+    // Reset counters
+    $('#foundCount').text('0');
+    $('#successCount').text('0');
+    $('#duplicateCount').text('0');
+    $('#errorCount').text('0');
+    
+    // Prepare form data
+    let startDate = $('#date_from').val() || new Date().toISOString().split('T')[0];
+    let endDate = $('#date_to').val() || new Date().toISOString().split('T')[0];
+    
+    let formData = {
+        platform: $('#platform').val(),
+        keywords: $('#keyword').val(),
+        max_results: parseInt($('#max_results').val()),
+        start_date: startDate,
+        end_date: endDate
+    };
+    
+    console.log('Sending scraping data:', formData);
+    
+    // Make AJAX call to start scraping
+    $.ajax({
+        url: '/start_scraping',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(formData),
+        headers: {
+            'X-CSRFToken': $('meta[name=csrf-token]').attr('content')
+        },
+        beforeSend: function() {
+            $('.progress-text').text('Memulai scraping...');
+            $('.progress-bar').css('width', '10%');
+        },
+        success: function(response) {
+            if (response.success) {
+                if (response.requires_mapping) {
+                    // Show column mapping modal
+                    showScrapingColumnMappingModal(response);
+                    resetScrapingUI();
+                } else {
+                    // Simulate progress for visual feedback
+                    simulateScrapingProgress(response.job_id, response);
+                }
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: response.message || 'Gagal memulai scraping'
+                });
+                resetScrapingUI();
+            }
+        },
+        error: function(xhr) {
+            let errorMsg = 'Terjadi kesalahan saat memulai scraping';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMsg = xhr.responseJSON.message;
+            }
+            
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: errorMsg
+            });
+            resetScrapingUI();
+        }
+    });
+}
+
+function simulateScrapingProgress(jobId, responseData = null) {
+    let startTime = Date.now();
+    let runId = responseData?.run_id; // Get run_id from Apify response
+    
+    // If we have run_id, use real-time progress tracking
+    if (runId) {
+        trackRealTimeProgress(runId, jobId, responseData, startTime);
+    } else {
+        // Fallback to simulation if no run_id
+        trackSimulatedProgress(jobId, responseData, startTime);
+    }
+}
+
+function trackRealTimeProgress(runId, jobId, responseData, startTime) {
+    scrapingInterval = setInterval(function() {
+        if (!isScrapingActive) {
+            clearInterval(scrapingInterval);
+            return;
+        }
+        
+        // Call API to get real progress
+        $.ajax({
+            url: `/api/scraping/progress/${runId}`,
+            type: 'GET',
+            success: function(progressData) {
+                updateProgressUI(progressData, startTime, jobId, responseData);
+                
+                // Check if completed
+                if (progressData.status === 'SUCCEEDED') {
+                    completeScraping(progressData.items_processed || 0, jobId, responseData);
+                } else if (['FAILED', 'ABORTED', 'TIMED-OUT', 'ERROR'].includes(progressData.status)) {
+                    handleScrapingError(progressData);
+                }
+            },
+            error: function() {
+                // Fallback to simulation on API error
+                clearInterval(scrapingInterval);
+                trackSimulatedProgress(jobId, responseData, startTime);
+            }
+        });
+    }, 2000); // Check every 2 seconds
+}
+
+function trackSimulatedProgress(jobId, responseData, startTime) {
+    let progress = 10;
+    let found = 0;
+    let success = 0;
+    
+    scrapingInterval = setInterval(function() {
+        if (!isScrapingActive) {
+            clearInterval(scrapingInterval);
+            return;
+        }
+        
+        progress += Math.random() * 15;
+        if (progress > 100) progress = 100;
+        
+        const simulatedData = {
+            progress_percentage: progress,
+            status: progress >= 100 ? 'SUCCEEDED' : 'RUNNING',
+            status_message: progress < 30 ? 'Menghubungkan ke API...' : 
+                           progress < 60 ? 'Mencari postingan...' : 
+                           progress < 90 ? 'Memproses data...' : 'Menyelesaikan...',
+            items_processed: Math.floor((progress / 100) * (parseInt($('#max_results').val()) || 25))
+        };
+        
+        updateProgressUI(simulatedData, startTime, jobId, responseData);
+        
+        if (progress >= 100) {
+            completeScraping(simulatedData.items_processed, jobId, responseData);
+        }
+    }, 800);
+}
+
+function updateProgressUI(progressData, startTime, jobId, responseData) {
+    const progress = progressData.progress_percentage || 0;
+    
+    // Update progress bar
+    $('.custom-progress-bar').css('width', progress + '%');
+    $('.progress-percentage').text(Math.round(progress) + '%');
+    $('.progress-inner-text').text(Math.round(progress) + '%');
+    
+    // Update status message
+    $('.progress-text').text(progressData.status_message || 'Memproses...');
+    
+    // Update elapsed time
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    const minutes = Math.floor(elapsed / 60);
+    const seconds = elapsed % 60;
+    $('#timeElapsed').text(`${minutes}:${seconds.toString().padStart(2, '0')}`);
+    
+    // Update estimated time remaining
+    if (progressData.time_remaining_formatted) {
+        $('#timeEstimate').text(progressData.time_remaining_formatted);
+    } else if (progressData.estimated_time_remaining) {
+        const remaining = Math.floor(progressData.estimated_time_remaining);
+        const remainingMinutes = Math.floor(remaining / 60);
+        const remainingSeconds = remaining % 60;
+        $('#timeEstimate').text(`${remainingMinutes}:${remainingSeconds.toString().padStart(2, '0')}`);
+    } else if (progress > 5) {
+        const rate = progress / elapsed;
+        const remaining = Math.max(0, (100 - progress) / rate);
+        const remainingMinutes = Math.floor(remaining / 60);
+        const remainingSeconds = Math.floor(remaining % 60);
+        $('#timeEstimate').text(`${remainingMinutes}:${remainingSeconds.toString().padStart(2, '0')}`);
+    } else {
+        $('#timeEstimate').text('Menghitung...');
+    }
+    
+    // Update data counters
+    const itemsProcessed = progressData.items_processed || 0;
+    $('#dataFound').text(itemsProcessed);
+    $('#foundCount').text(itemsProcessed);
+    $('#successCount').text(itemsProcessed);
+    
+    // Calculate processing rate
+    const processingRate = elapsed > 0 ? (itemsProcessed / elapsed).toFixed(1) : '0.0';
+    $('#processingRate').text(`${processingRate} data/s`);
+}
+
+function handleScrapingError(progressData) {
+    clearInterval(scrapingInterval);
+    resetScrapingUI();
+    
+    Swal.fire({
+        icon: 'error',
+        title: 'Scraping Gagal',
+        text: progressData.status_message || 'Terjadi kesalahan saat scraping data',
+        confirmButtonText: 'OK'
+    });
+}
+
+function resetScrapingUI() {
+    isScrapingActive = false;
+    $('#scrapingBtn').show();
+    $('#stopBtn').hide();
+    $('#scrapingProgress').hide();
+    clearInterval(scrapingInterval);
+}
+
+function stopScraping() {
+    Swal.fire({
+        title: 'Stop Scraping?',
+        text: 'Apakah Anda yakin ingin menghentikan proses scraping?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Stop',
+        cancelButtonText: 'Lanjutkan'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            isScrapingActive = false;
+            clearInterval(scrapingInterval);
+            
+            // Reset UI
+            $('#scrapingBtn').show();
+            $('#stopBtn').hide();
+            $('#scrapingProgress').hide();
+            
+            Swal.fire({
+                icon: 'info',
+                title: 'Scraping Dihentikan',
+                text: 'Proses scraping telah dihentikan'
+            });
+        }
+    });
+}
+
+function completeScraping(successCount, jobId, responseData = null) {
+    isScrapingActive = false;
+    clearInterval(scrapingInterval);
+    
+    // Store the dataset ID for later use
+    lastScrapingDatasetId = responseData ? (responseData.dataset_id || responseData.job_id) : jobId;
+    
+    // Reset UI
+    $('#scrapingBtn').show();
+    $('#stopBtn').hide();
+    
+    setTimeout(function() {
+        $('#scrapingProgress').hide();
+        $('.progress-bar').css('width', '0%');
+        
+        Swal.fire({
+            icon: 'success',
+            title: 'Scraping Selesai',
+            text: `Berhasil mengumpulkan ${successCount} data dari media sosial`,
+            showCancelButton: true,
+            confirmButtonText: 'Lihat Hasil',
+            cancelButtonText: 'Tutup'
+        }).then(function(result) {
+            if (result.isConfirmed && lastScrapingDatasetId) {
+                window.location.href = `/data/scraping/results/${lastScrapingDatasetId}`;
+            }
+            resetForm();
+            loadScrapingHistory(); // Re-enabled to refresh history after scraping
+            updateStatistics();
+            if (lastScrapingDatasetId) {
+                 $('#viewResultsBtn').removeClass('d-none');
+             }
+        });
+    }, 1000);
+}
+
+function resetForm() {
+    $('#scrapingForm')[0].reset();
+    $('#date_from').val(new Date().toISOString().split('T')[0]);
+        $('#date_to').val(new Date().toISOString().split('T')[0]);
+     $('#viewResultsBtn').addClass('d-none');
+}
+
+function loadScrapingHistory(searchQuery = '') {
+    // Destroy existing DataTable if it exists
+    if ($.fn.DataTable.isDataTable('#scrapingHistoryTable')) {
+        $('#scrapingHistoryTable').DataTable().destroy();
+    }
+    
+    // Real API call to get scraping history with search support
+    const params = searchQuery ? { search: searchQuery } : {};
+    $.get('/api/scraping/history', params, function(data) {
+        const tbody = $('#scrapingHistoryTable tbody');
+        tbody.empty();
+        
+        if (data.history && data.history.length > 0) {
+            data.history.forEach(function(job) {
+                // Format platform badge with correct icon
+                let platformIcon = 'fab fa-' + job.platform.toLowerCase();
+                if (job.platform.toLowerCase() === 'tiktok') {
+                    platformIcon = 'fab fa-tiktok';
+                } else if (job.platform.toLowerCase() === 'twitter') {
+                    platformIcon = 'fab fa-twitter';
+                } else if (job.platform.toLowerCase() === 'facebook') {
+                    platformIcon = 'fab fa-facebook';
+                } else if (job.platform.toLowerCase() === 'instagram') {
+                    platformIcon = 'fab fa-instagram';
+                }
+                
+                // Format platform name
+                let platformName = job.platform.charAt(0).toUpperCase() + job.platform.slice(1);
+                if (job.platform.toLowerCase() === 'tiktok') {
+                    platformName = 'TikTok';
+                }
+                
+                const row = `
+                    <tr>
+                        <td>
+                            <span class="badge bg-info">
+                                <i class="${platformIcon}"></i> ${platformName}
+                            </span>
+                        </td>
+                        <td><strong>${job.keywords}</strong></td>
+                        <td>${job.dataset_name || 'Dataset ' + platformName + ' - ' + job.keywords}</td>
+                        <td><span class="badge bg-primary">${job.results_count}</span></td>
+                        <td>${job.scraped_at || '-'}</td>
+                        <td>
+                            <span class="badge ${job.status === 'Mentah' ? 'bg-gradient-secondary' : job.status === 'Dibersihkan' ? 'bg-gradient-success' : 'bg-gradient-primary'}">${job.status}</span>
+                        </td>
+                        <td>${job.scraped_by || 'Unknown'}</td>
+                        <td>${job.created_at || job.scraped_at || '-'}</td>
+                    </tr>
+                `;
+                tbody.append(row);
+            });
+            
+            // Reinitialize DataTable with data
+            initializeScrapingHistoryTable();
+        } else {
+            tbody.append('<tr><td colspan="8" class="text-center text-muted"><i class="fas fa-info-circle mr-2"></i>Belum ada data scraping</td></tr>');
+        }
+    }).fail(function(xhr) {
+        console.error('Error loading scraping history:', xhr.responseJSON);
+        const tbody = $('#scrapingHistoryTable tbody');
+        tbody.empty();
+        tbody.append('<tr><td colspan="8" class="text-center text-danger">Error loading data</td></tr>');
+    });
+}
+
+function updateStatistics() {
+    // Real API call to get scraping statistics
+    $.get('/api/scraping/statistics', function(data) {
+        $('#totalScraping').text(data.total || 0);
+        $('#twitterScraping').text(data.twitter || 0);
+        $('#facebookScraping').text(data.facebook || 0);
+        $('#instagramScraping').text(data.instagram || 0);
+        $('#tiktokScraping').text(data.tiktok || 0);
+    }).fail(function(xhr) {
+        console.error('Error loading statistics:', xhr.responseJSON);
+        // Fallback to 0 values
+        $('#totalScraping').text('0');
+        $('#twitterScraping').text('0');
+        $('#facebookScraping').text('0');
+        $('#instagramScraping').text('0');
+        $('#tiktokScraping').text('0');
+    });
+}
+
+function refreshHistory() {
+    loadScrapingHistory();
+    
+    // Show loading animation
+    $('.fa-sync-alt').addClass('fa-spin');
+    setTimeout(function() {
+        $('.fa-sync-alt').removeClass('fa-spin');
+    }, 1000);
+}
+
+// Function removed - no longer needed since new_dataset_name field was removed
+
+function viewScrapingResults() {
+    if (lastScrapingDatasetId) {
+        window.location.href = `/data/scraping/results/${lastScrapingDatasetId}`;
+    } else {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Tidak Ada Data',
+            text: 'Belum ada hasil scraping yang tersedia'
+        });
+    }
+}
+
+
+
+// Function to update Instagram specific statistics
+
+
+// Function to show scraping column mapping modal
+function showScrapingColumnMappingModal(response) {
+    console.log('Showing scraping column mapping modal with data:', response);
+    
+    // Clear previous options
+    $('#scrapingContentColumn, #scrapingUsernameColumn, #scrapingUrlColumn').empty();
+    
+    // Add default empty option
+    $('#scrapingContentColumn').append('<option value="">Pilih kolom content...</option>');
+    $('#scrapingUsernameColumn').append('<option value="">Pilih kolom username...</option>');
+    $('#scrapingUrlColumn').append('<option value="">Pilih kolom URL...</option>');
+    
+    // Fix dropdown z-index and positioning
+    setTimeout(function() {
+        $('#scrapingColumnMappingModal select').each(function() {
+            $(this).css({
+                'position': 'relative',
+                'z-index': '1070',
+                'background-color': '#fff',
+                'border': '1px solid #ced4da'
+            });
+        });
+    }, 100);
+    
+    // Populate column options
+    if (response.columns && response.columns.length > 0) {
+        response.columns.forEach(function(column) {
+            $('#scrapingContentColumn').append(`<option value="${column}">${column}</option>`);
+            $('#scrapingUsernameColumn').append(`<option value="${column}">${column}</option>`);
+            $('#scrapingUrlColumn').append(`<option value="${column}">${column}</option>`);
+        });
+        
+        // Auto-suggest common column names
+        autoSuggestScrapingColumns(response.columns);
+    }
+    
+    // Populate preview table
+    populateScrapingPreviewTable(response.sample_data, response.columns);
+    
+    // Show modal
+    $('#scrapingColumnMappingModal').modal('show');
+    
+    // Store job data for later use
+    window.currentScrapingJobData = response;
+}
+
+// Function to auto-suggest column mappings
+function autoSuggestScrapingColumns(columns) {
+    // Content column suggestions
+    const contentSuggestions = ['content', 'text', 'message', 'post', 'caption', 'description'];
+    const usernameSuggestions = ['username', 'user', 'author', 'account', 'handle', 'name'];
+    const urlSuggestions = ['url', 'link', 'permalink', 'post_url', 'href'];
+    
+    // Auto-select content column
+    for (let suggestion of contentSuggestions) {
+        const matchedColumn = columns.find(col => col.toLowerCase().includes(suggestion));
+        if (matchedColumn) {
+            $('#scrapingContentColumn').val(matchedColumn);
+            break;
+        }
+    }
+    
+    // Auto-select username column
+    for (let suggestion of usernameSuggestions) {
+        const matchedColumn = columns.find(col => col.toLowerCase().includes(suggestion));
+        if (matchedColumn) {
+            $('#scrapingUsernameColumn').val(matchedColumn);
+            break;
+        }
+    }
+    
+    // Auto-select URL column
+    for (let suggestion of urlSuggestions) {
+        const matchedColumn = columns.find(col => col.toLowerCase().includes(suggestion));
+        if (matchedColumn) {
+            $('#scrapingUrlColumn').val(matchedColumn);
+            break;
+        }
+    }
+}
+
+// Function to populate preview table
+function populateScrapingPreviewTable(sampleData, columns) {
+    const headerRow = $('#scrapingPreviewHeader');
+    const bodyContainer = $('#scrapingPreviewBody');
+    
+    // Clear existing content
+    headerRow.empty();
+    bodyContainer.empty();
+    
+    if (!sampleData || sampleData.length === 0) {
+        bodyContainer.append('<tr><td colspan="100%" class="text-center">Tidak ada data preview</td></tr>');
+        return;
+    }
+    
+    // Create header
+    columns.forEach(function(column) {
+        headerRow.append(`<th>${column}</th>`);
+    });
+    
+    // Create preview rows (max 5 rows)
+    const maxRows = Math.min(5, sampleData.length);
+    for (let i = 0; i < maxRows; i++) {
+        const row = sampleData[i];
+        let rowHtml = '<tr>';
+        
+        columns.forEach(function(column) {
+            let cellValue = row[column] || '';
+            // Truncate long text for preview
+            if (typeof cellValue === 'string' && cellValue.length > 50) {
+                cellValue = cellValue.substring(0, 50) + '...';
+            }
+            rowHtml += `<td title="${row[column] || ''}">${cellValue}</td>`;
+        });
+        
+        rowHtml += '</tr>';
+        bodyContainer.append(rowHtml);
+    }
+}
+
+// Handle process scraping mapping button click
+$('#processScrapingMapping').on('click', function() {
+    const contentColumn = $('#scrapingContentColumn').val();
+    const usernameColumn = $('#scrapingUsernameColumn').val();
+    const urlColumn = $('#scrapingUrlColumn').val();
+    
+    // Validate required fields
+    if (!contentColumn) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Kolom Content Diperlukan',
+            text: 'Silakan pilih kolom untuk Content'
+        });
+        return;
+    }
+    
+    // Show loading
+    $(this).prop('disabled', true).text('Memproses...');
+    
+    // Prepare mapping data
+    const mappingData = {
+        content_column: contentColumn,
+        username_column: usernameColumn || null,
+        url_column: urlColumn || null
+    };
+    
+    console.log('Processing scraping column mapping:', mappingData);
+    
+    // Send mapping data to backend
+    $.ajax({
+        url: '/process_scraping_column_mapping',
+        type: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(mappingData),
+        headers: {
+            'X-CSRFToken': $('meta[name=csrf-token]').attr('content')
+        },
+        success: function(response) {
+            if (response.success) {
+                $('#scrapingColumnMappingModal').modal('hide');
+                
+                // Set lastScrapingDatasetId from response
+                if (response.dataset_id) {
+                    lastScrapingDatasetId = response.dataset_id;
+                    console.log('Set lastScrapingDatasetId from column mapping:', lastScrapingDatasetId);
+                }
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: response.message,
+                    showCancelButton: true,
+                    confirmButtonText: 'Lihat Data',
+                    cancelButtonText: 'Tutup'
+                }).then(function(result) {
+                    if (result.isConfirmed) {
+                        window.location.href = '/data/scraping';
+                    }
+                    // Refresh page data
+                    loadScrapingHistory(); // Re-enabled to refresh history after scraping
+                    updateStatistics();
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: response.message || 'Gagal memproses mapping kolom'
+                });
+            }
+        },
+        error: function(xhr) {
+            let errorMsg = 'Terjadi kesalahan saat memproses mapping';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMsg = xhr.responseJSON.message;
+            }
+            
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: errorMsg
+            });
+        },
+        complete: function() {
+            $('#processScrapingMapping').prop('disabled', false).text('Proses Data');
+        }
+    });
+});
+
+// Handle modal close event
+$('#scrapingColumnMappingModal').on('hidden.bs.modal', function() {
+    // Clear stored job data
+    window.currentScrapingJobData = null;
+    // Reset form when modal is closed
+    $('#scrapingContentColumn, #scrapingUsernameColumn, #scrapingUrlColumn').val('');
+    $('#scrapingPreviewHeader').empty();
+    $('#scrapingPreviewBody').empty();
+});
+
+// Handle cancel button click
+$('#cancelScrapingMapping').on('click', function() {
+    $('#scrapingColumnMappingModal').modal('hide');
+});
+
+// Fix aria-hidden accessibility issue and dropdown functionality
+$('#scrapingColumnMappingModal').on('shown.bs.modal', function() {
+    // Remove aria-hidden from wrapper after modal is fully shown
+    $('.wrapper').removeAttr('aria-hidden');
+    // Ensure modal can receive focus
+    $(this).removeAttr('aria-hidden');
+    
+    // Ensure all select elements are properly styled and functional
+    $(this).find('select').each(function() {
+        $(this).css({
+            'position': 'relative',
+            'z-index': '1070',
+            'background-color': '#fff !important',
+            'border': '1px solid #ced4da',
+            'appearance': 'menulist'
+        });
+        
+        // Force refresh of select element
+        this.style.display = 'none';
+        this.offsetHeight; // trigger reflow
+        this.style.display = 'block';
+    });
+});
+
+// Handle select focus to ensure visibility
+$(document).on('focus', '.modal select.form-control', function() {
+    $(this).css('z-index', '1060');
+});
+
+$(document).on('blur', '.modal select.form-control', function() {
+    $(this).css('z-index', '1055');
+});
+
+$('#scrapingColumnMappingModal').on('hide.bs.modal', function() {
+    // Set aria-hidden before hiding to prevent focus issues
+    $(this).attr('aria-hidden', 'true');
+});
+
+$('#scrapingColumnMappingModal').on('hidden.bs.modal', function() {
+    // Ensure aria-hidden is set after modal is hidden
+    $(this).attr('aria-hidden', 'true');
+});
+
+// Dropdown focus/blur handlers are already handled in the main modal shown event above
+
+// Function to view scraping details
+function viewScrapingDetails(scraperId) {
+    window.location.href = `/data/scraping/results/${scraperId}`;
+}
+
+// Function to delete scraping job
+function deleteScrapingJob(scraperId) {
+    Swal.fire({
+        title: 'Konfirmasi Hapus',
+        text: 'Apakah Anda yakin ingin menghapus data scraping ini?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Ya, Hapus!',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: `/api/scraper/${scraperId}/delete`,
+                type: 'DELETE',
+                headers: {
+                    'X-CSRFToken': $('meta[name=csrf-token]').attr('content')
+                },
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Berhasil',
+                            text: 'Data scraping berhasil dihapus'
+                        });
+                        loadScrapingHistory(); // Re-enabled to refresh history after deletion
+                        updateStatistics();
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: response.message || 'Gagal menghapus data scraping'
+                        });
+                    }
+                },
+                error: function(xhr) {
+                    let errorMsg = 'Terjadi kesalahan saat menghapus data';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMsg = xhr.responseJSON.message;
+                    }
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: errorMsg
+                    });
+                }
+            });
+        }
+    });
+}
+    </script>
+    <style>
+/* Dropdown placeholder styling */
+#platform option[value=""] {
+    color: #6c757d;
+    font-style: italic;
+}
+
+#platform {
+    color: #495057;
+    width: 100% !important;
+    min-width: 200px;
+    height: 38px;
+    padding: 6px 12px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    background-color: #fff;
+    font-size: 14px;
+    line-height: 1.42857143;
+}
+
+#platform:invalid {
+    color: #6c757d;
+}
+
+#platform:focus {
+    border-color: #80bdff;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Fix responsive layout issues */
+@media (max-width: 768px) {
+    .col-md-8, .col-md-4 {
+        margin-bottom: 15px;
+    }
+}
+
+/* Ensure form controls are not truncated */
+.form-control {
+    width: 100% !important;
+    box-sizing: border-box;
+}
+
+/* Fix AdminLTE form group spacing */
+.form-group {
+    margin-bottom: 1rem;
+    width: 100%;
+    position: relative;
+    overflow: visible;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #333;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
+}
+
+/* Specific styling for Platform Media Sosial label */
+label[for="platform"] {
+    width: 100%;
+    min-width: 150px;
+    overflow: visible;
+    white-space: normal;
+}
+
+/* Fix card and container layout */
+.card-body {
+    padding: 1.5rem !important;
+}
+
+.container-fluid {
+    padding-left: 15px !important;
+    padding-right: 15px !important;
+}
+
+/* Ensure row has proper spacing */
+.row {
+    margin-left: -15px;
+    margin-right: -15px;
+}
+
+.row > [class*="col-"] {
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+.progress {
+    height: 25px;
+    margin-top: 15px;
+}
+
+.progress-text {
+    position: absolute;
+    width: 100%;
+    text-align: center;
+    line-height: 25px;
+    color: white;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+.info-box {
+    margin-bottom: 15px;
+}
+
+.info-box-icon {
+    font-size: 45px;
+}
+
+.small-box .icon {
+    font-size: 70px;
+}
+
+.alert-warning {
+    border-left: 4px solid #ffc107;
+}
+
+.card-outline.card-secondary {
+    border-top: 3px solid #6c757d;
+}
+
+.table th {
+    background-color: #f8f9fa;
+}
+
+.badge {
+    font-size: 0.875em;
+}
+
+.btn-tool {
+    color: #6c757d;
+}
+
+.btn-tool:hover {
+    color: #495057;
+}
+
+.custom-progress {
+    height: 25px;
+}
+
+.custom-progress-bar {
+    width: 0%;
+    transition: width 0.5s ease-in-out;
+}
+    </style>
+{% endblock scripts %}

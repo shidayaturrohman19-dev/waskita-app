@@ -1,0 +1,439 @@
+{% extends "base.html" %}
+
+{% block title %}
+Hasil Klasifikasi - Waskita
+{% endblock title %}
+
+{% block page_title %}
+    Hasil Klasifikasi
+{% endblock page_title %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item">
+        <a href="{{ url_for("dashboard") }}">Home</a>
+    </li>
+    <li class="breadcrumb-item">Klasifikasi</li>
+    <li class="breadcrumb-item active">Hasil</li>
+{% endblock breadcrumb %}
+
+{% block content %}
+        <!-- Main content -->
+        <section class="content">
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header pb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="mr-3">
+                            <h6 class="mb-2">Hasil Klasifikasi Data</h6>
+                            <p class="text-sm mb-0">Daftar hasil klasifikasi data media sosial dikelompokkan berdasarkan dataset</p>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <div class="input-group dataset-filter-input">
+                                <input type="text" class="form-control form-control-sm" id="datasetFilter" placeholder="Cari dataset...">
+                                <div class="input-group-append">
+                                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                </div>
+                            </div>
+                            <button class="btn btn-success btn-sm mr-2" onclick="exportResults('csv')">
+                                <i class="fas fa-file-csv mr-1"></i>Export CSV
+                            </button>
+                            <button class="btn btn-info btn-sm mr-2" onclick="exportResults('excel')">
+                                <i class="fas fa-file-excel mr-1"></i>Export Excel
+                            </button>
+                            <a href="{{ url_for('classification') }}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-arrow-left mr-1"></i>Kembali ke Klasifikasi
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body px-0 pt-0 pb-2">
+                    {% if datasets %}
+                        {% for dataset in datasets %}
+                        <div class="dataset-section mb-4" data-dataset-name="{{ dataset.dataset_name|lower }}">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-header bg-light" id="heading{{ loop.index }}">
+                                    <h6 class="mb-0">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <button class="btn btn-link text-decoration-none flex-grow-1 text-left d-flex justify-content-between align-items-center" 
+                                                    type="button" data-toggle="collapse" data-target="#collapse{{ loop.index }}" 
+                                                    aria-expanded="true" aria-controls="collapse{{ loop.index }}">
+                                                <div>
+                                                    <i class="fas fa-database mr-2 text-primary"></i>
+                                                    <strong>{{ dataset.dataset_name }}</strong>
+                                                    <span class="badge badge-info ml-2">{{ dataset.total_items }} data</span>
+                                                </div>
+                                                <i class="fas fa-chevron-down"></i>
+                                            </button>
+                                            <div class="d-flex gap-1 ml-2">
+                                                <button class="btn btn-success btn-sm" onclick="exportDatasetResults('{{ dataset.id }}', '{{ dataset.name }}', 'csv')" title="Export CSV Dataset Ini">
+                                                    <i class="fas fa-file-csv"></i>
+                                                </button>
+                                                <span class="mx-1"></span>
+                                                <button class="btn btn-info btn-sm" onclick="exportDatasetResults('{{ dataset.id }}', '{{ dataset.name }}', 'excel')" title="Export Excel Dataset Ini">
+                                                    <i class="fas fa-file-excel"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </h6>
+                                </div>
+                                <div id="collapse{{ loop.index }}" class="collapse {{ 'show' if loop.first else '' }}" 
+                                     aria-labelledby="heading{{ loop.index }}">
+                                    <div class="card-body p-0">
+                                        <div class="table-responsive">
+                                            <table class="table table-striped table-hover mb-0 dataset-table" id="datasetTable{{ loop.index }}">
+                                                <thead>
+                                                    <tr>
+                                                        <th>ID</th>
+                                                        <th>Username</th>
+                                                        <th>Konten</th>
+                                                        <th>URL</th>
+                                                        <th>Tipe Data</th>
+                                                        <th>Model 1</th>
+                                                        <th>Model 2</th>
+                                                        <th>Model 3</th>
+                                                        <th>Tanggal</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for result in dataset.data_items %}
+                                                    <tr>
+                                                        <td>
+                                                            <div class="d-flex px-2 py-1">
+                                                                <div class="d-flex flex-column justify-content-center">
+                                                                    <h6 class="mb-0 text-sm">{{ result.data_id }}</h6>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <p class="text-xs font-weight-bold mb-0">{{ result.username or 'N/A' }}</p>
+                                                        </td>
+                                                        <td>
+                                                            <p class="text-xs mb-0" title="{{ result.content }}">
+                                                                {{ result.content[:50] + '...' if result.content and result.content|length > 50 else (result.content or 'N/A') }}
+                                                            </p>
+                                                        </td>
+                                                        <td>
+                                                            {% if result.url %}
+                                                            <a href="{{ result.url }}" target="_blank" class="text-xs text-primary">
+                                                                {{ result.url[:30] + '...' if result.url|length > 30 else result.url }}
+                                                            </a>
+                                                            {% else %}
+                                                            <p class="text-xs mb-0">N/A</p>
+                                                            {% endif %}
+                                                        </td>
+                                                        <td>
+                                                            <p class="text-xs font-weight-bold mb-0">{{ result.data_type }}</p>
+                                                        </td>
+                                                        <td>
+                                                            {% if result.models.get('model1') %}
+                                                            <div class="text-center">
+                                                                {% if result.models.model1.prediction == 'radikal' %}
+                                                                <span class="badge badge-sm bg-gradient-danger">Radikal</span>
+                                                                {% else %}
+                                                                <span class="badge badge-sm bg-gradient-success">Non-Radikal</span>
+                                                                {% endif %}
+                                                                <br><small class="text-xs">{{ "%.1f"|format(result.models.model1.probability_radikal * 100) }}%</small>
+                                                            </div>
+                                                            {% else %}
+                                                            <p class="text-xs text-center mb-0">-</p>
+                                                            {% endif %}
+                                                        </td>
+                                                        <td>
+                                                            {% if result.models.get('model2') %}
+                                                            <div class="text-center">
+                                                                {% if result.models.model2.prediction == 'radikal' %}
+                                                                <span class="badge badge-sm bg-gradient-danger">Radikal</span>
+                                                                {% else %}
+                                                                <span class="badge badge-sm bg-gradient-success">Non-Radikal</span>
+                                                                {% endif %}
+                                                                <br><small class="text-xs">{{ "%.1f"|format(result.models.model2.probability_radikal * 100) }}%</small>
+                                                            </div>
+                                                            {% else %}
+                                                            <p class="text-xs text-center mb-0">-</p>
+                                                            {% endif %}
+                                                        </td>
+                                                        <td>
+                                                            {% if result.models.get('model3') %}
+                                                            <div class="text-center">
+                                                                {% if result.models.model3.prediction == 'radikal' %}
+                                                                <span class="badge badge-sm bg-gradient-danger">Radikal</span>
+                                                                {% else %}
+                                                                <span class="badge badge-sm bg-gradient-success">Non-Radikal</span>
+                                                                {% endif %}
+                                                                <br><small class="text-xs">{{ "%.1f"|format(result.models.model3.probability_radikal * 100) }}%</small>
+                                                            </div>
+                                                            {% else %}
+                                                            <p class="text-xs text-center mb-0">-</p>
+                                                            {% endif %}
+                                                        </td>
+                                                        <td>
+                                                            <p class="text-xs font-weight-bold mb-0">{{ result.created_at | format_datetime }}</p>
+                                                        </td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-chart-line fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">Belum ada hasil klasifikasi</h5>
+                            <p class="text-sm text-muted">Silakan lakukan klasifikasi data terlebih dahulu</p>
+                            <a href="{{ url_for('classification') }}" class="btn btn-primary">
+                                <i class="fas fa-plus mr-1"></i>Mulai Klasifikasi
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+        </section>
+{% endblock content %}
+
+{% block extra_css %}
+<style>
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    background-color: #f8f9fa;
+}
+
+.badge {
+    font-size: 0.75em;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+/* DataTables styling untuk jarak yang lebih rapi */
+.dataTables_wrapper {
+    padding: 1rem;
+}
+
+.dataTables_length {
+    margin-bottom: 1rem;
+}
+
+.dataTables_length label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+}
+
+.dataTables_filter {
+    margin-bottom: 1rem;
+}
+
+.dataTables_filter label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+}
+
+.dataTables_info {
+    margin-top: 1rem;
+    padding-top: 0.5rem;
+}
+
+.dataTables_paginate {
+    margin-top: 1rem;
+    padding-top: 0.5rem;
+}
+
+/* Responsive spacing */
+@media (max-width: 768px) {
+    .dataTables_wrapper {
+        padding: 0.5rem;
+    }
+    
+    .dataTables_length,
+    .dataTables_filter {
+        margin-bottom: 0.75rem;
+    }
+}
+</style>
+{% endblock extra_css %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Initialize DataTables for each dataset table
+    $('.dataset-table').each(function() {
+        $(this).DataTable({
+            "pageLength": 10,
+            "order": [[ 8, "desc" ]],
+            "language": {
+                "decimal": "",
+                "emptyTable": "Tidak ada data yang tersedia pada tabel ini",
+                "info": "Menampilkan _START_ sampai _END_ dari _TOTAL_ entri",
+                "infoEmpty": "Menampilkan 0 sampai 0 dari 0 entri",
+                "infoFiltered": "(disaring dari _MAX_ entri keseluruhan)",
+                "infoPostFix": "",
+                "thousands": ",",
+                "lengthMenu": "Tampilkan _MENU_ entri",
+                "loadingRecords": "Sedang memuat...",
+                "processing": "Sedang memproses...",
+                "search": "Cari:",
+                "zeroRecords": "Tidak ditemukan data yang sesuai",
+                "paginate": {
+                    "first": "Pertama",
+                    "last": "Terakhir",
+                    "next": "Selanjutnya",
+                    "previous": "Sebelumnya"
+                },
+                "aria": {
+                    "sortAscending": ": aktifkan untuk mengurutkan kolom naik",
+                    "sortDescending": ": aktifkan untuk mengurutkan kolom turun"
+                }
+            },
+            "columnDefs": [
+                { "orderable": false, "targets": [5, 6, 7] }
+            ],
+            "dom": 'rt<"bottom"ip>',
+            "searching": false
+        });
+    });
+    
+    // Dataset filter functionality
+    $('#datasetFilter').on('keyup', function() {
+        var value = $(this).val().toLowerCase();
+        $('.dataset-section').filter(function() {
+            var datasetName = $(this).data('dataset-name');
+            var match = datasetName.indexOf(value) > -1;
+            $(this).toggle(match);
+            return match;
+        });
+    });
+    
+    // Toggle chevron icon on collapse
+    $('.collapse').on('show.bs.collapse', function() {
+        $(this).prev().find('.fa-chevron-down').removeClass('fa-chevron-down').addClass('fa-chevron-up');
+    }).on('hide.bs.collapse', function() {
+        $(this).prev().find('.fa-chevron-up').removeClass('fa-chevron-up').addClass('fa-chevron-down');
+    });
+});
+
+// Export all results function
+function exportResults(format) {
+    // Show loading immediately
+    Swal.fire({
+        title: 'Mengekspor Semua Data...',
+        text: 'Mohon tunggu sebentar',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    // Send request without frontend data, let backend handle the query
+    const csrfToken = $('meta[name=csrf-token]').attr('content');
+    fetch('/api/export/classification-results', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({
+            format: format
+        })
+    })
+    .then(response => response.blob())
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `hasil_klasifikasi_semua_${new Date().toISOString().split('T')[0]}.${format === 'csv' ? 'csv' : 'xlsx'}`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        
+        Swal.fire({
+            icon: 'success',
+            title: 'Berhasil!',
+            text: 'Semua data berhasil diekspor'
+        });
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal!',
+            text: 'Terjadi kesalahan saat mengekspor data'
+        });
+    });
+}
+
+// Export dataset specific results function
+function exportDatasetResults(datasetId, datasetName, format) {
+    // Show loading immediately
+    Swal.fire({
+        title: `Mengekspor Dataset: ${datasetName}`,
+        text: 'Mohon tunggu sebentar',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    // Send request with dataset_id parameter
+    const csrfToken = $('meta[name=csrf-token]').attr('content');
+    fetch('/api/export/classification-results', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({
+            format: format,
+            dataset_id: datasetId
+        })
+    })
+    .then(response => response.blob())
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        // Clean dataset name for filename
+        const cleanDatasetName = datasetName.replace(/[^a-zA-Z0-9]/g, '_');
+        a.download = `hasil_klasifikasi_${cleanDatasetName}_${new Date().toISOString().split('T')[0]}.${format === 'csv' ? 'csv' : 'xlsx'}`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        
+        Swal.fire({
+            icon: 'success',
+            title: 'Berhasil!',
+            text: `Data dataset "${datasetName}" berhasil diekspor`
+        });
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Gagal!',
+            text: 'Terjadi kesalahan saat mengekspor data dataset'
+        });
+    });
+}
+</script>
+{% endblock scripts %}

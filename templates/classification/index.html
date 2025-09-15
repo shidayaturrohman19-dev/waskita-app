@@ -1,0 +1,472 @@
+{% extends "base.html" %}
+{% block title %}
+    Klasifikasi Data - Waskita
+{% endblock title %}
+{% block page_title %}
+    Klasifikasi Data
+{% endblock page_title %}
+{% block breadcrumb %}
+    <li class="breadcrumb-item">
+        <a href="{{ url_for('dashboard') }}">Home</a>
+    </li>
+    <li class="breadcrumb-item active">Klasifikasi</li>
+{% endblock breadcrumb %}
+{% block content %}
+        <!-- Main content -->
+        <section class="content">
+            <div class="container-fluid">
+                <!-- Dataset Information (if selected) -->
+                {% if selected_dataset %}
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card card-outline card-info">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <i class="fas fa-info-circle mr-2"></i>Dataset Terpilih
+                                </h3>
+                                <div class="card-tools">
+                                    <a href="{{ url_for('classification') }}" class="btn btn-sm btn-secondary">
+                                        <i class="fas fa-times mr-1"></i>Batal
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p><strong>Nama Dataset:</strong> {{ selected_dataset.name }}</p>
+                                        <p><strong>Sumber:</strong> 
+                                            <span class="badge badge-{{ 'primary' if selected_dataset.source == 'upload' else 'success' }}">
+                                                {{ 'Upload' if selected_dataset.source == 'upload' else 'Scraping' }}
+                                            </span>
+                                        </p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p><strong>Total Data Bersih:</strong> {{ (clean_upload_data|length) + (clean_scraper_data|length) }}</p>
+                                        <p><strong>Dibuat:</strong> {{ selected_dataset.created_at|format_datetime('datetime') }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Overview Cards -->
+                <div class="row">
+                    <div class="col-lg-3 col-6">
+                        <div class="small-box bg-primary">
+                            <div class="inner">
+                                <h3>{{ clean_upload_data|length }}</h3>
+                                <p>Data Upload Bersih</p>
+                            </div>
+                            <div class="icon">
+                                <i class="fas fa-upload"></i>
+                            </div>
+                            <a href="#" class="small-box-footer" onclick="showUploadData()">
+                                Lihat Detail <i class="fas fa-arrow-circle-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-6">
+                        <div class="small-box bg-success">
+                            <div class="inner">
+                                <h3>{{ clean_scraper_data|length }}</h3>
+                                <p>Data Scraper Bersih</p>
+                            </div>
+                            <div class="icon">
+                                <i class="fas fa-spider"></i>
+                            </div>
+                            <a href="#" class="small-box-footer" onclick="showScraperData()">
+                                Lihat Detail <i class="fas fa-arrow-circle-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-6">
+                        <div class="small-box bg-warning">
+                            <div class="inner">
+                                <h3>{{ (clean_upload_data|length) + (clean_scraper_data|length) }}</h3>
+                                <p>Total Data Siap</p>
+                            </div>
+                            <div class="icon">
+                                <i class="fas fa-database"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-6">
+                        <div class="small-box bg-info">
+                            <div class="inner">
+                                <h3>{{ classified_count or 0 }}</h3>
+                                <p>Sudah Diklasifikasi</p>
+                            </div>
+                            <div class="icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Action Buttons -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">
+                                    <i class="fas fa-brain mr-2"></i>{% if selected_dataset %}Klasifikasi Dataset: {{ selected_dataset.name }}{% else %}Pilih Jenis Klasifikasi{% endif %}
+                                </h3>
+                            </div>
+                            <div class="card-body">
+                                {% if selected_dataset %}
+                                <!-- Dataset-specific classification -->
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="alert alert-info">
+                                            <i class="fas fa-info-circle mr-2"></i>
+                                            Anda akan mengklasifikasi <strong>{{ (clean_upload_data|length) + (clean_scraper_data|length) }}</strong> data dari dataset <strong>{{ selected_dataset.name }}</strong>.
+                                        </div>
+                                        {% if (clean_upload_data|length) + (clean_scraper_data|length) > 0 %}
+                                        <button class="btn btn-primary btn-lg" onclick="classifySelectedDataset({{ selected_dataset.id }})">
+                                            <i class="fas fa-play mr-2"></i>Mulai Klasifikasi Dataset
+                                        </button>
+                                        {% else %}
+                                        <div class="alert alert-warning">
+                                            <i class="fas fa-exclamation-triangle mr-2"></i>
+                                            Tidak ada data bersih yang tersedia untuk diklasifikasi pada dataset ini.
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% else %}
+                                <!-- General classification options -->
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="card card-outline card-primary">
+                                            <div class="card-header">
+                                                <h5 class="card-title">
+                                                    <i class="fas fa-list mr-2"></i>Klasifikasi Batch
+                                                </h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <p>Klasifikasi multiple data sekaligus dengan model machine learning.</p>
+                                                <a href="{{ url_for('classify_data', data_type='batch', data_id=0) }}" class="btn btn-primary">
+                                                    <i class="fas fa-play mr-2"></i>Mulai Klasifikasi Batch
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card card-outline card-success">
+                                            <div class="card-header">
+                                                <h5 class="card-title">
+                                                    <i class="fas fa-edit mr-2"></i>Klasifikasi Manual
+                                                </h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <p>Klasifikasi teks individual secara manual.</p>
+                                                <button class="btn btn-success" onclick="showManualClassification()">
+                                                    <i class="fas fa-keyboard mr-2"></i>Klasifikasi Manual
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Data Tables -->
+                <div class="row d-none" id="dataTablesContainer">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title" id="dataTableTitle">Data Bersih</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-striped" id="dataTable">
+                                        <thead>
+                                            <tr>
+                                                <th class="text-center w-50">
+                                                    <input type="checkbox" id="selectAll" class="form-check-input">
+                                                </th>
+                                                <th class="w-80">ID</th>
+                                                <th class="w-100-px">Platform</th>
+                                                <th class="w-120">Username</th>
+                                                <th>Konten</th>
+                                                <th class="w-120">Tanggal</th>
+                                                <th class="w-80">Status</th>
+                                                <th class="w-120">Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="dataTableBody">
+                                            <!-- Data will be loaded here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    
+    <!-- Manual Classification Modal -->
+    <div class="modal fade" id="manualClassificationModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-edit mr-2"></i>Klasifikasi Manual
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="manualText">Masukkan Teks:</label>
+                        <textarea class="form-control" id="manualText" rows="4" placeholder="Masukkan teks yang ingin diklasifikasi..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-primary" onclick="classifyManualText()">Klasifikasi</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}
+
+{% block scripts %}
+<script>
+function showUploadData() {
+    $('#dataTableTitle').text('Data Upload Bersih');
+    loadData('upload');
+}
+
+function showScraperData() {
+    $('#dataTableTitle').text('Data Scraper Bersih');
+    loadData('scraper');
+}
+
+function loadData(type) {
+    $('#dataTablesContainer').removeClass('d-none');
+    $('#dataTableBody').html('<tr><td colspan="8" class="text-center"><i class="fas fa-spinner fa-spin mr-2"></i>Memuat data...</td></tr>');
+    
+    // Simulate loading data
+    setTimeout(() => {
+        let tableHtml = '';
+        if (type === 'upload') {
+            {% for data in clean_upload_data %}
+            tableHtml += `
+                <tr>
+                    <td class="text-center"><input type="checkbox" class="form-check-input data-checkbox" value="{{ data.id }}"></td>
+                    <td>{{ data.id }}</td>
+                    <td>Upload</td>
+                    <td>{{ data.username if data.username else '-' }}</td>
+                    <td>{{ data.cleaned_content[:50] }}{% if data.cleaned_content|length > 50 %}...{% endif %}</td>
+                    <td>{{ data.created_at|format_datetime('date') if data.created_at else '-' }}</td>
+                    <td><span class="badge badge-success">Dibersihkan</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="classifyData('upload', {{ data.id }})">
+                            <i class="fas fa-brain"></i> Klasifikasi
+                        </button>
+                    </td>
+                </tr>
+            `;
+            {% endfor %}
+        } else {
+            {% for data in clean_scraper_data %}
+            tableHtml += `
+                <tr>
+                    <td class="text-center"><input type="checkbox" class="form-check-input data-checkbox" value="{{ data.id }}"></td>
+                    <td>{{ data.id }}</td>
+                    <td>Scraper</td>
+                    <td>{{ data.username if data.username else '-' }}</td>
+                    <td>{{ data.cleaned_content[:50] }}{% if data.cleaned_content|length > 50 %}...{% endif %}</td>
+                    <td>{{ data.created_at|format_datetime('date') if data.created_at else '-' }}</td>
+                    <td><span class="badge badge-success">Dibersihkan</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="classifyData('scraper', {{ data.id }})">
+                            <i class="fas fa-brain"></i> Klasifikasi
+                        </button>
+                    </td>
+                </tr>
+            `;
+            {% endfor %}
+        }
+        
+        if (tableHtml === '') {
+            tableHtml = '<tr><td colspan="8" class="text-center">Tidak ada data tersedia</td></tr>';
+        }
+        
+        $('#dataTableBody').html(tableHtml);
+        
+        // Initialize select all checkbox functionality
+        $('#selectAll').change(function() {
+            $('.data-checkbox').prop('checked', this.checked);
+        });
+        
+        // Update select all checkbox when individual checkboxes change
+        $(document).on('change', '.data-checkbox', function() {
+            const totalCheckboxes = $('.data-checkbox').length;
+            const checkedCheckboxes = $('.data-checkbox:checked').length;
+            $('#selectAll').prop('checked', totalCheckboxes === checkedCheckboxes);
+        });
+    }, 1000);
+}
+
+function showManualClassification() {
+    $('#manualClassificationModal').modal('show');
+}
+
+function classifyData(type, id) {
+    window.location.href = `/classification/classify/${type}/${id}`;
+}
+
+function classifyManualText() {
+    const text = $('#manualText').val().trim();
+    if (!text) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Teks Kosong',
+            text: 'Silakan masukkan teks yang ingin diklasifikasi'
+        });
+        return;
+    }
+    
+    // Show loading
+    Swal.fire({
+        title: 'Mengklasifikasi...',
+        text: 'Mohon tunggu, sedang memproses teks dengan 3 model',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+    
+    // Call API to classify text
+    const csrfToken = $('meta[name=csrf-token]').attr('content');
+    $.ajax({
+        url: '/api/classify_manual_text',
+        method: 'POST',
+        contentType: 'application/json',
+        headers: {
+            'X-CSRFToken': csrfToken
+        },
+        data: JSON.stringify({ text: text }),
+        success: function(response) {
+            if (response.success) {
+                let resultsHtml = `
+                    <div class="text-left">
+                        <p><strong>Teks:</strong> "${response.text}"</p>
+                        <hr>
+                        <h6><strong>Hasil Klasifikasi dari 3 Model:</strong></h6>
+                `;
+                
+                response.results.forEach((result, index) => {
+                    const modelNum = index + 1;
+                    const badgeClass = result.prediction === 'radikal' ? 'danger' : 'success';
+                    const predictionText = result.prediction === 'radikal' ? 'Radikal' : 'Non-Radikal';
+                    
+                    resultsHtml += `
+                        <div class="mb-3 p-2 border rounded">
+                            <h6><strong>Model ${modelNum}:</strong></h6>
+                            <p><strong>Prediksi:</strong> <span class="badge badge-${badgeClass} badge-lg">${predictionText}</span></p>
+                            <p><strong>Probabilitas Radikal:</strong> ${(result.probability_radikal * 100).toFixed(2)}%</p>
+                            <p><strong>Probabilitas Non-Radikal:</strong> ${(result.probability_non_radikal * 100).toFixed(2)}%</p>
+
+                        </div>
+                    `;
+                });
+                
+                resultsHtml += '</div>';
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Hasil Klasifikasi',
+                    html: resultsHtml,
+                    showConfirmButton: true,
+                    width: '600px'
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: response.message
+                });
+            }
+        },
+        error: function(xhr, status, error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Terjadi kesalahan saat mengklasifikasi teks'
+            });
+        },
+        complete: function() {
+            $('#manualText').val('');
+        }
+    });
+}
+
+function classifySelectedDataset(datasetId) {
+    Swal.fire({
+        title: 'Konfirmasi Klasifikasi',
+        text: 'Apakah Anda yakin ingin mengklasifikasi semua data dalam dataset ini?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Ya, Klasifikasi!',
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Show loading
+            Swal.fire({
+                title: 'Mengklasifikasi Dataset...',
+                text: 'Mohon tunggu, sedang memproses data',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // Call API to classify dataset
+            const csrfToken = $('meta[name=csrf-token]').attr('content');
+            $.ajax({
+                url: `/api/dataset/${datasetId}/classify`,
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                },
+                success: function(response) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Klasifikasi Berhasil!',
+                        text: `${response.classified_count} data berhasil diklasifikasi`,
+                        showConfirmButton: true
+                    }).then(() => {
+                        // Redirect to results page
+                        window.location.href = '/classification/results';
+                    });
+                },
+                error: function(xhr) {
+                    let errorMessage = 'Terjadi kesalahan saat mengklasifikasi data';
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        errorMessage = xhr.responseJSON.error;
+                    }
+                    
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Klasifikasi Gagal',
+                        text: errorMessage
+                    });
+                }
+            });
+        }
+    });
+}
+</script>
+{% endblock scripts %}

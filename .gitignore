@@ -1,0 +1,115 @@
+# Environment variables - NEVER commit these!
+.env
+.env.local
+.env.production
+.env.staging
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+instance/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+PIPFILE.lock
+
+# Virtual Environment
+venv/
+env/
+ENV/
+waskita_venv*/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+logs/
+*.log
+*.log.*
+
+# Uploads (exclude user uploaded files)
+uploads/*
+!uploads/.gitkeep
+
+# Models (if they contain sensitive data)
+models/*.pkl
+models/*.model
+!models/.gitkeep
+
+# Cache
+.cache/
+*.cache
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# Security
+*.key
+*.pem
+*.crt
+*.p12
+*.pfx
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Migration files (optional - uncomment if needed)
+# migrations/versions/*.py
+
+# Test coverage
+.coverage
+.pytest_cache/
+htmlcov/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Flask
+instance/
+flask_session/
+
+# Redis dump
+dump.rdb
+
+# Node modules (if any)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

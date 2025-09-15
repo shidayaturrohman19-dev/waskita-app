@@ -1,0 +1,800 @@
+{% extends "base.html" %}
+{% block title %}
+    Admin Panel - Waskita
+{% endblock title %}
+{% block page_title %}
+    Admin Panel
+{% endblock page_title %}
+{% block breadcrumb %}
+    <li class="breadcrumb-item">
+        <a href="{{ url_for("dashboard") }}">Home</a>
+    </li>
+    <li class="breadcrumb-item active">Admin Panel</li>
+{% endblock breadcrumb %}
+{% block extra_css %}
+<style>
+/* Dropdown fixes for Role and Status */
+.card-body {
+    overflow: visible !important;
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+.form-group {
+    overflow: visible !important;
+    position: relative !important;
+    z-index: 2 !important;
+}
+
+/* Konsistensi ukuran untuk semua elemen form */
+.form-control, .btn {
+    height: 38px !important;
+    min-height: 38px !important;
+    line-height: 1.5 !important;
+    padding: 6px 12px !important;
+    font-size: 14px !important;
+    border-radius: 4px !important;
+}
+
+/* Khusus untuk input group */
+.input-group .form-control {
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+}
+
+.input-group .btn {
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+    height: 38px !important;
+    padding: 6px 12px !important;
+}
+
+/* Dropdown styling */
+select.form-control {
+    position: relative !important;
+    z-index: 9999 !important;
+    background-color: #fff !important;
+    border: 1px solid #ced4da !important;
+    appearance: menulist !important;
+    -webkit-appearance: menulist !important;
+    -moz-appearance: menulist !important;
+    height: 38px !important;
+    padding: 6px 12px !important;
+}
+
+select.form-control:focus {
+    border-color: #80bdff !important;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+    z-index: 10000 !important;
+}
+
+select.form-control option {
+    background-color: #fff !important;
+    color: #495057 !important;
+    padding: 8px 12px !important;
+}
+
+/* Button consistency */
+.btn-block {
+    width: 100% !important;
+    height: 38px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* Label spacing */
+.invisible-label {
+    visibility: hidden !important;
+    margin-bottom: 0.5rem !important;
+}
+</style>
+{% endblock extra_css %}
+{% block content %}
+    <section class="content">
+        <div class="container-fluid">
+            <!-- Statistik Admin -->
+            <div class="row mb-4">
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-info">
+                        <div class="inner">
+                            <h3>{{ total_users }}</h3>
+                            <p>Total Pengguna</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-success">
+                        <div class="inner">
+                            <h3>{{ active_users }}</h3>
+                            <p>Pengguna Aktif</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-user-check"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-warning">
+                        <div class="inner">
+                            <h3>{{ admin_users }}</h3>
+                            <p>Administrator</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-user-shield"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-danger">
+                        <div class="inner">
+                            <h3>{{ inactive_users }}</h3>
+                            <p>Pengguna Nonaktif</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-user-times"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Filter dan Pencarian -->
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Filter Pengguna</h3>
+                            <div class="card-tools">
+                                <button type="button"
+                                        class="btn btn-warning mr-2"
+                                        onclick="updateDatasetTotals()"
+                                        title="Update Total Records Dataset">
+                                    <i class="fas fa-sync"></i> Update Dataset Totals
+                                </button>
+                                <button type="button"
+                                        class="btn btn-primary"
+                                        data-toggle="modal"
+                                        data-target="#addUserModal">
+                                    <i class="fas fa-plus"></i> Tambah Pengguna
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <form method="get" id="filterForm">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label>Role</label>
+                                            <select name="role" class="form-control">
+                                                <option value="">Semua Role</option>
+                                                <option value="admin" {{ 'selected' if request.args.get("role") == 'admin' }}>Administrator
+                                                </option>
+                                                <option value="user" {{ 'selected' if request.args.get("role") == 'user' }}>User
+                                                </option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label>Status</label>
+                                            <select name="status" class="form-control">
+                                                <option value="">Semua Status</option>
+                                                <option value="1" {{ 'selected' if request.args.get("status") == '1' }}>Aktif
+                                                </option>
+                                                <option value="0" {{ 'selected' if request.args.get("status") == '0' }}>Nonaktif
+                                                </option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label>Pencarian</label>
+                                            <div class="input-group">
+                                                <input type="text"
+                                                       name="search"
+                                                       class="form-control"
+                                                       placeholder="Cari username atau email..."
+                                                       value="{{ request.args.get('search', '') }}">
+                                                <div class="input-group-append">
+                                                    <button type="submit" class="btn btn-primary">
+                                                        <i class="fas fa-search"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="form-group">
+                                            <label class="invisible-label">.</label>
+                                            <div>
+                                                <a href="{{ url_for("admin_panel") }}"
+                                                   class="btn btn-secondary btn-block">
+                                                    <i class="fas fa-undo"></i> Reset
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Tabel Pengguna -->
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Daftar Pengguna</h3>
+                            <div class="card-tools">
+                                <span class="badge bg-info">Total: {{ users|length }} pengguna</span>
+                            </div>
+                        </div>
+                        <div class="card-body table-responsive p-0">
+                            <table class="table table-hover text-nowrap">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Username</th>
+                                        <th>Email</th>
+                                        <th>Role</th>
+                                        <th>Status</th>
+                                        <th>Terakhir Login</th>
+                                        <th>Tanggal Daftar</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user in users %}
+                                        <tr>
+                                            <td>{{ user.id }}</td>
+                                            <td>
+                                                <strong>{{ user.username }}</strong>
+                                                {% if user.id == current_user.id %}<span class="badge bg-info ml-1">Anda</span>{% endif %}
+                                            </td>
+                                            <td>{{ user.email }}</td>
+                                            <td>
+                                                {% if user.role == 'admin' %}
+                                                    <span class="badge bg-danger">Administrator</span>
+                                                {% else %}
+                                                    <span class="badge bg-primary">User</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if user.is_active %}
+                                                    <span class="badge bg-success">Aktif</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">Nonaktif</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if user.last_login %}
+                                                    {{ user.last_login | format_datetime }}
+                                                {% else %}
+                                                    <span class="text-muted">Belum pernah</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ user.created_at | format_datetime }}</td>
+                                            <td>
+                                                <div class="btn-group">
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-info"
+                                                            onclick="viewUser({{ user.id }})">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                    {% if user.id != current_user.id %}
+                                                        <button type="button"
+                                                                class="btn btn-sm btn-warning"
+                                                                onclick="editUser({{ user.id }})">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                        {% if user.is_active %}
+                                                            <button type="button"
+                                                                    class="btn btn-sm btn-secondary"
+                                                                    onclick="toggleUserStatus({{ user.id }}, false)">
+                                                                <i class="fas fa-user-slash"></i>
+                                                            </button>
+                                                        {% else %}
+                                                            <button type="button"
+                                                                    class="btn btn-sm btn-success"
+                                                                    onclick="toggleUserStatus({{ user.id }}, true)">
+                                                                <i class="fas fa-user-check"></i>
+                                                            </button>
+                                                        {% endif %}
+                                                        <button type="button"
+                                                                class="btn btn-sm btn-danger"
+                                                                onclick="deleteUser({{ user.id }})">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% else %}
+                                        <tr>
+                                            <td colspan="8" class="text-center text-muted py-4">
+                                                <i class="fas fa-users fa-3x mb-3"></i>
+                                                <br>
+                                                Tidak ada pengguna yang ditemukan
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Modal Tambah Pengguna -->
+    <div class="modal fade" id="addUserModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Tambah Pengguna Baru</h4>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>×</span>
+                    </button>
+                </div>
+                <form id="addUserForm">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="addUsername">Username</label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="addUsername"
+                                   name="username"
+                                   required>
+                        </div>
+                        <div class="form-group">
+                            <label for="addEmail">Email</label>
+                            <input type="email" class="form-control" id="addEmail" name="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="addPassword">Password</label>
+                            <input type="password"
+                                   class="form-control"
+                                   id="addPassword"
+                                   name="password"
+                                   required>
+                        </div>
+                        <div class="form-group">
+                            <label for="addRole">Role</label>
+                            <select class="form-control" id="addRole" name="role" required>
+                                <option value="user">User</option>
+                                <option value="admin">Administrator</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox"
+                                       class="custom-control-input"
+                                       id="addIsActive"
+                                       name="is_active"
+                                       checked>
+                                <label class="custom-control-label" for="addIsActive">Aktif</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary">Tambah Pengguna</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Modal Edit Pengguna -->
+    <div class="modal fade" id="editUserModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Edit Pengguna</h4>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>×</span>
+                    </button>
+                </div>
+                <form id="editUserForm">
+                    <input type="hidden" id="editUserId" name="user_id">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="editUsername">Username</label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="editUsername"
+                                   name="username"
+                                   required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editEmail">Email</label>
+                            <input type="email"
+                                   class="form-control"
+                                   id="editEmail"
+                                   name="email"
+                                   required>
+                        </div>
+                        <div class="form-group">
+                            <label for="editPassword">Password Baru (kosongkan jika tidak ingin mengubah)</label>
+                            <input type="password"
+                                   class="form-control"
+                                   id="editPassword"
+                                   name="password">
+                        </div>
+                        <div class="form-group">
+                            <label for="editRole">Role</label>
+                            <select class="form-control" id="editRole" name="role" required>
+                                <option value="user">User</option>
+                                <option value="admin">Administrator</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox"
+                                       class="custom-control-input"
+                                       id="editIsActive"
+                                       name="is_active">
+                                <label class="custom-control-label" for="editIsActive">Aktif</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- Modal Detail Pengguna -->
+    <div class="modal fade" id="viewUserModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Detail Pengguna</h4>
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span>×</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="userDetailBody">
+                    <!-- Content akan dimuat via AJAX -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}
+{% block extra_js %}
+<script>
+// Fix dropdown visibility and functionality
+$(document).ready(function() {
+    // Ensure dropdowns are properly styled and functional
+    $('select[name="role"], select[name="status"]').each(function() {
+        $(this).css({
+            'position': 'relative',
+            'z-index': '9999',
+            'background-color': '#ffffff',
+            'border': '1px solid #ced4da',
+            'height': '38px',
+            'min-height': '38px'
+        });
+    });
+    
+    // Handle dropdown focus to ensure visibility
+    $('select[name="role"], select[name="status"]').on('focus', function() {
+        $(this).css('z-index', '10000');
+        $(this).parent().css('overflow', 'visible');
+        $(this).closest('.card-body').css('overflow', 'visible');
+        $(this).closest('.card').css('overflow', 'visible');
+    });
+    
+    // Handle dropdown blur
+    $('select[name="role"], select[name="status"]').on('blur', function() {
+        $(this).css('z-index', '9999');
+    });
+    
+    // Force container overflow to be visible
+    $('.card-body, .card, .form-group').css('overflow', 'visible');
+    
+    // Ensure form elements have consistent height
+    $('.form-control, .btn').css({
+        'height': '38px',
+        'min-height': '38px',
+        'line-height': '1.5',
+        'padding': '6px 12px'
+    });
+    
+    // Handle form submission
+    $('#filterForm').on('submit', function(e) {
+        // Form akan submit secara normal ke server
+        console.log('Filter form submitted');
+    });
+    
+    // Handle reset button click
+    $('.btn-secondary[href*="admin_panel"]').on('click', function(e) {
+        e.preventDefault();
+        // Clear all form fields
+        $('#filterForm')[0].reset();
+        $('select[name="role"]').val('');
+        $('select[name="status"]').val('');
+        $('input[name="search"]').val('');
+        // Redirect to clean admin panel
+        window.location.href = $(this).attr('href');
+    });
+    
+    // Handle search button functionality
+    $('.btn-primary[type="submit"]').on('click', function() {
+        console.log('Search button clicked');
+        // Form akan submit secara otomatis
+    });
+});
+</script>
+<script>
+// Add User
+$('#addUserForm').submit(function(e) {
+    e.preventDefault();
+    
+    var formData = new FormData();
+    formData.append('username', $('#addUsername').val());
+    formData.append('email', $('#addEmail').val());
+    formData.append('password', $('#addPassword').val());
+    formData.append('role', $('#addRole').val());
+    formData.append('is_active', $('#addIsActive').is(':checked') ? 'true' : 'false');
+    
+    $.ajax({
+        url: '/api/admin/users',
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(response) {
+            if (response.success) {
+                Swal.fire('Berhasil', 'Pengguna berhasil ditambahkan', 'success').then(() => {
+                    $('#addUserModal').modal('hide');
+                    location.reload();
+                });
+            } else {
+                Swal.fire('Error', response.message || 'Gagal menambahkan pengguna', 'error');
+            }
+        },
+        error: function(xhr) {
+            var errorMsg = 'Gagal menambahkan pengguna';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMsg = xhr.responseJSON.message;
+            }
+            Swal.fire('Error', errorMsg, 'error');
+        }
+    });
+});
+
+// View User Detail
+function viewUser(userId) {
+    $.get('/api/admin/users/' + userId, function(data) {
+        var content = `
+            <div class="row">
+                <div class="col-md-6">
+                    <strong>ID:</strong> ${data.id}<br>
+                    <strong>Username:</strong> ${data.username}<br>
+                    <strong>Email:</strong> ${data.email}<br>
+                    <strong>Role:</strong> ${data.role === 'admin' ? 'Administrator' : 'User'}<br>
+                    <strong>Status:</strong> ${data.is_active ? 'Aktif' : 'Nonaktif'}<br>
+                </div>
+                <div class="col-md-6">
+                    <strong>Tanggal Daftar:</strong> ${new Date(data.created_at).toLocaleString('id-ID')}<br>
+                    <strong>Terakhir Login:</strong> ${data.last_login ? new Date(data.last_login).toLocaleString('id-ID') : 'Belum pernah'}<br>
+                    <strong>Total Upload:</strong> ${data.stats.total_uploads || 0}<br>
+                    <strong>Total Scraping:</strong> ${data.stats.total_scraping || 0}<br>
+                    <strong>Total Klasifikasi:</strong> ${data.stats.total_classifications || 0}<br>
+                </div>
+            </div>
+            <hr>
+            <div class="row">
+                <div class="col-md-12">
+                    <h5>Aktivitas Terbaru</h5>
+                    <div class="timeline">
+                        ${data.recent_activities.map(activity => `
+                            <div class="time-label">
+                                <span class="bg-info">${new Date(activity.created_at).toLocaleDateString('id-ID')}</span>
+                            </div>
+                            <div>
+                                <i class="fas ${activity.icon} bg-${activity.color}"></i>
+                                <div class="timeline-item">
+                                    <span class="time"><i class="fas fa-clock"></i> ${new Date(activity.created_at).toLocaleTimeString('id-ID')}</span>
+                                    <h3 class="timeline-header">${activity.title}</h3>
+                                    <div class="timeline-body">${activity.description}</div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+        $('#userDetailBody').html(content);
+        $('#viewUserModal').modal('show');
+    }).fail(function() {
+        Swal.fire('Error', 'Gagal memuat detail pengguna', 'error');
+    });
+}
+
+// Edit User
+function editUser(userId) {
+    $.get('/api/admin/users/' + userId, function(data) {
+        $('#editUserId').val(data.id);
+        $('#editUsername').val(data.username);
+        $('#editEmail').val(data.email);
+        $('#editRole').val(data.role);
+        $('#editIsActive').prop('checked', data.is_active);
+        $('#editUserModal').modal('show');
+    }).fail(function() {
+        Swal.fire('Error', 'Gagal memuat data pengguna', 'error');
+    });
+}
+
+$('#editUserForm').submit(function(e) {
+    e.preventDefault();
+    
+    var userId = $('#editUserId').val();
+    var formData = new FormData();
+    formData.append('username', $('#editUsername').val());
+    formData.append('email', $('#editEmail').val());
+    formData.append('role', $('#editRole').val());
+    formData.append('is_active', $('#editIsActive').is(':checked') ? 'true' : 'false');
+    
+    if ($('#editPassword').val()) {
+        formData.append('password', $('#editPassword').val());
+    }
+    
+    $.ajax({
+        url: '/api/admin/users/' + userId,
+        type: 'PUT',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(response) {
+            if (response.success) {
+                Swal.fire('Berhasil', 'Pengguna berhasil diperbarui', 'success').then(() => {
+                    $('#editUserModal').modal('hide');
+                    location.reload();
+                });
+            } else {
+                Swal.fire('Error', response.message || 'Gagal memperbarui pengguna', 'error');
+            }
+        },
+        error: function(xhr) {
+            var errorMsg = 'Gagal memperbarui pengguna';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMsg = xhr.responseJSON.message;
+            }
+            Swal.fire('Error', errorMsg, 'error');
+        }
+    });
+});
+
+// Toggle User Status
+function toggleUserStatus(userId, status) {
+    var action = status ? 'mengaktifkan' : 'menonaktifkan';
+    
+    Swal.fire({
+        title: 'Konfirmasi',
+        text: `Apakah Anda yakin ingin ${action} pengguna ini?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, ' + action.charAt(0).toUpperCase() + action.slice(1),
+        cancelButtonText: 'Batal'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            var formData = new FormData();
+            formData.append('is_active', status ? 'true' : 'false');
+            
+            $.ajax({
+                url: '/api/admin/users/' + userId + '/toggle-status',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire('Berhasil', `Pengguna berhasil ${status ? 'diaktifkan' : 'dinonaktifkan'}`, 'success').then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire('Error', response.message || 'Gagal mengubah status pengguna', 'error');
+                    }
+                },
+                error: function(xhr) {
+                    var errorMsg = 'Gagal mengubah status pengguna';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMsg = xhr.responseJSON.message;
+                    }
+                    Swal.fire('Error', errorMsg, 'error');
+                }
+            });
+        }
+    });
+}
+
+// Delete User
+function deleteUser(userId) {
+    Swal.fire({
+        title: 'Konfirmasi Hapus',
+        text: 'Apakah Anda yakin ingin menghapus pengguna ini? Tindakan ini tidak dapat dibatalkan.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Hapus',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: '#d33'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: '/api/admin/users/' + userId,
+                type: 'DELETE',
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire('Berhasil', 'Pengguna berhasil dihapus', 'success').then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire('Error', response.message || 'Gagal menghapus pengguna', 'error');
+                    }
+                },
+                error: function(xhr) {
+                    var errorMsg = 'Gagal menghapus pengguna';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMsg = xhr.responseJSON.message;
+                    }
+                    Swal.fire('Error', errorMsg, 'error');
+                }
+            });
+        }
+    });
+}
+
+// Update Dataset Totals
+function updateDatasetTotals() {
+    Swal.fire({
+        title: 'Konfirmasi Update',
+        text: 'Apakah Anda yakin ingin mengupdate total records semua dataset? Proses ini mungkin memakan waktu.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Update',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: '#ffc107'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Show loading
+            Swal.fire({
+                title: 'Memproses...',
+                text: 'Sedang mengupdate total records dataset',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            $.ajax({
+                url: '/admin/update_dataset_totals',
+                type: 'POST',
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire('Berhasil', response.message, 'success');
+                    } else {
+                        Swal.fire('Error', response.message || 'Gagal mengupdate dataset totals', 'error');
+                    }
+                },
+                error: function(xhr) {
+                    var errorMsg = 'Gagal mengupdate dataset totals';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMsg = xhr.responseJSON.message;
+                    }
+                    Swal.fire('Error', errorMsg, 'error');
+                }
+            });
+        }
+    });
+}
+</script>
+{% endblock extra_js %}
