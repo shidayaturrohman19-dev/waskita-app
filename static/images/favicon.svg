@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- Background circle -->
+  <circle cx="16" cy="16" r="15" fill="#2c3e50" stroke="#34495e" stroke-width="2"/>
+  
+  <!-- Shield shape -->
+  <path d="M16 4 L24 8 L24 16 C24 22 16 26 16 26 C16 26 8 22 8 16 L8 8 Z" 
+        fill="#3498db" stroke="#2980b9" stroke-width="1"/>
+  
+  <!-- Inner shield detail -->
+  <path d="M16 6 L22 9 L22 16 C22 20.5 16 23.5 16 23.5 C16 23.5 10 20.5 10 16 L10 9 Z" 
+        fill="#5dade2" stroke="#3498db" stroke-width="0.5"/>
+  
+  <!-- Center emblem -->
+  <circle cx="16" cy="14" r="3" fill="#ffffff" opacity="0.9"/>
+  <text x="16" y="17" text-anchor="middle" font-family="Arial, sans-serif" 
+        font-size="3" font-weight="bold" fill="#2c3e50">W</text>
+</svg>

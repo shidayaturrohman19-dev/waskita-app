@@ -451,7 +451,6 @@ $(document).ready(function() {
                         }
                     },
                     error: function(xhr, status, error) {
-                        console.error('Clean dataset error:', xhr.responseText);
                         Swal.fire('Error', 'Gagal membersihkan dataset', 'error');
                     }
                 });
@@ -642,7 +641,6 @@ $(document).ready(function() {
     };
     
     // All bulk operation functions are now defined
-    console.log('Bulk operations ready');
 });
 </script>
 {% endblock extra_js %}

@@ -246,7 +246,6 @@
 <script>
 $(document).ready(function() {
     if (typeof $ === 'undefined') {
-        console.error('jQuery is not loaded');
         return;
     }
     
@@ -318,7 +317,6 @@ $(document).ready(function() {
             },
             error: function(xhr, status, error) {
                 hideLoading();
-                console.error('Upload error:', xhr.responseText);
                 showAlert('error', 'Error', 'Terjadi kesalahan saat mengupload file');
             }
         });
@@ -422,7 +420,7 @@ function initializeDataTable() {
             }
         });
         } catch (error) {
-            console.warn('DataTable initialization failed:', error);
+            // DataTable initialization failed
         }
     }
 }
@@ -505,16 +503,11 @@ function updateStatistics() {
             }
         }
     }).fail(function() {
-        console.error('Error loading upload statistics');
+        // Error loading upload statistics
     });
 }
 
 function showColumnMappingModal(columns, sampleData, filename) {
-    console.log('DEBUG: showColumnMappingModal called with:', {
-        columns: columns,
-        sampleData: sampleData,
-        filename: filename
-    });
     
     // Clear previous options
     $('#contentColumnSelect, #usernameColumnSelect, #urlColumnSelect').empty();
@@ -541,9 +534,7 @@ function showColumnMappingModal(columns, sampleData, filename) {
     $('#columnMappingModalLabel').text('Mapping Kolom - ' + filename);
     
     // Show modal
-    console.log('DEBUG: Modal element found:', $('#columnMappingModal').length > 0);
     $('#columnMappingModal').modal('show');
-    console.log('DEBUG: Modal show command executed');
     
     // Fix aria-hidden accessibility issue
     $('#columnMappingModal').on('shown.bs.modal', function() {

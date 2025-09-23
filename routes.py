@@ -148,12 +148,12 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             db.session.add(stats)
             db.session.commit()
         
-        # Get platform statistics (excluding soft-deleted records)
+        # Get platform statistics
         platform_stats = {
-            'twitter_upload': RawData.query.filter_by(platform='twitter').filter(RawData.deleted_at.is_(None)).count(),
-        'tiktok_upload': RawData.query.filter_by(platform='tiktok').filter(RawData.deleted_at.is_(None)).count(),
-        'facebook_upload': RawData.query.filter_by(platform='facebook').filter(RawData.deleted_at.is_(None)).count(),
-        'instagram_upload': RawData.query.filter_by(platform='instagram').filter(RawData.deleted_at.is_(None)).count(),
+            'twitter_upload': RawData.query.filter_by(platform='twitter').count(),
+        'tiktok_upload': RawData.query.filter_by(platform='tiktok').count(),
+        'facebook_upload': RawData.query.filter_by(platform='facebook').count(),
+        'instagram_upload': RawData.query.filter_by(platform='instagram').count(),
         'twitter_scraper': RawDataScraper.query.filter_by(platform='twitter').count(),
         'tiktok_scraper': RawDataScraper.query.filter_by(platform='tiktok').count(),
         'facebook_scraper': RawDataScraper.query.filter_by(platform='facebook').count(),
@@ -660,10 +660,6 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                                  per_page=per_page)
         
         except Exception as e:
-            print(f"Dataset management table error: {str(e)}")
-            # Log the specific error for debugging
-            print(f"Traceback: {str(e)}")
-            
             flash(f'Error loading dataset management table: {str(e)}', 'error')
             return redirect(url_for('dashboard'))
     
@@ -1336,15 +1332,7 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             db.session.rollback()
             return jsonify({'success': False, 'message': f'Error: {str(e)}'})
     
-    @app.route('/admin/update_dataset_totals', methods=['POST'])
-    @login_required
-    @admin_required
-    def admin_update_dataset_totals():
-        try:
-            update_all_dataset_totals()
-            return jsonify({'success': True, 'message': 'Total records dataset berhasil diperbarui!'})
-        except Exception as e:
-            return jsonify({'success': False, 'message': f'Error: {str(e)}'})
+
     
     @app.route('/admin/setup_auto_triggers', methods=['POST'])
     @login_required
@@ -1568,12 +1556,7 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
     def upload_data():
         """Handle file upload"""
         try:
-            print(f"DEBUG: Request files: {request.files}")
-            print(f"DEBUG: Request form: {request.form}")
-            print(f"DEBUG: Request method: {request.method}")
-            print(f"DEBUG: Current user authenticated: {current_user.is_authenticated}")
-            print(f"DEBUG: Current user ID: {current_user.id if current_user.is_authenticated else 'None'}")
-            print(f"DEBUG: Current user active: {current_user.is_active if current_user.is_authenticated else 'None'}")
+
             if 'file' not in request.files:
                 return jsonify({'success': False, 'message': 'Tidak ada file yang dipilih'}), 400
             
@@ -1604,7 +1587,7 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                 df = pd.read_excel(filepath)
             
             # Store file temporarily and show column mapping page
-            print(f"DEBUG: Available columns: {list(df.columns)}")
+
             
             # Get sample data for preview (first 5 rows)
             # Replace NaN values with empty strings to avoid JSON serialization issues
@@ -1787,7 +1770,7 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             
         except Exception as e:
             db.session.rollback()
-            print(f"DEBUG: Error in process_column_mapping: {str(e)}")
+
             return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
     
     @app.route('/process_scraping_column_mapping', methods=['POST'])
@@ -1961,9 +1944,8 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                 if os.path.exists(temp_file_path):
                     try:
                         os.remove(temp_file_path)
-                        print(f"DEBUG: Cleaned up temp file: {temp_file_path}")
                     except Exception as e:
-                        print(f"DEBUG: Error cleaning up temp file: {str(e)}")
+                        pass
             
             # Create consistent success message based on platform
             platform_name = {
@@ -2003,10 +1985,7 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             db.session.rollback()
             import traceback
             error_details = traceback.format_exc()
-            print(f"DEBUG: Error in process_scraping_column_mapping: {str(e)}")
-            print(f"DEBUG: Full traceback: {error_details}")
-            print(f"DEBUG: Session keys: {list(session.keys())}")
-            print(f"DEBUG: Request data: {request.get_json()}")
+
             return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
     
     @app.route('/scraping')
@@ -2247,12 +2226,28 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             
             # Use Apify API for scraping
             try:
+                # Prepare Instagram specific parameters if platform is Instagram
+                instagram_params = None
+                if data['platform'].lower() == 'instagram':
+                    instagram_params = {
+                        'search_type': data.get('instagram_search_type', 'hashtag'),
+                        'results_type': data.get('instagram_results_type', 'posts'),
+                        'direct_url': data.get('instagram_direct_url', ''),
+                        'results_limit': int(data.get('instagram_results_limit', data['max_results'])),
+                        'search_limit': int(data.get('instagram_search_limit', 1)),
+                        'add_parent_data': data.get('instagram_add_parent_data', 'false') == 'true',
+                        'enhance_user_search': data.get('instagram_enhance_user_search', 'false') == 'true',
+                        'is_user_reel_feed': data.get('instagram_is_user_reel_feed', 'false') == 'true',
+                        'is_user_tagged_feed': data.get('instagram_is_user_tagged_feed', 'false') == 'true'
+                    }
+                
                 scraped_data, run_id = scrape_with_apify(
                     platform=data['platform'],
                     keyword=data['keywords'],
                     date_from=data['start_date'],
                     date_to=data['end_date'],
-                    max_results=int(data['max_results'])
+                    max_results=int(data['max_results']),
+                    instagram_params=instagram_params
                 )
                 
                 # Store scraping info in temporary file to avoid large session cookies
@@ -2370,25 +2365,20 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             
             session_ids = [rd.id for rd in session_raw_data]
             
-            # Instead of deleting, mark as deleted by adding a deleted_at timestamp
-            # This preserves data integrity while hiding from history view
-            for raw_data_item in session_raw_data:
-                raw_data_item.deleted_at = datetime.now(pytz.timezone('Asia/Jakarta'))
-            
-            # Also mark related clean data as deleted
+            # Delete classification results first
             clean_data_items = CleanDataUpload.query.filter(CleanDataUpload.raw_data_id.in_(session_ids)).all()
-            for clean_data_item in clean_data_items:
-                clean_data_item.deleted_at = datetime.now(pytz.timezone('Asia/Jakarta'))
-            
-            # Mark classification results as deleted (don't actually delete)
             clean_data_ids = [cd.id for cd in clean_data_items]
             if clean_data_ids:
-                classification_results = ClassificationResult.query.filter(
+                ClassificationResult.query.filter(
                     ClassificationResult.data_type == 'upload',
                     ClassificationResult.data_id.in_(clean_data_ids)
-                ).all()
-                for result in classification_results:
-                    result.deleted_at = datetime.now(pytz.timezone('Asia/Jakarta'))
+                ).delete(synchronize_session=False)
+            
+            # Delete clean data
+            CleanDataUpload.query.filter(CleanDataUpload.raw_data_id.in_(session_ids)).delete(synchronize_session=False)
+            
+            # Delete raw data
+            RawData.query.filter(RawData.id.in_(session_ids)).delete(synchronize_session=False)
             
             db.session.commit()
             update_statistics()
@@ -2440,7 +2430,6 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                             'probability_non_radikal': float(probabilities[0]) if len(probabilities) > 0 else 0.0
                         })
                     except Exception as model_error:
-                        print(f"Error with model {model_name}: {model_error}")
                         results.append({
                             'model': model_name,
                             'prediction': 'Error',
@@ -2997,9 +2986,6 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                                  classified_upload_data=classified_upload_data,
                                  classified_scraper_data=classified_scraper_data)
         except Exception as e:
-            print(f"Error in dataset_details: {str(e)}")
-            import traceback
-            traceback.print_exc()
             flash(f'Error loading dataset details: {str(e)}', 'error')
             return redirect(url_for('dataset_management_table'))
     
@@ -3053,9 +3039,6 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                                  classified_upload_data=classified_upload_data,
                                  classified_scraper_data=classified_scraper_data)
         except Exception as e:
-            print(f"Error in api_dataset_details: {str(e)}")
-            import traceback
-            traceback.print_exc()
             return jsonify({'error': f'Internal server error: {str(e)}'}), 500
     
     @app.route('/api/dataset/<int:dataset_id>/clean', methods=['POST'])
@@ -3186,10 +3169,6 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             logging.error(error_msg)
             logging.error(f"Traceback: {traceback.format_exc()}")
             
-            # Print to console for immediate debugging
-            print(f"ERROR in api_dataset_clean: {error_msg}")
-            print(f"Full traceback: {traceback.format_exc()}")
-            
             return jsonify({'success': False, 'message': str(e)}), 500
     
     @app.route('/api/dataset/<int:dataset_id>/classify', methods=['POST'])
@@ -3197,9 +3176,7 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
     def api_dataset_classify(dataset_id):
         import traceback
         try:
-            print(f"Starting classification for dataset_id: {dataset_id}")
             dataset = Dataset.query.get_or_404(dataset_id)
-            print(f"Dataset found: {dataset.name}")
             
             # Check permission
             if current_user.role != 'admin' and dataset.uploaded_by != current_user.id:
@@ -3267,7 +3244,7 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                     
                     classified_count += 1
                 else:
-                    print(f"Warning: Could not vectorize text for clean_data.id {clean_data.id}")
+                    pass
             
             # Process scraper data
             for clean_scraper in clean_scraper_list:
@@ -3318,7 +3295,7 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                     
                     classified_count += 1
                 else:
-                    print(f"Warning: Could not vectorize text for clean_scraper.id {clean_scraper.id}")
+                    pass
             
             # Update dataset statistics
             dataset.updated_at = datetime.utcnow()
@@ -3337,8 +3314,7 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
         except Exception as e:
             db.session.rollback()
             error_msg = f"Error in api_dataset_classify: {str(e)}"
-            print(error_msg)
-            print(f"Full traceback: {traceback.format_exc()}")
+            pass
             return jsonify({'success': False, 'message': str(e)}), 500
     
     @app.route('/api/dataset/<int:dataset_id>', methods=['DELETE'])
@@ -4302,7 +4278,6 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                     
                     classified_count += 1
                 except Exception as classify_error:
-                    print(f"Classification error for data {data_id}: {classify_error}")
                     continue
             
             db.session.commit()
@@ -4649,7 +4624,7 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             
             # Count actual data (excluding soft-deleted records) - improved version
             stats.total_raw_upload = db.session.execute(
-                text("SELECT COUNT(*) FROM raw_data WHERE deleted_at IS NULL")
+                text("SELECT COUNT(*) FROM raw_data")
             ).scalar() or 0
             
             stats.total_raw_scraper = db.session.execute(
@@ -4657,7 +4632,7 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             ).scalar() or 0
             
             stats.total_clean_upload = db.session.execute(
-                text("SELECT COUNT(*) FROM clean_data_upload WHERE deleted_at IS NULL")
+                text("SELECT COUNT(*) FROM clean_data_upload")
             ).scalar() or 0
             
             stats.total_clean_scraper = db.session.execute(
@@ -4665,108 +4640,25 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             ).scalar() or 0
             
             stats.total_classified = db.session.execute(
-                text("SELECT COUNT(*) FROM classification_results WHERE deleted_at IS NULL")
+                text("SELECT COUNT(*) FROM classification_results")
             ).scalar() or 0
             
             stats.total_radikal = db.session.execute(
-                text("SELECT COUNT(*) FROM classification_results WHERE prediction = 'radikal' AND deleted_at IS NULL")
+                text("SELECT COUNT(*) FROM classification_results WHERE prediction = 'radikal'")
             ).scalar() or 0
             
             stats.total_non_radikal = db.session.execute(
-                text("SELECT COUNT(*) FROM classification_results WHERE prediction = 'non-radikal' AND deleted_at IS NULL")
+                text("SELECT COUNT(*) FROM classification_results WHERE prediction = 'non-radikal'")
             ).scalar() or 0
             
             db.session.commit()
             
         except Exception as e:
             db.session.rollback()
-            print(f"Error updating statistics: {e}")
     
-    def create_auto_update_trigger():
-        """Buat trigger database untuk otomatis update statistik"""
-        try:
-            # SQL untuk membuat function yang akan dipanggil oleh trigger
-            trigger_function = """
-            CREATE OR REPLACE FUNCTION update_dataset_statistics()
-            RETURNS TRIGGER AS $$
-            BEGIN
-                -- Update statistik setiap kali ada perubahan data
-                UPDATE dataset_statistics SET
-                    total_raw_upload = (SELECT COUNT(*) FROM raw_data WHERE deleted_at IS NULL),
-                    total_raw_scraper = (SELECT COUNT(*) FROM raw_data_scraper),
-                    total_clean_upload = (SELECT COUNT(*) FROM clean_data_upload WHERE deleted_at IS NULL),
-                    total_clean_scraper = (SELECT COUNT(*) FROM clean_data_scraper),
-                    total_classified = (SELECT COUNT(*) FROM classification_results WHERE deleted_at IS NULL),
-                    total_radikal = (SELECT COUNT(*) FROM classification_results WHERE prediction = 'radikal' AND deleted_at IS NULL),
-                    total_non_radikal = (SELECT COUNT(*) FROM classification_results WHERE prediction = 'non-radikal' AND deleted_at IS NULL),
-                    last_updated = NOW()
-                WHERE id = 1;
-                
-                -- Jika belum ada record statistik, buat yang baru
-                INSERT INTO dataset_statistics (id, total_raw_upload, total_raw_scraper, total_clean_upload, total_clean_scraper, total_classified, total_radikal, total_non_radikal)
-                SELECT 1, 
-                    (SELECT COUNT(*) FROM raw_data WHERE deleted_at IS NULL),
-                    (SELECT COUNT(*) FROM raw_data_scraper),
-                    (SELECT COUNT(*) FROM clean_data_upload WHERE deleted_at IS NULL),
-                    (SELECT COUNT(*) FROM clean_data_scraper),
-                    (SELECT COUNT(*) FROM classification_results WHERE deleted_at IS NULL),
-                    (SELECT COUNT(*) FROM classification_results WHERE prediction = 'radikal' AND deleted_at IS NULL),
-                    (SELECT COUNT(*) FROM classification_results WHERE prediction = 'non-radikal' AND deleted_at IS NULL)
-                WHERE NOT EXISTS (SELECT 1 FROM dataset_statistics WHERE id = 1);
-                
-                RETURN NULL;
-            END;
-            $$ LANGUAGE plpgsql;
-            """
-            
-            # Eksekusi function
-            db.session.execute(text(trigger_function))
-            
-            # Buat trigger untuk setiap tabel yang mempengaruhi statistik
-            triggers = [
-                "DROP TRIGGER IF EXISTS trigger_update_stats_raw_data ON raw_data;",
-                "CREATE TRIGGER trigger_update_stats_raw_data AFTER INSERT OR UPDATE OR DELETE ON raw_data FOR EACH STATEMENT EXECUTE FUNCTION update_dataset_statistics();",
-                
-                "DROP TRIGGER IF EXISTS trigger_update_stats_raw_data_scraper ON raw_data_scraper;",
-                "CREATE TRIGGER trigger_update_stats_raw_data_scraper AFTER INSERT OR UPDATE OR DELETE ON raw_data_scraper FOR EACH STATEMENT EXECUTE FUNCTION update_dataset_statistics();",
-                
-                "DROP TRIGGER IF EXISTS trigger_update_stats_clean_data_upload ON clean_data_upload;",
-                "CREATE TRIGGER trigger_update_stats_clean_data_upload AFTER INSERT OR UPDATE OR DELETE ON clean_data_upload FOR EACH STATEMENT EXECUTE FUNCTION update_dataset_statistics();",
-                
-                "DROP TRIGGER IF EXISTS trigger_update_stats_clean_data_scraper ON clean_data_scraper;",
-                "CREATE TRIGGER trigger_update_stats_clean_data_scraper AFTER INSERT OR UPDATE OR DELETE ON clean_data_scraper FOR EACH STATEMENT EXECUTE FUNCTION update_dataset_statistics();",
-                
-                "DROP TRIGGER IF EXISTS trigger_update_stats_classification_results ON classification_results;",
-                "CREATE TRIGGER trigger_update_stats_classification_results AFTER INSERT OR UPDATE OR DELETE ON classification_results FOR EACH STATEMENT EXECUTE FUNCTION update_dataset_statistics();"
-            ]
-            
-            for trigger_sql in triggers:
-                db.session.execute(text(trigger_sql))
-            
-            db.session.commit()
-            print("✅ Trigger otomatis untuk update statistik berhasil dibuat")
-            return True
-            
-        except Exception as e:
-            print(f"❌ Error saat membuat trigger: {str(e)}")
-            db.session.rollback()
-            return False
+
     
-    def update_all_dataset_totals():
-        """Update total_records for all existing datasets"""
-        try:
-            datasets = Dataset.query.all()
-            for dataset in datasets:
-                raw_count = RawData.query.filter_by(dataset_id=dataset.id).count()
-                scraper_count = RawDataScraper.query.filter_by(dataset_id=dataset.id).count()
-                dataset.total_records = raw_count + scraper_count
-            
-            db.session.commit()
-            print(f"Updated total_records for {len(datasets)} datasets")
-            
-        except Exception as e:
-            db.session.rollback()
-            print(f"Error updating dataset totals: {e}")
+
     
     # Admin Panel Routes
     @app.route('/admin_panel')
@@ -5049,6 +4941,13 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             # Delete raw data
             RawData.query.filter_by(uploaded_by=user_id).delete()
             RawDataScraper.query.filter_by(scraped_by=user_id).delete()
+            
+            # Delete user activities
+            from models import UserActivity
+            UserActivity.query.filter_by(user_id=user_id).delete()
+            
+            # Delete datasets created by user
+            Dataset.query.filter_by(uploaded_by=user_id).delete()
             
             # Delete user
             db.session.delete(user)

@@ -30,7 +30,7 @@
                                 <div class="col-md-8">
                                     <div class="form-group">
                                         <label for="platform">Platform Media Sosial</label>
-                                        <select class="form-control" id="platform" name="platform" required>
+                                        <select class="form-control" id="platform" name="platform" required onchange="toggleInstagramOptions()">
                                             <option value="">Pilih Platform</option>
                                             <option value="twitter">Twitter</option>
                                             <option value="facebook">Facebook</option>
@@ -52,27 +52,9 @@
                                     </div>
                                 </div>
                             </div>
+                            
+                            <!-- Maksimal Hasil Field - Always Visible -->
                             <div class="row">
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="date_from">Dari Tanggal</label>
-                                        <input type="date"
-                                               class="form-control"
-                                               id="date_from"
-                                               name="date_from"
-                                               required>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-group">
-                                        <label for="date_to">Sampai Tanggal</label>
-                                        <input type="date"
-                                               class="form-control"
-                                               id="date_to"
-                                               name="date_to"
-                                               required>
-                                    </div>
-                                </div>
                                 <div class="col-md-4">
                                     <div class="form-group">
                                         <label for="max_results">Maksimal Hasil</label>
@@ -90,6 +72,28 @@
                                             </div>
                                         </div>
                                         <small class="form-text text-muted">Masukkan jumlah maksimal data yang ingin di-scrape (1-1000)</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Date Fields - Hidden for Instagram -->
+                            <div class="row date-fields-hidden" id="dateFields">
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="date_from">Dari Tanggal</label>
+                                        <input type="date"
+                                               class="form-control"
+                                               id="date_from"
+                                               name="date_from">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group">
+                                        <label for="date_to">Sampai Tanggal</label>
+                                        <input type="date"
+                                               class="form-control"
+                                               id="date_to"
+                                               name="date_to">
                                     </div>
                                 </div>
                             </div>
@@ -466,6 +470,31 @@ function startScraping() {
     });
 }
 
+function toggleInstagramOptions() {
+    const platform = $('#platform').val();
+    const dateFields = $('#dateFields');
+    const body = $('body');
+    
+    if (platform === 'instagram') {
+        // Hide date fields for Instagram
+        dateFields.addClass('date-fields-hidden');
+        body.addClass('platform-instagram');
+        
+        // Set max_results to 50 for Instagram
+        $('#max_results').attr('max', '50');
+        if (parseInt($('#max_results').val()) > 50) {
+            $('#max_results').val('50');
+        }
+    } else {
+        // Show date fields for other platforms
+        dateFields.removeClass('date-fields-hidden');
+        body.removeClass('platform-instagram');
+        
+        // Reset max_results limit
+        $('#max_results').attr('max', '1000');
+    }
+}
+
 function executeScrapingProcess() {
     isScrapingActive = true;
     
@@ -494,7 +523,23 @@ function executeScrapingProcess() {
         end_date: endDate
     };
     
-    console.log('Sending scraping data:', formData);
+    // Jika platform Instagram, tambahkan parameter khusus
+    if (formData.platform === 'instagram') {
+        const instagramParams = {
+            searchLimit: Math.min(parseInt($('#max_results').val()) || 50, 50)
+        };
+        
+        // Tambahkan search keyword dari field umum
+        const searchKeyword = $('#keyword').val().trim();
+        if (searchKeyword) {
+            instagramParams.search = searchKeyword;
+        }
+        
+        // Tambahkan parameter Instagram ke formData
+        formData.instagram_params = instagramParams;
+    }
+    
+
     
     // Make AJAX call to start scraping
     $.ajax({
@@ -813,7 +858,6 @@ function loadScrapingHistory(searchQuery = '') {
             tbody.append('<tr><td colspan="8" class="text-center text-muted"><i class="fas fa-info-circle mr-2"></i>Belum ada data scraping</td></tr>');
         }
     }).fail(function(xhr) {
-        console.error('Error loading scraping history:', xhr.responseJSON);
         const tbody = $('#scrapingHistoryTable tbody');
         tbody.empty();
         tbody.append('<tr><td colspan="8" class="text-center text-danger">Error loading data</td></tr>');
@@ -829,7 +873,6 @@ function updateStatistics() {
         $('#instagramScraping').text(data.instagram || 0);
         $('#tiktokScraping').text(data.tiktok || 0);
     }).fail(function(xhr) {
-        console.error('Error loading statistics:', xhr.responseJSON);
         // Fallback to 0 values
         $('#totalScraping').text('0');
         $('#twitterScraping').text('0');
@@ -870,7 +913,6 @@ function viewScrapingResults() {
 
 // Function to show scraping column mapping modal
 function showScrapingColumnMappingModal(response) {
-    console.log('Showing scraping column mapping modal with data:', response);
     
     // Clear previous options
     $('#scrapingContentColumn, #scrapingUsernameColumn, #scrapingUrlColumn').empty();
@@ -1014,7 +1056,7 @@ $('#processScrapingMapping').on('click', function() {
         url_column: urlColumn || null
     };
     
-    console.log('Processing scraping column mapping:', mappingData);
+
     
     // Send mapping data to backend
     $.ajax({
@@ -1032,7 +1074,6 @@ $('#processScrapingMapping').on('click', function() {
                 // Set lastScrapingDatasetId from response
                 if (response.dataset_id) {
                     lastScrapingDatasetId = response.dataset_id;
-                    console.log('Set lastScrapingDatasetId from column mapping:', lastScrapingDatasetId);
                 }
                 
                 Swal.fire({
@@ -1279,6 +1320,11 @@ label[for="platform"] {
     margin-right: -15px;
 }
 
+/* Date fields hidden for Instagram platform */
+.date-fields-hidden {
+    display: none;
+}
+
 .row > [class*="col-"] {
     padding-left: 15px;
     padding-right: 15px;
@@ -1342,6 +1388,11 @@ label[for="platform"] {
 .custom-progress-bar {
     width: 0%;
     transition: width 0.5s ease-in-out;
+}
+
+/* Platform specific field visibility */
+.platform-instagram #dateFields {
+    display: none !important;
 }
     </style>
 {% endblock scripts %}

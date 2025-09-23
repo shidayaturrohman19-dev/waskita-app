@@ -87,7 +87,6 @@ class RawData(db.Model):
     dataset_id = db.Column(db.Integer, db.ForeignKey('datasets.id'), nullable=True)
     dataset_name = db.Column(db.String(255), nullable=True)  # For backward compatibility
     uploaded_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    deleted_at = db.Column(db.DateTime, nullable=True)  # Soft delete timestamp
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -139,7 +138,6 @@ class CleanDataUpload(db.Model):
     platform = db.Column(db.String(50), nullable=False)
     dataset_id = db.Column(db.Integer, db.ForeignKey('datasets.id'), nullable=True)
     cleaned_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    deleted_at = db.Column(db.DateTime, nullable=True)  # Soft delete timestamp
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     raw_data = db.relationship('RawData', backref=db.backref('clean_upload_data', lazy=True))
     dataset = db.relationship('Dataset', backref=db.backref('clean_upload_data', lazy=True))
@@ -180,7 +178,6 @@ class ClassificationResult(db.Model):
     probability_radikal = db.Column(db.Float, nullable=False)
     probability_non_radikal = db.Column(db.Float, nullable=False)
     classified_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    deleted_at = db.Column(db.DateTime, nullable=True)  # Soft delete timestamp
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     # Manual correction fields

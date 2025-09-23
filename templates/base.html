@@ -8,6 +8,12 @@
         <meta name="keywords"
               content="klasifikasi konten, machine learning, naive bayes, analisis sentimen, media sosial, radikal, non-radikal">
         <meta name="csrf-token" content="{{ csrf_token() }}">
+        
+        <!-- Favicon -->
+        <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
+        <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+        <link rel="shortcut icon" type="image/x-icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+        
         <title>
             {% block title %}
                 Waskita - Sistem Klasifikasi Konten
@@ -480,7 +486,7 @@
             </div>
             <!-- Footer -->
             <footer class="main-footer">
-                <strong>Copyright © 2024 <a href="#">Waskita</a>.</strong>
+                <strong>Copyright © 2025 <a href="#">Waskita</a>.</strong>
                 Sistem Klasifikasi Konten Media Sosial.
                 <div class="float-right d-none d-sm-inline-block">
                     <b>Version</b> 1.0.0
@@ -504,7 +510,6 @@
             var script = document.createElement('script');
             script.src = 'https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js';
             script.onload = function() {
-                console.log('jQuery fallback loaded successfully');
             };
             document.head.appendChild(script);
         }
@@ -512,9 +517,7 @@
         <script>
         // Verify jQuery is loaded
         if (typeof jQuery === 'undefined') {
-            console.error('jQuery failed to load!');
-        } else {
-            console.log('jQuery loaded successfully:', jQuery.fn.jquery);
+            // jQuery failed to load
         }
         </script>
         <!-- Bootstrap JS -->

@@ -31,7 +31,7 @@ try:
     from dotenv import load_dotenv
     load_dotenv()
 except ImportError:
-    print("Warning: python-dotenv not available. Environment variables may not be loaded.")
+    pass
 
 # Try to import ML libraries, but don't fail if they're not available
 try:
@@ -39,7 +39,7 @@ try:
     GENSIM_AVAILABLE = True
 except ImportError:
     GENSIM_AVAILABLE = False
-    print("Warning: gensim not available. Word2Vec functionality will be limited.")
+    pass
 
 try:
     from sklearn.feature_extraction.text import TfidfVectorizer
@@ -47,7 +47,7 @@ try:
     SKLEARN_AVAILABLE = True
 except ImportError:
     SKLEARN_AVAILABLE = False
-    print("Warning: scikit-learn not available. Some ML functionality will be limited.")
+    pass
 
 # Authorization decorators
 def admin_required(f):
@@ -157,7 +157,6 @@ def check_content_duplicate(content, dataset_id=None):
         return existing_upload is not None or existing_scraper is not None
         
     except Exception as e:
-        print(f"Error checking content duplicate: {str(e)}")
         return False
 
 def check_cleaned_content_duplicate(cleaned_content):
@@ -184,7 +183,6 @@ def check_cleaned_content_duplicate(cleaned_content):
         return existing_clean_upload is not None or existing_clean_scraper is not None
         
     except Exception as e:
-        print(f"Error checking cleaned content duplicate: {str(e)}")
         return False
 
 def check_cleaned_content_duplicate_by_dataset(cleaned_content, dataset_id):
@@ -215,7 +213,6 @@ def check_cleaned_content_duplicate_by_dataset(cleaned_content, dataset_id):
         return existing_clean_upload is not None or existing_clean_scraper is not None
         
     except Exception as e:
-        print(f"Error checking cleaned content duplicate by dataset: {str(e)}")
         return False
 
 def preprocess_for_word2vec(text):
@@ -295,7 +292,6 @@ def classify_content(text_vector, naive_bayes_model):
         return prediction_label, probabilities
         
     except Exception as e:
-        print(f"Error in classification: {e}")
         return 'non-radikal', [0.0, 1.0]
 
 def load_word2vec_model():
@@ -303,7 +299,7 @@ def load_word2vec_model():
     Load Word2Vec model from configured path
     """
     if not GENSIM_AVAILABLE:
-        print("Warning: gensim not available. Cannot load Word2Vec model.")
+        pass
         return None
         
     try:
@@ -314,18 +310,15 @@ def load_word2vec_model():
         model_path = current_app.config.get('WORD2VEC_MODEL_PATH')
         
         if not model_path or not os.path.exists(model_path):
-            print(f"Word2Vec model not found at: {model_path}")
-            print("Model will be created during training.")
+            pass
             return None
             
-        print(f"Loading Word2Vec model from: {model_path}")
+        pass
         from gensim.models import Word2Vec
         model = Word2Vec.load(model_path)
-        print(f"Word2Vec model loaded successfully. Vocabulary size: {len(model.wv.key_to_index)}")
         return model
         
     except Exception as e:
-        print(f"Error loading Word2Vec model: {e}")
         return None
 
 def load_naive_bayes_models():
@@ -347,17 +340,17 @@ def load_naive_bayes_models():
                 try:
                     with open(model_path, 'rb') as f:
                         models[model_name] = pickle.load(f)
-                        print(f"Naive Bayes {model_name} loaded from {model_path}")
+                        pass
                 except Exception as e:
-                    print(f"Error loading {model_name} from {model_path}: {e}")
+                    pass
         
         if models:
-            print(f"Loaded {len(models)} Naive Bayes models")
+            pass
         else:
-            print("No Naive Bayes models found. Models will be created during training.")
+            pass
         return models
     except Exception as e:
-        print(f"Error loading Naive Bayes models: {e}")
+        pass
         return {}
 
 # Function removed - replaced with scrape_with_apify for proper API integration
@@ -517,21 +510,18 @@ def scrape_twitter_public(keyword):
     Scraping Twitter menggunakan Apify API untuk data publik
     """
     try:
-        print(f"Mencoba scraping Twitter untuk keyword: {keyword}")
+        pass
         
         # Coba gunakan Apify API terlebih dahulu
         results, run_id = scrape_with_apify('twitter', keyword, max_results=50)
         
         if results and len(results) > 0:
-            print(f"Berhasil mendapatkan {len(results)} data Twitter dari Apify")
             return results
         else:
-            print("Apify tidak mengembalikan data, menggunakan fallback")
             raise Exception("No data from Apify")
             
     except Exception as e:
-        print(f"Error scraping Twitter dengan Apify: {e}")
-        print("Menggunakan data fallback Twitter yang lebih realistis")
+        pass
         
         # Gunakan fallback data yang lebih baik
         fallback_data = generate_sample_data('twitter', keyword)
@@ -548,21 +538,19 @@ def scrape_facebook_public(keyword):
     Scraping Facebook dengan Apify API dan fallback yang lebih baik
     """
     try:
-        print(f"Mencoba scraping Facebook untuk keyword: {keyword}")
+        pass
         
         # Coba gunakan Apify API terlebih dahulu
         results, run_id = scrape_with_apify('facebook', keyword, max_results=15)
         
         if results and len(results) > 0:
-            print(f"Berhasil mendapatkan {len(results)} data Facebook dari Apify")
+            pass
             return results
         else:
-            print("Apify tidak mengembalikan data, menggunakan fallback")
             raise Exception("No data from Apify")
             
     except Exception as e:
-        print(f"Error scraping Facebook dengan Apify: {e}")
-        print("Menggunakan data fallback Facebook yang lebih realistis")
+        pass
         
         # Gunakan fallback data yang lebih baik
         fallback_data = generate_sample_data('facebook', keyword)
@@ -579,21 +567,24 @@ def scrape_tiktok_public(keyword):
     Scraping TikTok dengan Apify API dan fallback yang lebih baik
     """
     try:
-        print(f"Mencoba scraping TikTok untuk keyword: {keyword}")
+        pass
         
         # Coba gunakan Apify API terlebih dahulu
         results, run_id = scrape_with_apify('tiktok', keyword, max_results=15)
         
+        pass
+        
         if results and len(results) > 0:
-            print(f"Berhasil mendapatkan {len(results)} data TikTok dari Apify")
+            pass
+            # Debug: tampilkan struktur data pertama
+            if results:
+                pass
             return results
         else:
-            print("Apify tidak mengembalikan data, menggunakan fallback")
             raise Exception("No data from Apify")
             
     except Exception as e:
-        print(f"Error scraping TikTok dengan Apify: {e}")
-        print("Menggunakan data fallback TikTok yang lebih realistis")
+        pass
         
         # Gunakan fallback data yang lebih baik
         fallback_data = generate_sample_data('tiktok', keyword)
@@ -603,6 +594,7 @@ def scrape_tiktok_public(keyword):
             item['data_source'] = 'fallback'
             item['note'] = 'Data sampel karena Apify API tidak tersedia'
             
+        pass
         return fallback_data
 
 def scrape_instagram_public(keyword):
@@ -610,21 +602,19 @@ def scrape_instagram_public(keyword):
     Scraping Instagram dengan Apify API dan fallback yang lebih baik
     """
     try:
-        print(f"Mencoba scraping Instagram untuk keyword: {keyword}")
+        pass
         
         # Coba gunakan Apify API terlebih dahulu
         results, run_id = scrape_with_apify('instagram', keyword, max_results=15)
         
         if results and len(results) > 0:
-            print(f"Berhasil mendapatkan {len(results)} data Instagram dari Apify")
+            pass
             return results
         else:
-            print("Apify tidak mengembalikan data, menggunakan fallback")
             raise Exception("No data from Apify")
             
     except Exception as e:
-        print(f"Error scraping Instagram dengan Apify: {e}")
-        print("Menggunakan data fallback Instagram yang lebih realistis")
+        pass
         
         # Gunakan fallback data yang lebih baik
         fallback_data = generate_sample_data('instagram', keyword)
@@ -654,7 +644,7 @@ def get_apify_config():
     }
 
 
-def start_apify_actor(platform, keyword, date_from=None, date_to=None, max_results=25):
+def start_apify_actor(platform, keyword, date_from=None, date_to=None, max_results=25, instagram_params=None):
     """
     Start Apify actor for specific platform
     """
@@ -668,7 +658,7 @@ def start_apify_actor(platform, keyword, date_from=None, date_to=None, max_resul
         raise Exception(f"Actor not configured for platform: {platform}")
     
     # Prepare input based on platform
-    input_data = prepare_actor_input(platform, keyword, date_from, date_to, max_results)
+    input_data = prepare_actor_input(platform, keyword, date_from, date_to, max_results, instagram_params)
     
     # Start actor run
     url = f"{config['base_url']}/acts/{actor_id}/runs"
@@ -686,7 +676,7 @@ def start_apify_actor(platform, keyword, date_from=None, date_to=None, max_resul
         raise Exception(f"Failed to start actor: {response.text}")
 
 
-def prepare_actor_input(platform, keyword, date_from=None, date_to=None, max_results=25):
+def prepare_actor_input(platform, keyword, date_from=None, date_to=None, max_results=25, instagram_params=None):
     """
     Prepare input data for different platform actors
     Sesuaikan parameter dengan kebutuhan masing-masing actor Apify
@@ -750,21 +740,33 @@ def prepare_actor_input(platform, keyword, date_from=None, date_to=None, max_res
         }
         
     elif platform.lower() == 'instagram':
-        # Instagram Scraper - parameter yang disederhanakan
-        return {
-            "directUrls": [
-                f"https://www.instagram.com/explore/tags/{keyword.replace('#', '')}/"
-            ],
-            "resultsLimit": max_results,
-            "resultsType": "posts",
-            "searchType": "hashtag",
-            "addParentData": False,
-            "enhanceUserSearchWithFacebookPage": False
+        # Instagram Scraper - parameter sederhana hanya search limit dan keyword
+        base_params = {
+            "searchLimit": 50
         }
         
+        # Jika ada parameter Instagram khusus dari frontend, gunakan itu
+        if instagram_params:
+            # Batasi searchLimit maksimal 50
+            search_limit = min(instagram_params.get('searchLimit', 50), 50)
+            base_params["searchLimit"] = search_limit
+            
+            # Tambahkan search keyword jika ada
+            if instagram_params.get('search'):
+                base_params["search"] = instagram_params['search']
+            else:
+                # Gunakan keyword dari parameter utama jika tidak ada search khusus
+                base_params["search"] = keyword
+        else:
+            # Default behavior jika tidak ada parameter khusus
+            base_params["search"] = keyword
+            
+        return base_params
+        
     elif platform.lower() == 'tiktok':
-        # TikTok Scraper - parameter yang lebih sederhana
-        return {
+        # TikTok Scraper - parameter yang lebih fleksibel
+        # Coba beberapa format parameter yang berbeda
+        base_params = {
             "hashtags": [keyword.replace('#', '')],
             "resultsPerPage": max_results,
             "shouldDownloadCovers": False,
@@ -772,6 +774,17 @@ def prepare_actor_input(platform, keyword, date_from=None, date_to=None, max_res
             "shouldDownloadSubtitles": False,
             "shouldDownloadVideos": False
         }
+        
+        # Tambahkan parameter alternatif untuk kompatibilitas
+        base_params.update({
+            "searchTerms": [keyword],  # Fallback parameter
+            "maxItems": max_results,   # Fallback parameter
+            "search": keyword,         # Parameter umum
+            "query": keyword,          # Parameter alternatif
+            "keyword": keyword         # Parameter sederhana
+        })
+        
+        return base_params
         
     else:
         # Default fallback untuk platform yang tidak dikenal
@@ -924,30 +937,43 @@ def get_apify_run_progress(run_id):
         }
 
 
-def scrape_with_apify(platform, keyword, date_from=None, date_to=None, max_results=25):
+def scrape_with_apify(platform, keyword, date_from=None, date_to=None, max_results=25, instagram_params=None):
     """
     Main function to scrape data using Apify API
     """
     try:
+        pass
+        
         # Start the actor
-        run_id, initial_status = start_apify_actor(platform, keyword, date_from, date_to, max_results)
+        run_id, initial_status = start_apify_actor(platform, keyword, date_from, date_to, max_results, instagram_params)
+        pass
         
         # Wait for completion
+        pass
         success, final_status = wait_for_apify_completion(run_id)
+        pass
         
         if success:
             # Get results
+            pass
             raw_results = get_apify_run_results(run_id)
+            pass
+            
+            if raw_results and len(raw_results) > 0:
+                pass
             
             # Process results based on platform
+            pass
             processed_results = process_apify_results(raw_results, platform)
+            pass
             
             return processed_results, run_id
         else:
+            pass
             raise Exception(f"Scraping failed with status: {final_status}")
             
     except Exception as e:
-        print(f"Error in Apify scraping: {e}")
+        pass
         # No fallback - raise error to force proper API usage
         raise Exception(f"Apify scraping failed: {str(e)}. Please check your API configuration and try again.")
 
@@ -1084,6 +1110,54 @@ def process_apify_results(raw_results, platform):
                     if api_field in item and item[api_field] is not None:
                         processed_item[api_field] = item[api_field]
                         processed_item[display_field] = item[api_field]
+                        
+            elif platform.lower() == 'tiktok':
+                # TikTok-specific field mapping
+                # TikTok Scraper biasanya mengembalikan: text, webVideoUrl, createTime, authorMeta, etc.
+                
+                # Core TikTok fields
+                processed_item['content'] = item.get('text', item.get('desc', item.get('description', '')))
+                processed_item['url'] = item.get('webVideoUrl', item.get('videoUrl', item.get('url', '')))
+                processed_item['created_at'] = item.get('createTime', item.get('createTimeISO', item.get('timestamp', '')))
+                
+                # Author information - TikTok biasanya menggunakan authorMeta
+                if 'authorMeta' in item and isinstance(item['authorMeta'], dict):
+                    author_meta = item['authorMeta']
+                    processed_item['username'] = author_meta.get('name', author_meta.get('uniqueId', ''))
+                    processed_item['possible_username_fields'].append(f"authorMeta.name: {author_meta.get('name', '')}")
+                    processed_item['possible_username_fields'].append(f"authorMeta.uniqueId: {author_meta.get('uniqueId', '')}")
+                else:
+                    # Fallback untuk username
+                    processed_item['username'] = item.get('author', item.get('username', item.get('uniqueId', '')))
+                
+                # Content fields untuk TikTok
+                if processed_item['content']:
+                    content_preview = str(processed_item['content'])[:100] + '...' if len(str(processed_item['content'])) > 100 else str(processed_item['content'])
+                    processed_item['possible_content_fields'].append(f"text: {content_preview}")
+                
+                # URL fields untuk TikTok
+                if processed_item['url']:
+                    processed_item['possible_url_fields'].append(f"webVideoUrl: {processed_item['url']}")
+                
+                # Username fields untuk TikTok
+                if processed_item['username']:
+                    processed_item['possible_username_fields'].append(f"authorMeta.name: {processed_item['username']}")
+                
+                # Date fields untuk TikTok
+                if processed_item['created_at']:
+                    processed_item['possible_date_fields'].append(f"createTime: {processed_item['created_at']}")
+                
+                # Engagement metrics untuk TikTok
+                engagement_fields = {
+                    'diggCount': 'likes',
+                    'shareCount': 'shares',
+                    'commentCount': 'comments',
+                    'playCount': 'views'
+                }
+                for api_field, display_field in engagement_fields.items():
+                    if api_field in item and item[api_field] is not None:
+                        processed_item[api_field] = item[api_field]
+                        processed_item[display_field] = item[api_field]
                 
             else:
                 # Generic field identification untuk platform lain
@@ -1148,7 +1222,7 @@ def process_apify_results(raw_results, platform):
             processed_data.append(processed_item)
             
         except Exception as e:
-            print(f"Error processing item: {e}")
+            pass
             # Tetap simpan item meskipun ada error
             processed_data.append({
                 'platform': platform,
@@ -1215,7 +1289,7 @@ def export_classification_results(results, format='csv'):
         return filename
         
     except Exception as e:
-        print(f"Error exporting results: {e}")
+        pass
         return None
 
 
@@ -1264,7 +1338,7 @@ def format_datetime(dt, format_type='default'):
         else:
             return str(dt)
     except Exception as e:
-        print(f"Error in format_datetime: {e}")
+        pass
         return str(dt) if dt else '-'
 
 def generate_activity_log(action, description, user_id, details=None, icon='fa-info-circle', color='blue'):
@@ -1288,12 +1362,12 @@ def generate_activity_log(action, description, user_id, details=None, icon='fa-i
         db.session.add(activity)
         db.session.commit()
         
-        print(f"[{activity.created_at}] User {user_id}: {action} - {description}")
+        pass
         
         return activity.to_dict()
         
     except Exception as e:
-        print(f"Error saving activity log: {str(e)}")
+        pass
         db.session.rollback()
         
         # Fallback ke log sederhana
@@ -1304,5 +1378,5 @@ def generate_activity_log(action, description, user_id, details=None, icon='fa-i
             'description': description
         }
         
-        print(f"[{log_entry['timestamp']}] User {user_id}: {action} - {description}")
+        pass
         return log_entry

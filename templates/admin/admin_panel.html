@@ -148,12 +148,6 @@ select.form-control option {
                             <h3 class="card-title">Filter Pengguna</h3>
                             <div class="card-tools">
                                 <button type="button"
-                                        class="btn btn-warning mr-2"
-                                        onclick="updateDatasetTotals()"
-                                        title="Update Total Records Dataset">
-                                    <i class="fas fa-sync"></i> Update Dataset Totals
-                                </button>
-                                <button type="button"
                                         class="btn btn-primary"
                                         data-toggle="modal"
                                         data-target="#addUserModal">
@@ -511,7 +505,6 @@ $(document).ready(function() {
     // Handle form submission
     $('#filterForm').on('submit', function(e) {
         // Form akan submit secara normal ke server
-        console.log('Filter form submitted');
     });
     
     // Handle reset button click
@@ -528,7 +521,6 @@ $(document).ready(function() {
     
     // Handle search button functionality
     $('.btn-primary[type="submit"]').on('click', function() {
-        console.log('Search button clicked');
         // Form akan submit secara otomatis
     });
 });
@@ -729,9 +721,13 @@ function deleteUser(userId) {
         confirmButtonColor: '#d33'
     }).then((result) => {
         if (result.isConfirmed) {
+            const csrfToken = $('meta[name=csrf-token]').attr('content');
             $.ajax({
                 url: '/api/admin/users/' + userId,
                 type: 'DELETE',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                },
                 success: function(response) {
                     if (response.success) {
                         Swal.fire('Berhasil', 'Pengguna berhasil dihapus', 'success').then(() => {
@@ -753,48 +749,6 @@ function deleteUser(userId) {
     });
 }
 
-// Update Dataset Totals
-function updateDatasetTotals() {
-    Swal.fire({
-        title: 'Konfirmasi Update',
-        text: 'Apakah Anda yakin ingin mengupdate total records semua dataset? Proses ini mungkin memakan waktu.',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonText: 'Ya, Update',
-        cancelButtonText: 'Batal',
-        confirmButtonColor: '#ffc107'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Show loading
-            Swal.fire({
-                title: 'Memproses...',
-                text: 'Sedang mengupdate total records dataset',
-                allowOutsideClick: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                }
-            });
-            
-            $.ajax({
-                url: '/admin/update_dataset_totals',
-                type: 'POST',
-                success: function(response) {
-                    if (response.success) {
-                        Swal.fire('Berhasil', response.message, 'success');
-                    } else {
-                        Swal.fire('Error', response.message || 'Gagal mengupdate dataset totals', 'error');
-                    }
-                },
-                error: function(xhr) {
-                    var errorMsg = 'Gagal mengupdate dataset totals';
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        errorMsg = xhr.responseJSON.message;
-                    }
-                    Swal.fire('Error', errorMsg, 'error');
-                }
-            });
-        }
-    });
-}
+
 </script>
 {% endblock extra_js %}

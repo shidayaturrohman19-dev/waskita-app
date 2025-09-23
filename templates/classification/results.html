@@ -373,7 +373,6 @@ function exportResults(format) {
         });
     })
     .catch(error => {
-        console.error('Error:', error);
         Swal.fire({
             icon: 'error',
             title: 'Gagal!',
@@ -427,7 +426,6 @@ function exportDatasetResults(datasetId, datasetName, format) {
         });
     })
     .catch(error => {
-        console.error('Error:', error);
         Swal.fire({
             icon: 'error',
             title: 'Gagal!',

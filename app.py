@@ -41,7 +41,7 @@ except locale.Error:
         pass
 
 # Use PostgreSQL as the primary database
-print(f"Using PostgreSQL database: {app.config['SQLALCHEMY_DATABASE_URI']}")
+pass
 
 # Initialize extensions
 from models import db
@@ -78,14 +78,14 @@ naive_bayes_models = {}
 def load_models():
     global word2vec_model, naive_bayes_models
     with app.app_context():
-        print("Loading AI models...")
+        pass
         try:
             from utils import load_word2vec_model, load_naive_bayes_models
             word2vec_model = load_word2vec_model()
             naive_bayes_models = load_naive_bayes_models()
-            print("AI models loaded successfully")
+            pass
         except Exception as e:
-            print(f"Error loading AI models: {e}")
+            pass
             # Set empty models if loading fails
             word2vec_model = None
             naive_bayes_models = {}
