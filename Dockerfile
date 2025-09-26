@@ -22,17 +22,11 @@ RUN apt-get update \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy project
+# Copy project (includes models directory now)
 COPY . .
 
 # Create necessary directories
-RUN mkdir -p uploads logs models static/uploads
-
-# Copy AI models if they exist
-COPY models/ ./models/
-
-# Set permissions
-RUN chmod +x deploy.py
+RUN mkdir -p uploads logs static/uploads data
 
 # Expose port
 EXPOSE 5000

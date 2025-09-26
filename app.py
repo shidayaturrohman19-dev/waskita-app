@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-from config import config
+from config import Config
 
 # Setup logging
 logging.basicConfig(
@@ -25,10 +25,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-# Load configuration from config.py
-config_name = os.getenv('FLASK_ENV', 'development')
-app.config.from_object(config[config_name])
-config[config_name].init_app(app)
+app.config.from_object(Config)
 
 # Set Indonesian locale as default
 try:

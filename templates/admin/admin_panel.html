@@ -576,8 +576,8 @@ function viewUser(userId) {
                     <strong>Status:</strong> ${data.is_active ? 'Aktif' : 'Nonaktif'}<br>
                 </div>
                 <div class="col-md-6">
-                    <strong>Tanggal Daftar:</strong> ${new Date(data.created_at).toLocaleString('id-ID')}<br>
-                    <strong>Terakhir Login:</strong> ${data.last_login ? new Date(data.last_login).toLocaleString('id-ID') : 'Belum pernah'}<br>
+                    <strong>Tanggal Daftar:</strong> ${data.created_at || '-'}<br>
+                    <strong>Terakhir Login:</strong> ${data.last_login || 'Belum pernah'}<br>
                     <strong>Total Upload:</strong> ${data.stats.total_uploads || 0}<br>
                     <strong>Total Scraping:</strong> ${data.stats.total_scraping || 0}<br>
                     <strong>Total Klasifikasi:</strong> ${data.stats.total_classifications || 0}<br>
@@ -590,12 +590,12 @@ function viewUser(userId) {
                     <div class="timeline">
                         ${data.recent_activities.map(activity => `
                             <div class="time-label">
-                                <span class="bg-info">${new Date(activity.created_at).toLocaleDateString('id-ID')}</span>
+                                <span class="bg-info">${activity.created_at ? activity.created_at.split(' ')[0] : '-'}</span>
                             </div>
                             <div>
                                 <i class="fas ${activity.icon} bg-${activity.color}"></i>
                                 <div class="timeline-item">
-                                    <span class="time"><i class="fas fa-clock"></i> ${new Date(activity.created_at).toLocaleTimeString('id-ID')}</span>
+                                    <span class="time"><i class="fas fa-clock"></i> ${activity.created_at ? activity.created_at.split(' ')[1] + ' ' + activity.created_at.split(' ')[2] : '-'}</span>
                                     <h3 class="timeline-header">${activity.title}</h3>
                                     <div class="timeline-body">${activity.description}</div>
                                 </div>

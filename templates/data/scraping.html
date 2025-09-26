@@ -780,7 +780,7 @@ function completeScraping(successCount, jobId, responseData = null) {
             cancelButtonText: 'Tutup'
         }).then(function(result) {
             if (result.isConfirmed && lastScrapingDatasetId) {
-                window.location.href = `/data/scraping/results/${lastScrapingDatasetId}`;
+                window.location.href = `/dataset/${lastScrapingDatasetId}/details`;
             }
             resetForm();
             loadScrapingHistory(); // Re-enabled to refresh history after scraping
@@ -896,7 +896,7 @@ function refreshHistory() {
 
 function viewScrapingResults() {
     if (lastScrapingDatasetId) {
-        window.location.href = `/data/scraping/results/${lastScrapingDatasetId}`;
+        window.location.href = `/dataset/${lastScrapingDatasetId}/details`;
     } else {
         Swal.fire({
             icon: 'warning',
@@ -1084,8 +1084,8 @@ $('#processScrapingMapping').on('click', function() {
                     confirmButtonText: 'Lihat Data',
                     cancelButtonText: 'Tutup'
                 }).then(function(result) {
-                    if (result.isConfirmed) {
-                        window.location.href = '/data/scraping';
+                    if (result.isConfirmed && lastScrapingDatasetId) {
+                        window.location.href = `/dataset/${lastScrapingDatasetId}/details`;
                     }
                     // Refresh page data
                     loadScrapingHistory(); // Re-enabled to refresh history after scraping
@@ -1179,7 +1179,7 @@ $('#scrapingColumnMappingModal').on('hidden.bs.modal', function() {
 
 // Function to view scraping details
 function viewScrapingDetails(scraperId) {
-    window.location.href = `/data/scraping/results/${scraperId}`;
+    window.location.href = `/dataset/${scraperId}/details`;
 }
 
 // Function to delete scraping job

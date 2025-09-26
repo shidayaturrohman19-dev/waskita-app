@@ -69,6 +69,16 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                 db.session.commit()
                 
                 login_user(user, remember=remember)
+                
+                # Log activity
+                generate_activity_log(
+                    action='login',
+                    description=f'Login berhasil untuk pengguna: {user.username}',
+                    user_id=user.id,
+                    icon='fas fa-sign-in-alt',
+                    color='success'
+                )
+                
                 next_page = request.args.get('next')
                 flash('Login berhasil!', 'success')
                 return redirect(next_page) if next_page else redirect(url_for('dashboard'))
@@ -119,6 +129,16 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             try:
                 db.session.add(user)
                 db.session.commit()
+                
+                # Log activity for new user registration
+                generate_activity_log(
+                    action='register',
+                    description=f'Registrasi pengguna baru: {user.username}',
+                    user_id=user.id,
+                    icon='fas fa-user-plus',
+                    color='info'
+                )
+                
                 flash('Registrasi berhasil! Silakan login.', 'success')
                 return redirect(url_for('login'))
             except Exception as e:
@@ -134,6 +154,15 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
     @app.route('/logout')
     @login_required
     def logout():
+        # Log activity before logout
+        generate_activity_log(
+            action='logout',
+            description=f'Logout untuk pengguna: {current_user.username}',
+            user_id=current_user.id,
+            icon='fas fa-sign-out-alt',
+            color='warning'
+        )
+        
         logout_user()
         flash('Logout berhasil!', 'info')
         return redirect(url_for('login'))
@@ -356,45 +385,6 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
         
         return render_template('data/scraping.html')
     
-    @app.route('/data/scraping/results/<int:dataset_id>')
-    @login_required
-    def scraping_results(dataset_id):
-        """Display scraping results for mapping"""
-        try:
-            # Get dataset
-            dataset = Dataset.query.get_or_404(dataset_id)
-            
-            # Check permission
-            if not current_user.is_admin() and dataset.uploaded_by != current_user.id:
-                flash('Akses ditolak!', 'error')
-                return redirect(url_for('data_scraping'))
-            
-            # Get scraping results
-            scraping_data = RawDataScraper.query.filter_by(dataset_id=dataset_id).all()
-            
-            # Prepare data for display
-            results = []
-            for item in scraping_data:
-                results.append({
-                    'id': item.id,
-                    'username': item.username,
-                    'content': item.content[:200] + '...' if len(item.content) > 200 else item.content,
-                    'full_content': item.content,
-                    'url': item.url,
-                    'platform': item.platform,
-                    'keyword': item.keyword,
-                    'created_at': format_datetime(item.created_at, 'default') if item.created_at else None
-                })
-            
-            return render_template('data/scraping_results.html', 
-                                 dataset=dataset, 
-                                 results=results,
-                                 total_results=len(results))
-            
-        except Exception as e:
-            flash(f'Error loading scraping results: {str(e)}', 'error')
-            return redirect(url_for('data_scraping'))
-    
     @app.route('/api/scraping/map-data', methods=['POST'])
     @login_required
     def map_scraping_data():
@@ -451,7 +441,8 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             return jsonify({
                 'success': True,
                 'message': f'Successfully mapped {success_count} records to upload data format',
-                'mapped_count': success_count
+                'mapped_count': success_count,
+                'redirect_url': f'/dataset/{dataset_id}/details'
             })
             
         except Exception as e:
@@ -786,6 +777,7 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             
             # Update statistics
             update_statistics()
+            app.logger.info("Statistics updated successfully")
             
             flash('Data berhasil dibersihkan!', 'success')
             
@@ -1421,7 +1413,9 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                 action='profile_update',
                 description='Profil pengguna berhasil diperbarui',
                 user_id=current_user.id,
-                details={'email': email, 'full_name': full_name}
+                details={'email': email, 'full_name': full_name},
+                icon='fas fa-user-edit',
+                color='warning'
             )
             
             return jsonify({
@@ -1660,8 +1654,12 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             username_column = mapping_data.get('username_column')
             url_column = mapping_data.get('url_column')
             
+            # Debug logging
+            app.logger.info(f"Column mapping received - content: {content_column}, username: {username_column}, url: {url_column}")
+            
             # Validate required mapping
             if not content_column:
+                app.logger.error("Content column not provided")
                 return jsonify({
                     'success': False,
                     'message': 'Kolom content harus dipilih'
@@ -1752,6 +1750,21 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             # Update statistics
             update_statistics()
             
+            # Log aktivitas upload data
+            generate_activity_log(
+                action='upload_data',
+                description=f'Berhasil mengupload {records_added} data dari file {filename}',
+                user_id=current_user.id,
+                details={
+                    'filename': filename,
+                    'records_count': records_added,
+                    'dataset_name': dataset_name,
+                    'file_size': file_size
+                },
+                icon='fa-upload',
+                color='success'
+            )
+            
             # Clean up file and session
             os.remove(filepath)
             session.pop('upload_file_path', None)
@@ -1835,10 +1848,13 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             
             if not scraped_data:
                 app.logger.error(f"No scraped_data found. Session keys: {list(session.keys())}")
+                app.logger.error(f"Scraping info: {scraping_info}")
                 return jsonify({
                     'success': False,
                     'message': 'Data scraping tidak ditemukan. Silakan lakukan scraping ulang.'
                 }), 400
+            
+            app.logger.info(f"Found scraped data - platform: {platform}, keyword: {keyword}, dataset_id: {dataset_id}, data_count: {len(scraped_data)}")
             
             # Validate selected columns exist in data
             if scraped_data:
@@ -1860,6 +1876,8 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             # Save data to database with column mapping
             records_added = 0
             scrape_date = datetime.strptime(date_from, '%Y-%m-%d').date()
+            
+            app.logger.info(f"Starting to save {len(scraped_data)} records to database")
             
             for data in scraped_data:
                 # Get mapped values
@@ -1925,11 +1943,13 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                 db.session.add(raw_data_scraper)
                 records_added += 1
                 
-                # Debug logging for TikTok data
-                if platform.lower() == 'tiktok':
-                    app.logger.info(f"TikTok data saved: username={username_value}, content_length={len(content_to_check)}, likes={likes}, views={views}")
+                # Debug logging for all platforms
+                if records_added <= 5:  # Log first 5 records
+                    app.logger.info(f"Record {records_added} - Platform: {platform}, Username: {username_value}, Content length: {len(content_to_check)}, Likes: {likes}, Views: {views}")
             
+            app.logger.info(f"About to commit {records_added} records to database")
             db.session.commit()
+            app.logger.info(f"Successfully committed {records_added} records to database")
             
             # Update statistics
             update_statistics()
@@ -2334,6 +2354,15 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             db.session.commit()
             update_statistics()
             
+            # Log activity
+            generate_activity_log(
+                action='delete_upload_data',
+                description=f'Menghapus data upload ID: {upload_id}',
+                user_id=current_user.id,
+                icon='fas fa-trash',
+                color='danger'
+            )
+            
             return jsonify({'success': True, 'message': 'Data upload berhasil dihapus dari database'})
         except Exception as e:
             db.session.rollback()
@@ -2382,6 +2411,15 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             
             db.session.commit()
             update_statistics()
+            
+            # Log activity
+            generate_activity_log(
+                action='delete_upload_history',
+                description=f'Menghapus riwayat upload ({len(session_ids)} records)',
+                user_id=current_user.id,
+                icon='fas fa-history',
+                color='warning'
+            )
             
             return jsonify({'success': True, 'message': f'Riwayat upload berhasil dihapus dari tampilan ({len(session_ids)} records)'})
         except Exception as e:
@@ -2747,6 +2785,15 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                     continue
             
             db.session.commit()
+            
+            # Log activity
+            generate_activity_log(
+                action='bulk_delete_datasets',
+                description=f'Menghapus {processed_count} dataset secara bulk',
+                user_id=current_user.id,
+                icon='fas fa-trash-alt',
+                color='danger'
+            )
             
             if errors:
                 return jsonify({
@@ -3374,6 +3421,15 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             
             db.session.commit()
             
+            # Log activity
+            generate_activity_log(
+                action='delete_dataset',
+                description=f'Menghapus dataset: {dataset.name}',
+                user_id=current_user.id,
+                icon='fas fa-trash-alt',
+                color='danger'
+            )
+            
             # Update statistics after deletion
             update_statistics()
             
@@ -3763,6 +3819,15 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                 'instagram': 'Instagram'
             }.get(scraper_data.platform.lower(), scraper_data.platform.title())
             
+            # Log activity
+            generate_activity_log(
+                action='delete_scraping_data',
+                description=f'Menghapus data scraping {platform_name} ID: {job_id}',
+                user_id=current_user.id,
+                icon='fas fa-trash',
+                color='danger'
+            )
+            
             return jsonify({'success': True, 'message': f'Data scraping {platform_name} berhasil dihapus dari database'})
         except Exception as e:
             db.session.rollback()
@@ -3807,6 +3872,15 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                 'facebook': 'Facebook', 
                 'instagram': 'Instagram'
             }.get(scraper_data.platform.lower(), scraper_data.platform.title())
+            
+            # Log activity
+            generate_activity_log(
+                action='delete_scraping_data',
+                description=f'Menghapus data scraping {platform_name} ID: {scraper_id}',
+                user_id=current_user.id,
+                icon='fas fa-trash',
+                color='danger'
+            )
             
             return jsonify({'success': True, 'message': f'Data scraping {platform_name} berhasil dihapus'})
         except Exception as e:
@@ -4550,6 +4624,20 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             if not filename:
                 return jsonify({'error': 'Gagal membuat file export'}), 500
             
+            # Log download activity
+            generate_activity_log(
+                action='download_results',
+                description=f'Mengunduh hasil klasifikasi dalam format {format_type.upper()}',
+                user_id=current_user.id,
+                details={
+                    'format': format_type,
+                    'record_count': len(final_results),
+                    'dataset_id': dataset_id if dataset_id else 'all'
+                },
+                icon='fas fa-download',
+                color='success'
+            )
+            
             # Read the file and return as response
             if format_type == 'csv':
                 with open(filename, 'r', encoding='utf-8-sig') as f:
@@ -4782,23 +4870,38 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             
             total_classifications = (upload_classifications or 0) + (scraper_classifications or 0)
             
-            # Get recent activities (mock data for now)
-            recent_activities = [
-                {
-                    'title': 'Login ke sistem',
-                    'description': 'Pengguna berhasil login',
-                    'created_at': format_datetime(user.last_login, 'default') if user.last_login else format_datetime(user.created_at, 'default'),
-                    'icon': 'fa-sign-in-alt',
-                    'color': 'success'
-                },
-                {
-                    'title': 'Akun dibuat',
-                    'description': 'Pengguna mendaftar ke sistem',
-                    'created_at': format_datetime(user.created_at, 'default'),
-                    'icon': 'fa-user-plus',
-                    'color': 'info'
-                }
-            ]
+            # Get recent activities from database
+            from models import UserActivity
+            activities = UserActivity.query.filter_by(user_id=user_id).order_by(UserActivity.created_at.desc()).limit(10).all()
+            
+            recent_activities = []
+            for activity in activities:
+                recent_activities.append({
+                    'title': activity.action.replace('_', ' ').title(),
+                    'description': activity.description,
+                    'created_at': format_datetime(activity.created_at, 'default'),
+                    'icon': activity.icon or 'fa-info-circle',
+                    'color': activity.color or 'primary'
+                })
+            
+            # If no activities found, add default activities
+            if not recent_activities:
+                recent_activities = [
+                    {
+                        'title': 'Login ke sistem',
+                        'description': 'Pengguna berhasil login',
+                        'created_at': format_datetime(user.last_login, 'default') if user.last_login else format_datetime(user.created_at, 'default'),
+                        'icon': 'fa-sign-in-alt',
+                        'color': 'success'
+                    },
+                    {
+                        'title': 'Akun dibuat',
+                        'description': 'Pengguna mendaftar ke sistem',
+                        'created_at': format_datetime(user.created_at, 'default'),
+                        'icon': 'fa-user-plus',
+                        'color': 'info'
+                    }
+                ]
             
             return jsonify({
                 'id': user.id,

@@ -23,26 +23,102 @@
     white-space: nowrap;
 }
 .dropdown {
-    position: static !important;
+    position: relative !important;
 }
 .dropdown-menu {
-    min-width: 150px;
+    min-width: 180px;
     z-index: 9999 !important;
     position: absolute !important;
-    transform: translate3d(-120px, 38px, 0px) !important;
-    top: 0px !important;
-    left: 0px !important;
+    right: 0 !important;
+    left: auto !important;
+    top: 100% !important;
+    transform: none !important;
     will-change: transform;
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    border: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-radius: 8px;
+    padding: 0.5rem 0;
+}
+/* Override untuk dropdown menu yang lebih besar seperti di navbar */
+.dropdown-menu-lg {
+    min-width: 200px;
 }
 .dropdown-toggle {
-    min-width: 35px;
-    padding: 0.375rem 0.5rem;
+    min-width: 40px;
+    padding: 0.5rem 0.75rem;
     border: 1px solid #dee2e6;
     background: transparent;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    font-size: 0.875rem;
 }
 .dropdown-toggle:hover {
     background-color: #f8f9fa;
+    border-color: #adb5bd;
+}
+.dropdown-item {
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    color: #2c3e50;
+    transition: all 0.2s ease;
+    border: none;
+    background: none;
+}
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+    color: #3498db;
+}
+/* Konsistensi ukuran tombol dropdown */
+.btn-outline-secondary.dropdown-toggle {
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+.btn-outline-secondary.dropdown-toggle i {
+    margin-right: 0.5rem;
+}
+/* Konsistensi ukuran form control */
+.form-control {
+    min-height: 38px;
+    font-size: 0.875rem;
+}
+/* Konsistensi ukuran tombol */
+.btn {
+    min-height: 38px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+/* CSS untuk menggantikan inline styles */
+.btn-search {
+    min-width: 50px !important;
+    min-height: 38px !important;
+}
+.dropdown-sort {
+    min-width: 120px !important;
+}
+.dropdown-pagination {
+    min-width: 160px !important;
+}
+/* Memastikan konsistensi untuk semua dropdown toggle */
+.btn-outline-secondary.dropdown-toggle.dropdown-sort {
+    min-width: 120px !important;
+    min-height: 38px !important;
+}
+.btn-outline-secondary.dropdown-toggle.dropdown-pagination {
+    min-width: 160px !important;
+    min-height: 38px !important;
+}
+/* Memastikan konsistensi untuk tombol search */
+.btn-outline-primary.btn-search {
+    min-width: 50px !important;
+    min-height: 38px !important;
+}
+.dropdown-divider {
+    margin: 0.5rem 0;
+    border-color: #e9ecef;
 }
 .table-responsive {
     overflow: visible !important;
@@ -82,8 +158,86 @@
     color: #721c24 !important;
 }
 .btn-action {
-    min-width: 120px;
+    min-width: 140px;
+    min-height: 38px;
     padding: 0.5rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+/* Bulk Action Buttons Consistency */
+.btn-bulk-action {
+    min-width: 100px !important;
+    min-height: 38px !important;
+    padding: 0.5rem 0.75rem !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0.875rem !important;
+    font-weight: 500 !important;
+    border-radius: 0.375rem !important;
+}
+.btn-bulk-action i {
+    margin-right: 0.25rem !important;
+}
+/* Override Bootstrap btn-sm conflicts */
+.btn-bulk-action.btn-sm {
+    min-width: 100px !important;
+    min-height: 38px !important;
+    padding: 0.5rem 0.75rem !important;
+    font-size: 0.875rem !important;
+}
+/* Ensure all buttons have consistent height */
+.btn, .btn-outline-primary, .btn-outline-secondary, .btn-primary, .btn-success, .btn-info, .btn-danger, .btn-secondary {
+    min-height: 38px !important;
+}
+/* Global consistency untuk semua elemen form dan button */
+.form-control, .btn, .dropdown-toggle, .input-group .form-control, .input-group .btn {
+    min-height: 38px !important;
+    height: 38px !important;
+    line-height: 1.5 !important;
+    padding: 6px 12px !important;
+    font-size: 14px !important;
+    border-radius: 4px !important;
+    box-sizing: border-box !important;
+}
+
+/* Khusus untuk input group */
+.input-group .form-control {
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+}
+
+.input-group .btn {
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+}
+
+/* Konsistensi untuk semua dropdown */
+.dropdown-menu {
+    min-width: 120px !important;
+}
+
+/* Konsistensi untuk action buttons */
+.btn-action, .btn-bulk-action {
+    min-height: 38px !important;
+    height: 38px !important;
+    padding: 6px 12px !important;
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* Override Bootstrap btn-sm conflicts */
+.btn-bulk-action.btn-sm, .btn.btn-sm {
+    min-height: 38px !important;
+    height: 38px !important;
+    padding: 6px 12px !important;
+    font-size: 14px !important;
 }
 </style>
 {% endblock extra_css %}
@@ -115,7 +269,7 @@
                         <div class="col-md-6">
                             <form method="get" class="d-flex">
                                 <input type="text" name="search" class="form-control" placeholder="Cari dataset..." value="{{ search }}">
-                                <button type="submit" class="btn btn-outline-primary ml-2">
+                                <button type="submit" class="btn btn-outline-primary ml-2 btn-search">
                                     <i class="fas fa-search"></i>
                                 </button>
                             </form>
@@ -123,35 +277,35 @@
                         <div class="col-md-6">
                             <div class="d-flex justify-content-end">
                                 <div class="dropdown mr-2">
-                                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="false">
-                                        <i class="fas fa-sort"></i> Urutkan
-                                    </button>
-                                    <div class="dropdown-menu">
-                                        <a class="dropdown-item" href="?search={{ search }}&sort_by=updated_at&sort_order=desc&per_page={{ per_page }}">
-                                            <i class="fas fa-clock"></i> Terbaru
-                                        </a>
-                                        <a class="dropdown-item" href="?search={{ search }}&sort_by=updated_at&sort_order=asc&per_page={{ per_page }}">
-                                            <i class="fas fa-clock"></i> Terlama
-                                        </a>
-                                        <a class="dropdown-item" href="?search={{ search }}&sort_by=name&sort_order=asc&per_page={{ per_page }}">
-                                            <i class="fas fa-sort-alpha-down"></i> A-Z
-                                        </a>
-                                        <a class="dropdown-item" href="?search={{ search }}&sort_by=name&sort_order=desc&per_page={{ per_page }}">
-                                            <i class="fas fa-sort-alpha-up"></i> Z-A
-                                        </a>
-                                    </div>
-                                </div>
-                                <div class="dropdown">
-                                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="false">
-                                        <i class="fas fa-list"></i> {{ per_page }} per halaman
-                                    </button>
-                                    <div class="dropdown-menu">
-                                        <a class="dropdown-item" href="?search={{ search }}&sort_by={{ sort_by }}&sort_order={{ sort_order }}&per_page=10">10 per halaman</a>
-                                        <a class="dropdown-item" href="?search={{ search }}&sort_by={{ sort_by }}&sort_order={{ sort_order }}&per_page=25">25 per halaman</a>
-                                        <a class="dropdown-item" href="?search={{ search }}&sort_by={{ sort_by }}&sort_order={{ sort_order }}&per_page=50">50 per halaman</a>
-                                        <a class="dropdown-item" href="?search={{ search }}&sort_by={{ sort_by }}&sort_order={{ sort_order }}&per_page=100">100 per halaman</a>
-                                    </div>
-                                </div>
+                    <button class="btn btn-outline-secondary dropdown-toggle dropdown-sort" type="button" data-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-sort"></i> Urutkan
+                    </button>
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" href="?search={{ search }}&sort_by=updated_at&sort_order=desc&per_page={{ per_page }}">
+                            <i class="fas fa-clock"></i> Terbaru
+                        </a>
+                        <a class="dropdown-item" href="?search={{ search }}&sort_by=updated_at&sort_order=asc&per_page={{ per_page }}">
+                            <i class="fas fa-clock"></i> Terlama
+                        </a>
+                        <a class="dropdown-item" href="?search={{ search }}&sort_by=name&sort_order=asc&per_page={{ per_page }}">
+                            <i class="fas fa-sort-alpha-down"></i> A-Z
+                        </a>
+                        <a class="dropdown-item" href="?search={{ search }}&sort_by=name&sort_order=desc&per_page={{ per_page }}">
+                            <i class="fas fa-sort-alpha-up"></i> Z-A
+                        </a>
+                    </div>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary dropdown-toggle dropdown-pagination" type="button" data-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-list"></i> {{ per_page }} per halaman
+                    </button>
+                    <div class="dropdown-menu">
+                        <a class="dropdown-item" href="?search={{ search }}&sort_by={{ sort_by }}&sort_order={{ sort_order }}&per_page=10">10 per halaman</a>
+                        <a class="dropdown-item" href="?search={{ search }}&sort_by={{ sort_by }}&sort_order={{ sort_order }}&per_page=25">25 per halaman</a>
+                        <a class="dropdown-item" href="?search={{ search }}&sort_by={{ sort_by }}&sort_order={{ sort_order }}&per_page=50">50 per halaman</a>
+                        <a class="dropdown-item" href="?search={{ search }}&sort_by={{ sort_by }}&sort_order={{ sort_order }}&per_page=100">100 per halaman</a>
+                    </div>
+                </div>
                             </div>
                         </div>
                     </div>
@@ -164,16 +318,16 @@
                                 <span id="selectedCount" class="fw-bold">0</span> dataset dipilih
                             </div>
                             <div>
-                                <button type="button" class="btn btn-sm btn-success mr-2" onclick="bulkCleanDatasets()">
+                                <button type="button" class="btn btn-success mr-2 btn-bulk-action" onclick="bulkCleanDatasets()">
                                     <i class="fas fa-broom"></i> Bersihkan
                                 </button>
-                                <button type="button" class="btn btn-sm btn-info mr-2" onclick="bulkClassifyDatasets()">
+                                <button type="button" class="btn btn-info mr-2 btn-bulk-action" onclick="bulkClassifyDatasets()">
                                     <i class="fas fa-tags"></i> Klasifikasi
                                 </button>
-                                <button type="button" class="btn btn-sm btn-danger mr-2" onclick="bulkDeleteDatasets()">
+                                <button type="button" class="btn btn-danger mr-2 btn-bulk-action" onclick="bulkDeleteDatasets()">
                                     <i class="fas fa-trash"></i> Hapus
                                 </button>
-                                <button type="button" class="btn btn-sm btn-secondary" onclick="clearSelection()">
+                                <button type="button" class="btn btn-secondary btn-bulk-action" onclick="clearSelection()">
                                     <i class="fas fa-times"></i> Batal
                                 </button>
                             </div>

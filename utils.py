@@ -299,7 +299,7 @@ def load_word2vec_model():
     Load Word2Vec model from configured path
     """
     if not GENSIM_AVAILABLE:
-        pass
+        print("❌ Gensim not available for Word2Vec model loading")
         return None
         
     try:
@@ -309,16 +309,22 @@ def load_word2vec_model():
         # Get model path from config
         model_path = current_app.config.get('WORD2VEC_MODEL_PATH')
         
-        if not model_path or not os.path.exists(model_path):
-            pass
+        if not model_path:
+            print("❌ WORD2VEC_MODEL_PATH not found in config")
             return None
             
-        pass
+        if not os.path.exists(model_path):
+            print(f"❌ Word2Vec model file not found at: {model_path}")
+            return None
+            
+        print(f"🔄 Loading Word2Vec model from: {model_path}")
         from gensim.models import Word2Vec
         model = Word2Vec.load(model_path)
+        print("✅ Word2Vec model loaded successfully")
         return model
         
     except Exception as e:
+        print(f"❌ Error loading Word2Vec model: {e}")
         return None
 
 def load_naive_bayes_models():
@@ -340,17 +346,19 @@ def load_naive_bayes_models():
                 try:
                     with open(model_path, 'rb') as f:
                         models[model_name] = pickle.load(f)
-                        pass
+                        print(f"✅ Loaded {model_name} from: {model_path}")
                 except Exception as e:
-                    pass
+                    print(f"❌ Error loading {model_name}: {e}")
+            else:
+                print(f"❌ Model file not found for {model_name}: {model_path}")
         
         if models:
-            pass
+            print(f"✅ Successfully loaded {len(models)} Naive Bayes models")
         else:
-            pass
+            print("❌ No Naive Bayes models were loaded")
         return models
     except Exception as e:
-        pass
+        print(f"❌ Error in load_naive_bayes_models: {e}")
         return {}
 
 # Function removed - replaced with scrape_with_apify for proper API integration
@@ -740,49 +748,42 @@ def prepare_actor_input(platform, keyword, date_from=None, date_to=None, max_res
         }
         
     elif platform.lower() == 'instagram':
-        # Instagram Scraper - parameter sederhana hanya search limit dan keyword
+        # Instagram Scraper - parameter berdasarkan dokumentasi resmi Apify
+        # Menggunakan search untuk hashtag atau keyword
         base_params = {
-            "searchLimit": 50
+            "search": keyword,
+            "searchType": "hashtag" if keyword.startswith('#') else "hashtag",
+            "searchLimit": min(max_results, 50),  # Batasi maksimal 50
+            "resultsType": "posts",
+            "resultsLimit": min(max_results, 100)  # Batasi maksimal 100 posts
         }
         
         # Jika ada parameter Instagram khusus dari frontend, gunakan itu
         if instagram_params:
-            # Batasi searchLimit maksimal 50
-            search_limit = min(instagram_params.get('searchLimit', 50), 50)
-            base_params["searchLimit"] = search_limit
-            
-            # Tambahkan search keyword jika ada
+            # Update dengan parameter khusus jika ada
             if instagram_params.get('search'):
                 base_params["search"] = instagram_params['search']
-            else:
-                # Gunakan keyword dari parameter utama jika tidak ada search khusus
-                base_params["search"] = keyword
-        else:
-            # Default behavior jika tidak ada parameter khusus
-            base_params["search"] = keyword
+            if instagram_params.get('searchType'):
+                base_params["searchType"] = instagram_params['searchType']
+            if instagram_params.get('searchLimit'):
+                base_params["searchLimit"] = min(instagram_params.get('searchLimit', 50), 50)
+            if instagram_params.get('resultsLimit'):
+                base_params["resultsLimit"] = min(instagram_params.get('resultsLimit', 100), 100)
             
         return base_params
         
     elif platform.lower() == 'tiktok':
-        # TikTok Scraper - parameter yang lebih fleksibel
-        # Coba beberapa format parameter yang berbeda
+        # TikTok Scraper - parameter berdasarkan dokumentasi resmi Apify
+        # Menggunakan hashtags sebagai parameter utama
         base_params = {
             "hashtags": [keyword.replace('#', '')],
-            "resultsPerPage": max_results,
+            "resultsPerPage": min(max_results, 100),  # Batasi maksimal 100
+            "proxyCountryCode": "US",  # Gunakan proxy US untuk stabilitas
             "shouldDownloadCovers": False,
             "shouldDownloadSlideshowImages": False,
             "shouldDownloadSubtitles": False,
             "shouldDownloadVideos": False
         }
-        
-        # Tambahkan parameter alternatif untuk kompatibilitas
-        base_params.update({
-            "searchTerms": [keyword],  # Fallback parameter
-            "maxItems": max_results,   # Fallback parameter
-            "search": keyword,         # Parameter umum
-            "query": keyword,          # Parameter alternatif
-            "keyword": keyword         # Parameter sederhana
-        })
         
         return base_params
         
@@ -1105,6 +1106,46 @@ def process_apify_results(raw_results, platform):
                     'comments': 'comments',
                     'shares': 'shares',
                     'reactions': 'reactions'
+                }
+                for api_field, display_field in engagement_fields.items():
+                    if api_field in item and item[api_field] is not None:
+                        processed_item[api_field] = item[api_field]
+                        processed_item[display_field] = item[api_field]
+                        
+            elif platform.lower() == 'instagram':
+                # Instagram-specific field mapping
+                # Instagram Scraper biasanya mengembalikan: caption, url, timestamp, ownerUsername, etc.
+                
+                # Core Instagram fields
+                processed_item['content'] = item.get('caption', item.get('text', item.get('description', '')))
+                processed_item['url'] = item.get('url', item.get('shortcode', item.get('permalink', '')))
+                processed_item['created_at'] = item.get('timestamp', item.get('taken_at_timestamp', item.get('date', '')))
+                
+                # Author information - Instagram biasanya menggunakan ownerUsername
+                processed_item['username'] = item.get('ownerUsername', item.get('username', item.get('owner', '')))
+                
+                # Content fields untuk Instagram
+                if processed_item['content']:
+                    content_preview = str(processed_item['content'])[:100] + '...' if len(str(processed_item['content'])) > 100 else str(processed_item['content'])
+                    processed_item['possible_content_fields'].append(f"caption: {content_preview}")
+                
+                # URL fields untuk Instagram
+                if processed_item['url']:
+                    processed_item['possible_url_fields'].append(f"url: {processed_item['url']}")
+                
+                # Username fields untuk Instagram
+                if processed_item['username']:
+                    processed_item['possible_username_fields'].append(f"ownerUsername: {processed_item['username']}")
+                
+                # Date fields untuk Instagram
+                if processed_item['created_at']:
+                    processed_item['possible_date_fields'].append(f"timestamp: {processed_item['created_at']}")
+                
+                # Engagement metrics untuk Instagram
+                engagement_fields = {
+                    'likesCount': 'likes',
+                    'commentsCount': 'comments',
+                    'videoViewCount': 'views'
                 }
                 for api_field, display_field in engagement_fields.items():
                     if api_field in item and item[api_field] is not None:
