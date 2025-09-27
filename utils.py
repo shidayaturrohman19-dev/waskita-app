@@ -263,15 +263,15 @@ def classify_content(text_vector, naive_bayes_model):
     Klasifikasi konten menggunakan model Naive Bayes
     """
     if text_vector is None or naive_bayes_model is None:
-        return 'non-radikal', [0.0, 1.0]
+        return 'non-radikal', [0.0, 1.0]  # [prob_radikal, prob_non_radikal]
     
     # Handle array comparison issue
     if hasattr(text_vector, 'size') and text_vector.size == 0:
-        return 'non-radikal', [0.0, 1.0]
+        return 'non-radikal', [0.0, 1.0]  # [prob_radikal, prob_non_radikal]
     
     # Handle zero vector (when no words found in vocabulary)
     if hasattr(text_vector, 'any') and not text_vector.any():
-        return 'non-radikal', [0.0, 1.0]
+        return 'non-radikal', [0.0, 1.0]  # [prob_radikal, prob_non_radikal]
     
     try:
         # Reshape vector for prediction
@@ -292,7 +292,7 @@ def classify_content(text_vector, naive_bayes_model):
         return prediction_label, probabilities
         
     except Exception as e:
-        return 'non-radikal', [0.0, 1.0]
+        return 'non-radikal', [0.0, 1.0]  # [prob_radikal, prob_non_radikal]
 
 def load_word2vec_model():
     """

@@ -101,14 +101,24 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
-# Environments
-.env
-.venv
-env/
+# Virtual environments
 venv/
+env/
 ENV/
 env.bak/
 venv.bak/
+waskita_venv*/
+
+# Environment files
+.env
+.env.local
+.env.docker
+.env.production
+
+# Development guides (local only, not for repository)
+DEVELOPMENT_SYNC_GUIDE.md
+DEV_GUIDE.md
+LOCAL_SETUP_GUIDE.md
 
 # Spyder project settings
 .spyderproject
