@@ -103,6 +103,7 @@ celerybeat.pid
 
 # Virtual environments
 venv/
+venv_dev/
 env/
 ENV/
 env.bak/
@@ -181,3 +182,13 @@ models/
 # Temporary files
 temp/
 tmp/
+
+# Testing and Debug files
+test_*.py
+*_test.py
+debug_*.py
+*_debug.py
+simple_*.py
+direct_*.py
+test_*.csv
+*_test.csv

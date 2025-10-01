@@ -41,6 +41,12 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
     app.config['WORD2VEC_MODEL'] = word2vec_model_param
     app.config['NAIVE_BAYES_MODELS'] = naive_bayes_models_param
     
+    # Get CSRF instance from app
+    from flask_wtf.csrf import CSRFProtect
+    csrf = app.extensions.get('csrf', None)
+    if not csrf:
+        csrf = CSRFProtect(app)
+    
     @app.route('/')
     def index():
         if current_user.is_authenticated:
@@ -200,7 +206,7 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
         
         # Get recent activities from database
         from models import UserActivity
-        recent_activities_query = UserActivity.query.order_by(UserActivity.created_at.desc()).limit(10).all()
+        recent_activities_query = UserActivity.query.order_by(UserActivity.created_at.desc()).limit(4).all()
         
         recent_activities = []
         for activity in recent_activities_query:
@@ -1574,9 +1580,35 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             # Get file size in bytes
             file_size = os.path.getsize(filepath)
             
-            # Read and process file
+            # Read and process file with proper encoding handling
             if filename.endswith('.csv'):
-                df = pd.read_csv(filepath)
+                # Try different encodings for CSV files
+                encodings_to_try = ['utf-8', 'utf-8-sig', 'latin1', 'cp1252', 'iso-8859-1']
+                df = None
+                last_error = None
+                
+                for encoding in encodings_to_try:
+                    try:
+                        df = pd.read_csv(filepath, encoding=encoding)
+                        app.logger.info(f"Successfully read CSV with encoding: {encoding}")
+                        break
+                    except (UnicodeDecodeError, UnicodeError) as e:
+                        last_error = e
+                        app.logger.warning(f"Failed to read CSV with encoding {encoding}: {str(e)}")
+                        continue
+                    except Exception as e:
+                        # For other errors (like parsing errors), try with error handling
+                        try:
+                            df = pd.read_csv(filepath, encoding=encoding, on_bad_lines='skip')
+                            app.logger.info(f"Successfully read CSV with encoding {encoding} (skipping bad lines)")
+                            break
+                        except Exception as e2:
+                            last_error = e2
+                            app.logger.warning(f"Failed to read CSV with encoding {encoding} even with error handling: {str(e2)}")
+                            continue
+                
+                if df is None:
+                    raise Exception(f"Could not read CSV file with any encoding. Last error: {str(last_error)}")
             else:
                 df = pd.read_excel(filepath)
             
@@ -1596,14 +1628,22 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                     if pd.isna(value) or value is None:
                         clean_row[str(col)] = ''
                     else:
-                        # Convert to string and remove problematic characters
-                        str_value = str(value)
-                        # Remove or replace characters that might cause JSON issues
-                        str_value = str_value.replace('\x00', '').replace('\r', ' ').replace('\n', ' ')
-                        # Limit length to prevent huge JSON responses
-                        if len(str_value) > 100:
-                            str_value = str_value[:100] + '...'
-                        clean_row[str(col)] = str_value
+                        # Convert to string and handle Unicode properly
+                        try:
+                            str_value = str(value)
+                            # Remove only null bytes and normalize line breaks
+                            str_value = str_value.replace('\x00', '').replace('\r\n', ' ').replace('\r', ' ').replace('\n', ' ')
+                            # Limit length to prevent huge JSON responses
+                            if len(str_value) > 200:
+                                str_value = str_value[:200] + '...'
+                            clean_row[str(col)] = str_value
+                        except (UnicodeEncodeError, UnicodeDecodeError) as e:
+                            # Handle Unicode errors gracefully
+                            app.logger.warning(f"Unicode error in column {col}: {str(e)}")
+                            clean_row[str(col)] = repr(value)  # Use repr to safely represent the value
+                        except Exception as e:
+                            app.logger.warning(f"Error processing value in column {col}: {str(e)}")
+                            clean_row[str(col)] = '[Error processing value]'
                 sample_data.append(clean_row)
             
             # Store file info in session for later processing
@@ -1637,6 +1677,11 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             })
             
         except Exception as e:
+            import traceback
+            error_details = traceback.format_exc()
+            print(f"Upload data error: {str(e)}")
+            print(f"Full traceback: {error_details}")
+            
             db.session.rollback()
             if 'filepath' in locals() and os.path.exists(filepath):
                 os.remove(filepath)
@@ -1707,6 +1752,8 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             records_added = 0
             for _, row in df.iterrows():
                 if pd.notna(row[content_column]) and str(row[content_column]).strip():
+                    content_text = str(row[content_column]).strip()
+                    
                     # Get mapped values
                     url_value = row.get(url_column, '') if url_column and url_column in df.columns else ''
                     username_value = row.get(username_column, 'unknown') if username_column and username_column in df.columns else 'unknown'
@@ -1728,7 +1775,7 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                             detected_platform = 'instagram'
                     
                     raw_data = RawData(
-                        content=str(row[content_column]).strip(),
+                        content=content_text,
                         platform=detected_platform,
                         username=str(username_value).strip(),
                         url=str(url_value) if url_value else '',
@@ -1751,9 +1798,11 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             update_statistics()
             
             # Log aktivitas upload data
+            log_message = f'Berhasil mengupload {records_added} data dari file {filename}'
+            
             generate_activity_log(
                 action='upload_data',
-                description=f'Berhasil mengupload {records_added} data dari file {filename}',
+                description=log_message,
                 user_id=current_user.id,
                 details={
                     'filename': filename,
@@ -1776,9 +1825,12 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             session.pop('upload_source', None)
             session.pop('upload_dataset_name', None)
             
+            success_message = f'Berhasil mengupload {records_added} data baru dari file {filename}'
+            
             return jsonify({
                 'success': True,
-                'message': f'Berhasil mengupload {records_added} data dari file {filename}'
+                'message': success_message,
+                'records_added': records_added
             })
             
         except Exception as e:
@@ -2005,8 +2057,20 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             db.session.rollback()
             import traceback
             error_details = traceback.format_exc()
+            app.logger.error(f"Error in process_scraping_column_mapping: {str(e)}")
+            app.logger.error(f"Full traceback: {error_details}")
+            
+            # More specific error messages
+            if "update_statistics" in str(e):
+                error_msg = "Error saat memperbarui statistik database"
+            elif "database" in str(e).lower() or "sql" in str(e).lower():
+                error_msg = "Error database saat menyimpan data"
+            elif "json" in str(e).lower():
+                error_msg = "Error parsing data JSON"
+            else:
+                error_msg = f"Error tidak terduga: {str(e)}"
 
-            return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
+            return jsonify({'success': False, 'message': error_msg}), 500
     
     @app.route('/scraping')
     @login_required
@@ -2028,49 +2092,50 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             # Calculate offset
             offset = (page - 1) * limit
             
-            # Get grouped upload sessions (group by created_at within same minute and same user)
+            # Get grouped upload sessions (group by filename and dataset)
             
             # Get total count of upload sessions for pagination
             total_sessions = db.session.query(
-                func.date_trunc('minute', RawData.created_at).label('upload_session')
+                RawData.original_filename,
+                RawData.dataset_id
             ).filter(
                 RawData.uploaded_by == current_user.id
             ).group_by(
-                func.date_trunc('minute', RawData.created_at),
-                RawData.uploaded_by
+                RawData.original_filename,
+                RawData.uploaded_by,
+                RawData.dataset_id
             ).count()
             
             total_count = total_sessions
             
-            # Query to group uploads by session (within same minute)
+            # Query to group uploads by filename and upload time (not by minute)
             upload_sessions = db.session.query(
-                func.date_trunc('minute', RawData.created_at).label('upload_session'),
+                RawData.original_filename.label('filename'),
                 func.count(RawData.id).label('records_count'),
                 func.min(RawData.created_at).label('first_upload'),
-                func.max(RawData.original_filename).label('filename'),
-                RawData.uploaded_by
+                func.max(RawData.created_at).label('last_upload'),
+                RawData.uploaded_by,
+                RawData.dataset_id
             ).filter(
                 RawData.uploaded_by == current_user.id
             ).group_by(
-                func.date_trunc('minute', RawData.created_at),
-                RawData.uploaded_by
+                RawData.original_filename,
+                RawData.uploaded_by,
+                RawData.dataset_id
             ).order_by(
                 desc('first_upload')
             ).offset(offset).limit(limit).all()
             
             uploads_data = []
             for session in upload_sessions:
-                # Get status counts for this session
-                session_start = session.first_upload.replace(second=0, microsecond=0)
-                session_end = session_start.replace(second=59, microsecond=999999)
-                
+                # Get status counts for this upload file
                 status_counts = db.session.query(
                     RawData.status,
                     func.count(RawData.id).label('count')
                 ).filter(
                     RawData.uploaded_by == current_user.id,
-                    RawData.created_at >= session_start,
-                    RawData.created_at <= session_end
+                    RawData.original_filename == session.filename,
+                    RawData.dataset_id == session.dataset_id
                 ).group_by(RawData.status).all()
                 
                 # Calculate status based on data processing state
@@ -2083,11 +2148,11 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                         cleaned_count = status_row.count
                 
                 # Check if data has been classified
-                # Get raw data IDs from this session
+                # Get raw data IDs from this upload file
                 session_raw_ids = db.session.query(RawData.id).filter(
                     RawData.uploaded_by == current_user.id,
-                    RawData.created_at >= session_start,
-                    RawData.created_at <= session_end
+                    RawData.original_filename == session.filename,
+                    RawData.dataset_id == session.dataset_id
                 ).all()
                 
                 session_raw_ids_list = [row[0] for row in session_raw_ids]
@@ -2115,11 +2180,11 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                 else:
                     status = 'Mentah'
                 
-                # Get first raw data ID from this session for actions
+                # Get first raw data ID from this upload file for actions
                 first_raw_data = RawData.query.filter(
                     RawData.uploaded_by == current_user.id,
-                    RawData.created_at >= session_start,
-                    RawData.created_at <= session_end
+                    RawData.original_filename == session.filename,
+                    RawData.dataset_id == session.dataset_id
                 ).first()
                 
                 # Get dataset name if available
@@ -2299,7 +2364,7 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                 if scraped_data:
                     columns = list(scraped_data[0].keys())
                 
-                # Return data for column mapping
+                # Return data for column mapping with run_id for progress tracking
                 return jsonify({
                     'success': True,
                     'requires_mapping': True,
@@ -2308,7 +2373,9 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                     'columns': columns,
                     'sample_data': scraped_data[:5] if scraped_data else [],  # First 5 items for preview
                     'dataset_id': dataset.id,
-                    'run_id': run_id
+                    'run_id': run_id,
+                    'platform': data['platform'],
+                    'keywords': data['keywords']
                 })
                 
             except Exception as e:
@@ -4740,9 +4807,13 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             ).scalar() or 0
             
             db.session.commit()
+            app.logger.info("Statistics updated successfully")
             
         except Exception as e:
             db.session.rollback()
+            app.logger.error(f"Error updating statistics: {str(e)}")
+            import traceback
+            app.logger.error(f"Statistics update traceback: {traceback.format_exc()}")
     
 
     
@@ -5060,4 +5131,73 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
         
         except Exception as e:
             db.session.rollback()
+            return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
+
+    # API Endpoints for external access (CSRF exempt)
+    @app.route('/api/v1/scraping/start', methods=['POST'])
+    @csrf.exempt
+    def api_start_scraping():
+        """API endpoint for starting scraping process - CSRF exempt for external API access"""
+        try:
+            # Check for API key authentication (optional - implement if needed)
+            api_key = request.headers.get('X-API-Key')
+            if not api_key:
+                return jsonify({'success': False, 'message': 'API key required'}), 401
+            
+            # Validate API key (you can implement your own validation logic)
+            # For now, we'll use a simple check against environment variable
+            expected_api_key = os.getenv('WASKITA_API_KEY')
+            if expected_api_key and api_key != expected_api_key:
+                return jsonify({'success': False, 'message': 'Invalid API key'}), 401
+            
+            # Get JSON data
+            data = request.get_json()
+            if not data:
+                return jsonify({'success': False, 'message': 'No JSON data provided'}), 400
+            
+            # Validate required fields
+            required_fields = ['platform', 'keywords']
+            for field in required_fields:
+                if field not in data:
+                    return jsonify({'success': False, 'message': f'Missing required field: {field}'}), 400
+            
+            platform = data.get('platform')
+            keywords = data.get('keywords')
+            start_date = data.get('start_date')
+            end_date = data.get('end_date')
+            max_results = data.get('max_results', 100)
+            
+            # Validate platform
+            valid_platforms = ['twitter', 'facebook', 'instagram', 'tiktok']
+            if platform not in valid_platforms:
+                return jsonify({'success': False, 'message': f'Invalid platform. Must be one of: {", ".join(valid_platforms)}'}), 400
+            
+            # Create a system user for API requests (or use a specific API user)
+            api_user_id = 1  # Assuming admin user ID is 1, or create a dedicated API user
+            
+            # Generate unique job ID
+            job_id = str(uuid.uuid4())
+            
+            # Start scraping process
+            processed_results, run_id = scrape_with_apify(
+                platform=platform,
+                keyword=keywords,
+                date_from=start_date,
+                date_to=end_date,
+                max_results=max_results
+            )
+            
+            return jsonify({
+                'success': True,
+                'message': 'Scraping started successfully',
+                'job_id': job_id,
+                'run_id': run_id,
+                'platform': platform,
+                'keywords': keywords,
+                'max_results': max_results,
+                'results_count': len(processed_results) if processed_results else 0,
+                'preview_data': processed_results[:3] if processed_results else []  # Return first 3 results as preview
+            })
+                
+        except Exception as e:
             return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500

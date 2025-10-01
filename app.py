@@ -27,6 +27,10 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 app.config.from_object(Config)
 
+# Configure JSON to handle Unicode properly
+app.json.ensure_ascii = False
+app.json.sort_keys = False
+
 # Set Indonesian locale as default
 try:
     locale.setlocale(locale.LC_ALL, 'id_ID.UTF-8')

@@ -132,26 +132,28 @@ def check_content_duplicate(content, dataset_id=None):
     try:
         from models import RawData, RawDataScraper
         
-        # Bersihkan konten untuk perbandingan
-        cleaned_content = clean_text(content)
-        
-        if not cleaned_content:
+        if not content or not str(content).strip():
             return False
         
-        # Cek duplikasi di RawData
+        # Normalisasi konten untuk perbandingan yang lebih akurat
+        normalized_content = str(content).strip()
+        
+        # Cek duplikasi di RawData berdasarkan konten yang sama persis
         if dataset_id:
-            existing_upload = RawData.query.filter_by(dataset_id=dataset_id).filter(
-                RawData.content.like(f'%{content[:50]}%')
+            existing_upload = RawData.query.filter_by(
+                dataset_id=dataset_id,
+                content=normalized_content
             ).first()
-            existing_scraper = RawDataScraper.query.filter_by(dataset_id=dataset_id).filter(
-                RawDataScraper.content.like(f'%{content[:50]}%')
+            existing_scraper = RawDataScraper.query.filter_by(
+                dataset_id=dataset_id,
+                content=normalized_content
             ).first()
         else:
-            existing_upload = RawData.query.filter(
-                RawData.content.like(f'%{content[:50]}%')
+            existing_upload = RawData.query.filter_by(
+                content=normalized_content
             ).first()
-            existing_scraper = RawDataScraper.query.filter(
-                RawDataScraper.content.like(f'%{content[:50]}%')
+            existing_scraper = RawDataScraper.query.filter_by(
+                content=normalized_content
             ).first()
         
         return existing_upload is not None or existing_scraper is not None
@@ -513,126 +515,9 @@ def generate_sample_data(platform, keyword):
     
     return sample_data
 
-def scrape_twitter_public(keyword):
-    """
-    Scraping Twitter menggunakan Apify API untuk data publik
-    """
-    try:
-        pass
-        
-        # Coba gunakan Apify API terlebih dahulu
-        results, run_id = scrape_with_apify('twitter', keyword, max_results=50)
-        
-        if results and len(results) > 0:
-            return results
-        else:
-            raise Exception("No data from Apify")
-            
-    except Exception as e:
-        pass
-        
-        # Gunakan fallback data yang lebih baik
-        fallback_data = generate_sample_data('twitter', keyword)
-        
-        # Tambahkan informasi bahwa ini adalah fallback data
-        for item in fallback_data:
-            item['data_source'] = 'fallback'
-            item['note'] = 'Data sampel karena Apify API tidak tersedia'
-            
-        return fallback_data
-
-def scrape_facebook_public(keyword):
-    """
-    Scraping Facebook dengan Apify API dan fallback yang lebih baik
-    """
-    try:
-        pass
-        
-        # Coba gunakan Apify API terlebih dahulu
-        results, run_id = scrape_with_apify('facebook', keyword, max_results=15)
-        
-        if results and len(results) > 0:
-            pass
-            return results
-        else:
-            raise Exception("No data from Apify")
-            
-    except Exception as e:
-        pass
-        
-        # Gunakan fallback data yang lebih baik
-        fallback_data = generate_sample_data('facebook', keyword)
-        
-        # Tambahkan informasi bahwa ini adalah fallback data
-        for item in fallback_data:
-            item['data_source'] = 'fallback'
-            item['note'] = 'Data sampel karena Apify API tidak tersedia'
-            
-        return fallback_data
-
-def scrape_tiktok_public(keyword):
-    """
-    Scraping TikTok dengan Apify API dan fallback yang lebih baik
-    """
-    try:
-        pass
-        
-        # Coba gunakan Apify API terlebih dahulu
-        results, run_id = scrape_with_apify('tiktok', keyword, max_results=15)
-        
-        pass
-        
-        if results and len(results) > 0:
-            pass
-            # Debug: tampilkan struktur data pertama
-            if results:
-                pass
-            return results
-        else:
-            raise Exception("No data from Apify")
-            
-    except Exception as e:
-        pass
-        
-        # Gunakan fallback data yang lebih baik
-        fallback_data = generate_sample_data('tiktok', keyword)
-        
-        # Tambahkan informasi bahwa ini adalah fallback data
-        for item in fallback_data:
-            item['data_source'] = 'fallback'
-            item['note'] = 'Data sampel karena Apify API tidak tersedia'
-            
-        pass
-        return fallback_data
-
-def scrape_instagram_public(keyword):
-    """
-    Scraping Instagram dengan Apify API dan fallback yang lebih baik
-    """
-    try:
-        pass
-        
-        # Coba gunakan Apify API terlebih dahulu
-        results, run_id = scrape_with_apify('instagram', keyword, max_results=15)
-        
-        if results and len(results) > 0:
-            pass
-            return results
-        else:
-            raise Exception("No data from Apify")
-            
-    except Exception as e:
-        pass
-        
-        # Gunakan fallback data yang lebih baik
-        fallback_data = generate_sample_data('instagram', keyword)
-        
-        # Tambahkan informasi bahwa ini adalah fallback data
-        for item in fallback_data:
-            item['data_source'] = 'fallback'
-            item['note'] = 'Data sampel karena Apify API tidak tersedia'
-            
-        return fallback_data
+# Removed obsolete platform-specific scraping functions
+# These functions have been replaced by the unified scrape_with_apify function
+# which handles all platforms through proper Apify API integration
 
 
 # Apify API Integration Functions
@@ -668,8 +553,13 @@ def start_apify_actor(platform, keyword, date_from=None, date_to=None, max_resul
     # Prepare input based on platform
     input_data = prepare_actor_input(platform, keyword, date_from, date_to, max_results, instagram_params)
     
+    # Log parameter yang dikirim ke Apify untuk debugging
+    print(f"[APIFY DEBUG] Platform: {platform}")
+    print(f"[APIFY DEBUG] Max Results Input: {max_results}")
+    print(f"[APIFY DEBUG] Input Data yang dikirim ke Apify: {json.dumps(input_data, indent=2)}")
+    
     # Start actor run
-    url = f"{config['base_url']}/acts/{actor_id}/runs"
+    url = f"{config['base_url']}/acts/{actor_id.replace('/', '~')}/runs"
     headers = {
         'Authorization': f"Bearer {config['api_token']}",
         'Content-Type': 'application/json'
@@ -679,8 +569,10 @@ def start_apify_actor(platform, keyword, date_from=None, date_to=None, max_resul
     
     if response.status_code == 201:
         run_data = response.json()['data']
+        print(f"[APIFY DEBUG] Actor berhasil dimulai dengan Run ID: {run_data['id']}")
         return run_data['id'], run_data['status']
     else:
+        print(f"[APIFY DEBUG] Error response: {response.text}")
         raise Exception(f"Failed to start actor: {response.text}")
 
 
@@ -691,45 +583,21 @@ def prepare_actor_input(platform, keyword, date_from=None, date_to=None, max_res
     """
     
     if platform.lower() == 'twitter':
-        # Twitter menggunakan format yang berhasil dengan semua filter parameter
-        return {
-            # Filter parameters - semua false untuk hasil maksimal
-            "filter:blue_verified": False,
-            "filter:consumer_video": False,
-            "filter:has_engagement": False,
-            "filter:hashtags": False,
-            "filter:images": False,
-            "filter:links": False,
-            "filter:media": False,
-            "filter:mentions": False,
-            "filter:native_video": False,
-            "filter:nativeretweets": False,
-            "filter:news": False,
-            "filter:pro_video": False,
-            "filter:quote": False,
-            "filter:replies": False,
-            "filter:safe": False,
-            "filter:spaces": False,
-            "filter:twimg": False,
-            "filter:videos": False,
-            "filter:vine": False,
-            
-            # Include retweets untuk data lebih lengkap
-            "include:nativeretweets": True,
-            
-            # Bahasa Indonesia
-            "lang": "in",
-            
-            # Jumlah item maksimal
-            "maxItems": max_results,
-            
-            # Search terms dari parameter
+        # Format input untuk kaitoeasyapi/twitter-x-data-tweet-scraper-pay-per-result-cheapest
+        input_data = {
             "searchTerms": [keyword] if isinstance(keyword, str) else keyword,
-            
-            # Rentang tanggal yang luas
-            "since": "2021-12-31_23:59:59_UTC",
-            "until": "2024-12-31_23:59:59_UTC"
+            "maxTweets": max_results,
+            "lang": "in"  # Bahasa Indonesia (kode yang valid untuk actor ini)
         }
+        
+        # Tambahkan rentang tanggal jika disediakan (format YYYY-MM-DD)
+        if date_from:
+            input_data["since"] = date_from
+            
+        if date_to:
+            input_data["until"] = date_to
+            
+        return input_data
         
     elif platform.lower() == 'facebook':
         # Facebook Scraper format - parameter yang benar
@@ -737,7 +605,7 @@ def prepare_actor_input(platform, keyword, date_from=None, date_to=None, max_res
             "startUrls": [
                 {"url": f"https://www.facebook.com/search/posts/?q={keyword}"}
             ],
-            "resultsLimit": max_results,
+            "resultsLimit": max_results,  # Sesuaikan dengan input Maksimal Hasil
             "scrapeComments": False,
             "scrapeReactions": True,
             "onlyPostsFromPages": False,
@@ -753,9 +621,9 @@ def prepare_actor_input(platform, keyword, date_from=None, date_to=None, max_res
         base_params = {
             "search": keyword,
             "searchType": "hashtag" if keyword.startswith('#') else "hashtag",
-            "searchLimit": min(max_results, 50),  # Batasi maksimal 50
+            "searchLimit": max_results,  # Sesuaikan dengan input Maksimal Hasil
             "resultsType": "posts",
-            "resultsLimit": min(max_results, 100)  # Batasi maksimal 100 posts
+            "resultsLimit": max_results  # Sesuaikan dengan input Maksimal Hasil
         }
         
         # Jika ada parameter Instagram khusus dari frontend, gunakan itu
@@ -766,9 +634,9 @@ def prepare_actor_input(platform, keyword, date_from=None, date_to=None, max_res
             if instagram_params.get('searchType'):
                 base_params["searchType"] = instagram_params['searchType']
             if instagram_params.get('searchLimit'):
-                base_params["searchLimit"] = min(instagram_params.get('searchLimit', 50), 50)
+                base_params["searchLimit"] = instagram_params.get('searchLimit', max_results)
             if instagram_params.get('resultsLimit'):
-                base_params["resultsLimit"] = min(instagram_params.get('resultsLimit', 100), 100)
+                base_params["resultsLimit"] = instagram_params.get('resultsLimit', max_results)
             
         return base_params
         
@@ -777,7 +645,7 @@ def prepare_actor_input(platform, keyword, date_from=None, date_to=None, max_res
         # Menggunakan hashtags sebagai parameter utama
         base_params = {
             "hashtags": [keyword.replace('#', '')],
-            "resultsPerPage": min(max_results, 100),  # Batasi maksimal 100
+            "resultsPerPage": max_results,  # Sesuaikan dengan input Maksimal Hasil
             "proxyCountryCode": "US",  # Gunakan proxy US untuk stabilitas
             "shouldDownloadCovers": False,
             "shouldDownloadSlideshowImages": False,
@@ -791,7 +659,7 @@ def prepare_actor_input(platform, keyword, date_from=None, date_to=None, max_res
         # Default fallback untuk platform yang tidak dikenal
         return {
             'searchTerms': [keyword],
-            'maxItems': max_results
+            'max_results': max_results
         }
 
 
@@ -965,7 +833,7 @@ def scrape_with_apify(platform, keyword, date_from=None, date_to=None, max_resul
             
             # Process results based on platform
             pass
-            processed_results = process_apify_results(raw_results, platform)
+            processed_results = process_apify_results(raw_results, platform, max_results)
             pass
             
             return processed_results, run_id
@@ -979,12 +847,16 @@ def scrape_with_apify(platform, keyword, date_from=None, date_to=None, max_resul
         raise Exception(f"Apify scraping failed: {str(e)}. Please check your API configuration and try again.")
 
 
-def process_apify_results(raw_results, platform):
+def process_apify_results(raw_results, platform, max_results=None):
     """
     Process raw Apify results - tampilkan semua data untuk manual mapping
     User akan melakukan manual mapping untuk username, content text, dan URL
     """
     processed_data = []
+    
+    # Batasi jumlah hasil jika max_results diberikan
+    if max_results and len(raw_results) > max_results:
+        raw_results = raw_results[:max_results]
     
     for item in raw_results:
         try:

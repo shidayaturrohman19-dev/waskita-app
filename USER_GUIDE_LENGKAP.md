@@ -35,7 +35,7 @@
 - **Dark/Light Mode**: Antarmuka yang dapat disesuaikan
 
 ### 🔧 Teknologi yang Digunakan
-- **Backend**: Python Flask
+- **Backend**: Python 3.11.x Flask (WAJIB Python 3.11 untuk kompatibilitas optimal)
 - **Database**: PostgreSQL
 - **Machine Learning**: Scikit-learn, Gensim Word2Vec
 - **Frontend**: Soft UI Dashboard (Bootstrap)
@@ -47,6 +47,7 @@
 
 ### 💻 Minimum Requirements
 - **OS**: Windows 10/11, macOS 10.15+, Ubuntu 18.04+
+- **Python**: 3.11.x ONLY (TIDAK mendukung 3.12/3.13 karena masalah kompatibilitas Gensim)
 - **RAM**: 4GB (Recommended: 8GB+)
 - **Storage**: 2GB free space
 - **Docker**: Docker Desktop 4.0+

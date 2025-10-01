@@ -46,6 +46,50 @@ Waskita adalah aplikasi web berbasis Flask yang menggunakan teknologi Machine Le
 - 4GB RAM minimum (8GB recommended)
 - 2GB free disk space
 
+### 🐍 Development dengan Virtual Environment
+
+#### Prasyarat
+- **Python 3.11.x ONLY** (Wajib untuk kompatibilitas optimal dengan Gensim dan semua dependencies)
+- ⚠️ **TIDAK menggunakan Python 3.12 atau 3.13** (ada masalah kompatibilitas)
+- 4GB RAM minimum (8GB recommended)
+- 2GB free disk space
+
+#### Setup Development Environment
+```bash
+# Clone repository
+git clone <repository-url>
+cd waskita
+
+# Buat virtual environment dengan Python 3.11 ONLY
+python3.11 -m venv venv_dev
+
+# PASTIKAN menggunakan Python 3.11, bukan versi lain
+python --version  # Harus menampilkan Python 3.11.x
+
+# Aktivasi virtual environment
+# Windows PowerShell:
+.\venv_dev\Scripts\Activate.ps1
+# Windows Command Prompt:
+venv_dev\Scripts\activate.bat
+# Linux/Mac:
+source venv_dev/bin/activate
+
+# Upgrade tools
+python -m pip install --upgrade pip setuptools wheel
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Setup environment variables
+cp .env.example .env.local
+# Edit .env.local sesuai kebutuhan development
+
+# Jalankan aplikasi
+python app.py
+```
+
+### 🐳 Production dengan Docker
+
 ### Instalasi
 
 1. **Clone Repository**

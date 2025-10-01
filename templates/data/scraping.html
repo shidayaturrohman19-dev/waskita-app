@@ -101,7 +101,7 @@
                             <input type="hidden" id="language" name="language" value="id">
 
                             <!-- Scraping Progress -->
-                            <div id="scrapingProgress" class="hidden">
+                            <div id="scrapingProgress" class="d-none-custom">
                                 <div class="mb-2 d-flex justify-content-between align-items-center">
                                     <span class="progress-text font-weight-bold">Memulai scraping...</span>
                                     <span class="progress-percentage badge bg-primary">0%</span>
@@ -386,19 +386,25 @@ function initializeScrapingHistoryTable() {
             }
         });
         
-        // Add custom search functionality that calls server-side search
-        let searchTimeout;
-        table.on('search.dt', function() {
-            clearTimeout(searchTimeout);
-            const searchValue = table.search();
+        // Only add search event listener if it hasn't been added before
+        const tableElement = $('#scrapingHistoryTable');
+        if (!tableElement.hasClass('search-initialized')) {
+            tableElement.addClass('search-initialized');
             
-            // Debounce search to avoid too many API calls
-            searchTimeout = setTimeout(function() {
-                if (searchValue.length >= 2 || searchValue.length === 0) {
-                    loadScrapingHistory(searchValue);
-                }
-            }, 500);
-        });
+            // Add custom search functionality that calls server-side search
+            let searchTimeout;
+            table.on('search.dt', function() {
+                clearTimeout(searchTimeout);
+                const searchValue = table.search();
+                
+                // Debounce search to avoid too many API calls
+                searchTimeout = setTimeout(function() {
+                    if (searchValue.length >= 2 || searchValue.length === 0) {
+                        loadScrapingHistoryWithoutReinit(searchValue);
+                    }
+                }, 500);
+            });
+        }
     }
 }
 
@@ -496,12 +502,25 @@ function toggleInstagramOptions() {
 }
 
 function executeScrapingProcess() {
+    console.log('executeScrapingProcess called'); // Debug log
     isScrapingActive = true;
     
-    // Update UI
+    // Update UI - langsung tampilkan progress bar
     $('#scrapingBtn').hide();
     $('#stopBtn').show();
-    $('#scrapingProgress').show();
+    
+    // Langsung tampilkan progress bar setelah tombol diklik
+    $('#scrapingProgress').removeClass('d-none-custom').addClass('show-progress').show().css({
+        'display': 'block !important',
+        'visibility': 'visible !important',
+        'opacity': '1 !important'
+    });
+    $('.progress-bar').css('width', '5%').attr('aria-valuenow', 5);
+    $('.progress-percentage').text('5%');
+    $('.progress-text').text('Memulai scraping...');
+    $('#timeEstimate').text('Menghitung...');
+    
+    console.log('Progress bar displayed immediately after button click'); // Debug log
     
     // Results will be shown in the history table
     
@@ -551,20 +570,26 @@ function executeScrapingProcess() {
             'X-CSRFToken': $('meta[name=csrf-token]').attr('content')
         },
         beforeSend: function() {
+            console.log('AJAX request starting...'); // Debug log
+            // Don't show progress bar yet - wait for response
             $('.progress-text').text('Memulai scraping...');
-            $('.progress-bar').css('width', '10%');
         },
         success: function(response) {
+            console.log('AJAX Response:', response); // Debug log
             if (response.success) {
-                if (response.requires_mapping) {
-                    // Show column mapping modal
-                    showScrapingColumnMappingModal(response);
-                    resetScrapingUI();
-                } else {
-                    // Simulate progress for visual feedback
-                    simulateScrapingProgress(response.job_id, response);
-                }
+                console.log('Success response received, updating progress bar'); // Debug log
+                
+                // Update progress bar yang sudah ditampilkan
+                $('.progress-bar').css('width', '10%').attr('aria-valuenow', 10);
+                $('.progress-percentage').text('10%');
+                $('.progress-text').text('Scraping sedang berjalan...');
+                
+                console.log('Progress bar updated after successful response'); // Debug log
+                
+                // Mulai simulasi progress dan tracking
+                simulateScrapingProgress(response.job_id, response);
             } else {
+                console.log('Error response:', response.message); // Debug log
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
@@ -574,6 +599,7 @@ function executeScrapingProcess() {
             }
         },
         error: function(xhr) {
+            console.log('AJAX Error:', xhr); // Debug log
             let errorMsg = 'Terjadi kesalahan saat memulai scraping';
             if (xhr.responseJSON && xhr.responseJSON.message) {
                 errorMsg = xhr.responseJSON.message;
@@ -593,19 +619,30 @@ function simulateScrapingProgress(jobId, responseData = null) {
     let startTime = Date.now();
     let runId = responseData?.run_id; // Get run_id from Apify response
     
-    // If we have run_id, use real-time progress tracking
-    if (runId) {
-        trackRealTimeProgress(runId, jobId, responseData, startTime);
-    } else {
-        // Fallback to simulation if no run_id
-        trackSimulatedProgress(jobId, responseData, startTime);
+    // Clear any existing interval first
+    if (scrapingInterval) {
+        clearInterval(scrapingInterval);
+        scrapingInterval = null;
     }
+    
+    // Reset progress fallback flag
+    window.progressFallbackUsed = false;
+    
+    // Always use simulated progress for consistency and to avoid loops
+    trackSimulatedProgress(jobId, responseData, startTime);
 }
 
 function trackRealTimeProgress(runId, jobId, responseData, startTime) {
+    // Clear any existing interval first
+    if (scrapingInterval) {
+        clearInterval(scrapingInterval);
+        scrapingInterval = null;
+    }
+    
     scrapingInterval = setInterval(function() {
         if (!isScrapingActive) {
             clearInterval(scrapingInterval);
+            scrapingInterval = null;
             return;
         }
         
@@ -623,16 +660,27 @@ function trackRealTimeProgress(runId, jobId, responseData, startTime) {
                     handleScrapingError(progressData);
                 }
             },
-            error: function() {
-                // Fallback to simulation on API error
-                clearInterval(scrapingInterval);
-                trackSimulatedProgress(jobId, responseData, startTime);
+            error: function(xhr, status, error) {
+                console.log('Real-time progress API error:', error);
+                // Only fallback to simulation if this is the first error
+                if (!window.progressFallbackUsed) {
+                    window.progressFallbackUsed = true;
+                    clearInterval(scrapingInterval);
+                    scrapingInterval = null;
+                    trackSimulatedProgress(jobId, responseData, startTime);
+                }
             }
         });
     }, 2000); // Check every 2 seconds
 }
 
 function trackSimulatedProgress(jobId, responseData, startTime) {
+    // Clear any existing interval first
+    if (scrapingInterval) {
+        clearInterval(scrapingInterval);
+        scrapingInterval = null;
+    }
+    
     let progress = 10;
     let found = 0;
     let success = 0;
@@ -640,6 +688,7 @@ function trackSimulatedProgress(jobId, responseData, startTime) {
     scrapingInterval = setInterval(function() {
         if (!isScrapingActive) {
             clearInterval(scrapingInterval);
+            scrapingInterval = null;
             return;
         }
         
@@ -652,13 +701,28 @@ function trackSimulatedProgress(jobId, responseData, startTime) {
             status_message: progress < 30 ? 'Menghubungkan ke API...' : 
                            progress < 60 ? 'Mencari postingan...' : 
                            progress < 90 ? 'Memproses data...' : 'Menyelesaikan...',
-            items_processed: Math.floor((progress / 100) * (parseInt($('#max_results').val()) || 25))
+            items_processed: Math.floor((progress / 100) * (parseInt($('#max_results').val()) || 25)),
+            // Tambahkan estimasi waktu untuk simulasi
+            estimated_time_remaining: progress < 95 ? Math.max(5, Math.floor((100 - progress) * 0.8)) : 0
         };
         
         updateProgressUI(simulatedData, startTime, jobId, responseData);
         
         if (progress >= 100) {
-            completeScraping(simulatedData.items_processed, jobId, responseData);
+            // Setelah progress selesai, tampilkan mapping modal jika diperlukan
+            if (responseData && responseData.requires_mapping) {
+                // Store response data for mapping
+                window.pendingScrapingData = responseData;
+                
+                // Hide progress bar
+                $('#scrapingProgress').addClass('d-none-custom');
+                
+                // Show column mapping modal
+                showScrapingColumnMappingModal(responseData);
+            } else {
+                // Langsung complete jika tidak perlu mapping
+                completeScraping(simulatedData.items_processed, jobId, responseData);
+            }
         }
     }, 800);
 }
@@ -683,17 +747,38 @@ function updateProgressUI(progressData, startTime, jobId, responseData) {
     // Update estimated time remaining
     if (progressData.time_remaining_formatted) {
         $('#timeEstimate').text(progressData.time_remaining_formatted);
-    } else if (progressData.estimated_time_remaining) {
+    } else if (progressData.estimated_time_remaining && progressData.estimated_time_remaining > 0) {
         const remaining = Math.floor(progressData.estimated_time_remaining);
         const remainingMinutes = Math.floor(remaining / 60);
         const remainingSeconds = remaining % 60;
-        $('#timeEstimate').text(`${remainingMinutes}:${remainingSeconds.toString().padStart(2, '0')}`);
-    } else if (progress > 5) {
+        
+        if (remaining < 10) {
+            $('#timeEstimate').text('< 10 detik');
+        } else if (remaining < 60) {
+            $('#timeEstimate').text(`${remaining} detik`);
+        } else {
+            $('#timeEstimate').text(`${remainingMinutes}:${remainingSeconds.toString().padStart(2, '0')}`);
+        }
+    } else if (progress > 10 && progress < 90 && elapsed > 3) {
+        // Hanya hitung estimasi jika sudah ada data yang cukup
         const rate = progress / elapsed;
-        const remaining = Math.max(0, (100 - progress) / rate);
-        const remainingMinutes = Math.floor(remaining / 60);
-        const remainingSeconds = Math.floor(remaining % 60);
-        $('#timeEstimate').text(`${remainingMinutes}:${remainingSeconds.toString().padStart(2, '0')}`);
+        if (rate > 0) {
+            const remaining = Math.max(1, (100 - progress) / rate);
+            
+            if (remaining < 10) {
+                $('#timeEstimate').text('< 10 detik');
+            } else if (remaining < 60) {
+                $('#timeEstimate').text(`${Math.floor(remaining)} detik`);
+            } else {
+                const remainingMinutes = Math.floor(remaining / 60);
+                const remainingSeconds = Math.floor(remaining % 60);
+                $('#timeEstimate').text(`${remainingMinutes}:${remainingSeconds.toString().padStart(2, '0')}`);
+            }
+        } else {
+            $('#timeEstimate').text('Menghitung...');
+        }
+    } else if (progress >= 90) {
+        $('#timeEstimate').text('Hampir selesai');
     } else {
         $('#timeEstimate').text('Menghitung...');
     }
@@ -723,10 +808,19 @@ function handleScrapingError(progressData) {
 
 function resetScrapingUI() {
     isScrapingActive = false;
+    
+    // Clear interval properly
+    if (scrapingInterval) {
+        clearInterval(scrapingInterval);
+        scrapingInterval = null;
+    }
+    
+    // Reset progress fallback flag
+    window.progressFallbackUsed = false;
+    
     $('#scrapingBtn').show();
     $('#stopBtn').hide();
-    $('#scrapingProgress').hide();
-    clearInterval(scrapingInterval);
+    $('#scrapingProgress').addClass('d-none-custom').removeClass('show-progress').hide();
 }
 
 function stopScraping() {
@@ -740,12 +834,20 @@ function stopScraping() {
     }).then((result) => {
         if (result.isConfirmed) {
             isScrapingActive = false;
-            clearInterval(scrapingInterval);
+            
+            // Clear interval properly
+            if (scrapingInterval) {
+                clearInterval(scrapingInterval);
+                scrapingInterval = null;
+            }
+            
+            // Reset progress fallback flag
+            window.progressFallbackUsed = false;
             
             // Reset UI
             $('#scrapingBtn').show();
             $('#stopBtn').hide();
-            $('#scrapingProgress').hide();
+            $('#scrapingProgress').addClass('d-none-custom');
             
             Swal.fire({
                 icon: 'info',
@@ -758,38 +860,56 @@ function stopScraping() {
 
 function completeScraping(successCount, jobId, responseData = null) {
     isScrapingActive = false;
-    clearInterval(scrapingInterval);
+    
+    // Clear interval properly
+    if (scrapingInterval) {
+        clearInterval(scrapingInterval);
+        scrapingInterval = null;
+    }
+    
+    // Reset progress fallback flag
+    window.progressFallbackUsed = false;
+    
+    // Update final progress
+    $('.custom-progress-bar').css('width', '100%');
+    $('.progress-percentage').text('100%');
+    $('.progress-inner-text').text('100%');
+    $('.progress-text').text('Scraping selesai!');
+    $('#timeEstimate').text('Selesai');
+    
+    // Update counters with actual data
+    $('#foundCount').text(successCount || responseData?.total_records || 0);
+    $('#successCount').text(successCount || responseData?.total_records || 0);
     
     // Store the dataset ID for later use
     lastScrapingDatasetId = responseData ? (responseData.dataset_id || responseData.job_id) : jobId;
     
-    // Reset UI
+    // Reset UI buttons
     $('#scrapingBtn').show();
     $('#stopBtn').hide();
     
-    setTimeout(function() {
-        $('#scrapingProgress').hide();
-        $('.progress-bar').css('width', '0%');
+    // Tampilkan dialog sukses tanpa menyembunyikan progress bar secara otomatis
+    Swal.fire({
+        icon: 'success',
+        title: 'Scraping Selesai',
+        text: `Berhasil mengumpulkan ${successCount || responseData?.total_records || 0} data dari ${responseData?.platform || 'media sosial'}`,
+        showCancelButton: true,
+        confirmButtonText: 'Lihat Hasil',
+        cancelButtonText: 'Tutup'
+    }).then(function(result) {
+        if (result.isConfirmed && lastScrapingDatasetId) {
+            window.location.href = `/dataset/${lastScrapingDatasetId}/details`;
+        }
         
-        Swal.fire({
-            icon: 'success',
-            title: 'Scraping Selesai',
-            text: `Berhasil mengumpulkan ${successCount} data dari media sosial`,
-            showCancelButton: true,
-            confirmButtonText: 'Lihat Hasil',
-            cancelButtonText: 'Tutup'
-        }).then(function(result) {
-            if (result.isConfirmed && lastScrapingDatasetId) {
-                window.location.href = `/dataset/${lastScrapingDatasetId}/details`;
-            }
-            resetForm();
-            loadScrapingHistory(); // Re-enabled to refresh history after scraping
-            updateStatistics();
-            if (lastScrapingDatasetId) {
-                 $('#viewResultsBtn').removeClass('d-none');
-             }
-        });
-    }, 1000);
+        // Hanya reset setelah user menutup dialog
+        resetScrapingUI();
+        resetForm();
+        updateStatistics();
+        loadScrapingHistory(); // Update riwayat scraping otomatis setelah scraping selesai
+        if (lastScrapingDatasetId) {
+             $('#viewResultsBtn').removeClass('d-none');
+         }
+    });
 }
 
 function resetForm() {
@@ -864,6 +984,69 @@ function loadScrapingHistory(searchQuery = '') {
     });
 }
 
+// Function to load scraping history without reinitializing DataTable (to prevent infinite loop)
+function loadScrapingHistoryWithoutReinit(searchQuery = '') {
+    // Real API call to get scraping history with search support
+    const params = searchQuery ? { search: searchQuery } : {};
+    $.get('/api/scraping/history', params, function(data) {
+        const tbody = $('#scrapingHistoryTable tbody');
+        tbody.empty();
+        
+        if (data.history && data.history.length > 0) {
+            data.history.forEach(function(job) {
+                // Format platform badge with correct icon
+                let platformIcon = 'fab fa-' + job.platform.toLowerCase();
+                if (job.platform.toLowerCase() === 'tiktok') {
+                    platformIcon = 'fab fa-tiktok';
+                } else if (job.platform.toLowerCase() === 'twitter') {
+                    platformIcon = 'fab fa-twitter';
+                } else if (job.platform.toLowerCase() === 'facebook') {
+                    platformIcon = 'fab fa-facebook';
+                } else if (job.platform.toLowerCase() === 'instagram') {
+                    platformIcon = 'fab fa-instagram';
+                }
+                
+                // Format platform name
+                let platformName = job.platform.charAt(0).toUpperCase() + job.platform.slice(1);
+                if (job.platform.toLowerCase() === 'tiktok') {
+                    platformName = 'TikTok';
+                }
+                
+                const row = `
+                    <tr>
+                        <td>
+                            <span class="badge bg-info">
+                                <i class="${platformIcon}"></i> ${platformName}
+                            </span>
+                        </td>
+                        <td><strong>${job.keywords}</strong></td>
+                        <td>${job.dataset_name || 'Dataset ' + platformName + ' - ' + job.keywords}</td>
+                        <td><span class="badge bg-primary">${job.results_count}</span></td>
+                        <td>${job.scraped_at || '-'}</td>
+                        <td>
+                            <span class="badge ${job.status === 'Mentah' ? 'bg-gradient-secondary' : job.status === 'Dibersihkan' ? 'bg-gradient-success' : 'bg-gradient-primary'}">${job.status}</span>
+                        </td>
+                        <td>${job.scraped_by || 'Unknown'}</td>
+                        <td>${job.created_at || job.scraped_at || '-'}</td>
+                    </tr>
+                `;
+                tbody.append(row);
+            });
+            
+            // Don't reinitialize DataTable - just redraw the existing one
+            if ($.fn.DataTable.isDataTable('#scrapingHistoryTable')) {
+                $('#scrapingHistoryTable').DataTable().draw();
+            }
+        } else {
+            tbody.append('<tr><td colspan="8" class="text-center text-muted"><i class="fas fa-info-circle mr-2"></i>Belum ada data scraping</td></tr>');
+        }
+    }).fail(function(xhr) {
+        const tbody = $('#scrapingHistoryTable tbody');
+        tbody.empty();
+        tbody.append('<tr><td colspan="8" class="text-center text-danger">Error loading data</td></tr>');
+    });
+}
+
 function updateStatistics() {
     // Real API call to get scraping statistics
     $.get('/api/scraping/statistics', function(data) {
@@ -914,6 +1097,11 @@ function viewScrapingResults() {
 // Function to show scraping column mapping modal
 function showScrapingColumnMappingModal(response) {
     
+    // Store current selections before clearing
+    const currentContentSelection = $('#scrapingContentColumn').val();
+    const currentUsernameSelection = $('#scrapingUsernameColumn').val();
+    const currentUrlSelection = $('#scrapingUrlColumn').val();
+    
     // Clear previous options
     $('#scrapingContentColumn, #scrapingUsernameColumn, #scrapingUrlColumn').empty();
     
@@ -942,8 +1130,21 @@ function showScrapingColumnMappingModal(response) {
             $('#scrapingUrlColumn').append(`<option value="${column}">${column}</option>`);
         });
         
-        // Auto-suggest common column names
-        autoSuggestScrapingColumns(response.columns);
+        // Restore previous selections if they exist in new columns
+        if (currentContentSelection && response.columns.includes(currentContentSelection)) {
+            $('#scrapingContentColumn').val(currentContentSelection);
+        }
+        if (currentUsernameSelection && response.columns.includes(currentUsernameSelection)) {
+            $('#scrapingUsernameColumn').val(currentUsernameSelection);
+        }
+        if (currentUrlSelection && response.columns.includes(currentUrlSelection)) {
+            $('#scrapingUrlColumn').val(currentUrlSelection);
+        }
+        
+        // Only auto-suggest if no previous selections were restored
+        if (!currentContentSelection && !currentUsernameSelection && !currentUrlSelection) {
+            autoSuggestScrapingColumns(response.columns);
+        }
     }
     
     // Populate preview table
@@ -1069,6 +1270,7 @@ $('#processScrapingMapping').on('click', function() {
         },
         success: function(response) {
             if (response.success) {
+                shouldResetScrapingModal = true; // Set flag to reset modal after successful processing
                 $('#scrapingColumnMappingModal').modal('hide');
                 
                 // Set lastScrapingDatasetId from response
@@ -1076,21 +1278,27 @@ $('#processScrapingMapping').on('click', function() {
                     lastScrapingDatasetId = response.dataset_id;
                 }
                 
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Berhasil!',
-                    text: response.message,
-                    showCancelButton: true,
-                    confirmButtonText: 'Lihat Data',
-                    cancelButtonText: 'Tutup'
-                }).then(function(result) {
-                    if (result.isConfirmed && lastScrapingDatasetId) {
-                        window.location.href = `/dataset/${lastScrapingDatasetId}/details`;
-                    }
-                    // Refresh page data
-                    loadScrapingHistory(); // Re-enabled to refresh history after scraping
-                    updateStatistics();
-                });
+                // DON'T show progress bar - directly complete the scraping process
+                // $('#scrapingProgress').removeClass('d-none-custom'); // REMOVED
+                
+                // Complete scraping immediately without showing progress bar
+                if (window.pendingScrapingData && window.pendingScrapingData.run_id) {
+                    // Complete immediately without progress tracking
+                    completeScraping(
+                        window.pendingScrapingData.total_records || response.total_records || 0, 
+                        response.dataset_id, 
+                        response
+                    );
+                } else {
+                    // Complete immediately if no run_id
+                    completeScraping(response.total_records || 0, response.dataset_id, response);
+                }
+                
+                // Statistics will be updated by completeScraping function
+                // loadScrapingHistory(); // Removed to prevent duplicate calls
+                
+                // Clear pending data
+                window.pendingScrapingData = null;
             } else {
                 Swal.fire({
                     icon: 'error',
@@ -1117,18 +1325,26 @@ $('#processScrapingMapping').on('click', function() {
     });
 });
 
+// Variable to track if modal should be reset
+let shouldResetScrapingModal = false;
+
 // Handle modal close event
 $('#scrapingColumnMappingModal').on('hidden.bs.modal', function() {
-    // Clear stored job data
-    window.currentScrapingJobData = null;
-    // Reset form when modal is closed
-    $('#scrapingContentColumn, #scrapingUsernameColumn, #scrapingUrlColumn').val('');
-    $('#scrapingPreviewHeader').empty();
-    $('#scrapingPreviewBody').empty();
+    // Only reset if explicitly cancelled or processing completed successfully
+    if (shouldResetScrapingModal) {
+        // Clear stored job data
+        window.currentScrapingJobData = null;
+        // Reset form when modal is closed
+        $('#scrapingContentColumn, #scrapingUsernameColumn, #scrapingUrlColumn').val('');
+        $('#scrapingPreviewHeader').empty();
+        $('#scrapingPreviewBody').empty();
+        shouldResetScrapingModal = false;
+    }
 });
 
 // Handle cancel button click
 $('#cancelScrapingMapping').on('click', function() {
+    shouldResetScrapingModal = true;
     $('#scrapingColumnMappingModal').modal('hide');
 });
 
@@ -1381,13 +1597,36 @@ label[for="platform"] {
     color: #495057;
 }
 
+.d-none-custom {
+    display: none !important;
+}
+
 .custom-progress {
     height: 25px;
+    position: relative !important;
+    z-index: 1000 !important;
+}
+
+.show-progress .custom-progress {
+    display: block !important;
+    visibility: visible !important;
 }
 
 .custom-progress-bar {
     width: 0%;
     transition: width 0.5s ease-in-out;
+    position: relative !important;
+    z-index: 1001 !important;
+}
+
+#scrapingProgress {
+    position: relative !important;
+    z-index: 999 !important;
+}
+
+#scrapingProgress.show-progress {
+    display: block !important;
+    visibility: visible !important;
 }
 
 /* Platform specific field visibility */
