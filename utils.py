@@ -301,7 +301,6 @@ def load_word2vec_model():
     Load Word2Vec model from configured path
     """
     if not GENSIM_AVAILABLE:
-        print("❌ Gensim not available for Word2Vec model loading")
         return None
         
     try:
@@ -312,21 +311,16 @@ def load_word2vec_model():
         model_path = current_app.config.get('WORD2VEC_MODEL_PATH')
         
         if not model_path:
-            print("❌ WORD2VEC_MODEL_PATH not found in config")
             return None
             
         if not os.path.exists(model_path):
-            print(f"❌ Word2Vec model file not found at: {model_path}")
             return None
             
-        print(f"🔄 Loading Word2Vec model from: {model_path}")
         from gensim.models import Word2Vec
         model = Word2Vec.load(model_path)
-        print("✅ Word2Vec model loaded successfully")
         return model
         
     except Exception as e:
-        print(f"❌ Error loading Word2Vec model: {e}")
         return None
 
 def load_naive_bayes_models():
@@ -348,19 +342,11 @@ def load_naive_bayes_models():
                 try:
                     with open(model_path, 'rb') as f:
                         models[model_name] = pickle.load(f)
-                        print(f"✅ Loaded {model_name} from: {model_path}")
                 except Exception as e:
-                    print(f"❌ Error loading {model_name}: {e}")
-            else:
-                print(f"❌ Model file not found for {model_name}: {model_path}")
-        
-        if models:
-            print(f"✅ Successfully loaded {len(models)} Naive Bayes models")
-        else:
-            print("❌ No Naive Bayes models were loaded")
+                    pass
+            
         return models
     except Exception as e:
-        print(f"❌ Error in load_naive_bayes_models: {e}")
         return {}
 
 # Function removed - replaced with scrape_with_apify for proper API integration
@@ -553,11 +539,6 @@ def start_apify_actor(platform, keyword, date_from=None, date_to=None, max_resul
     # Prepare input based on platform
     input_data = prepare_actor_input(platform, keyword, date_from, date_to, max_results, instagram_params)
     
-    # Log parameter yang dikirim ke Apify untuk debugging
-    print(f"[APIFY DEBUG] Platform: {platform}")
-    print(f"[APIFY DEBUG] Max Results Input: {max_results}")
-    print(f"[APIFY DEBUG] Input Data yang dikirim ke Apify: {json.dumps(input_data, indent=2)}")
-    
     # Start actor run
     url = f"{config['base_url']}/acts/{actor_id.replace('/', '~')}/runs"
     headers = {
@@ -569,11 +550,21 @@ def start_apify_actor(platform, keyword, date_from=None, date_to=None, max_resul
     
     if response.status_code == 201:
         run_data = response.json()['data']
-        print(f"[APIFY DEBUG] Actor berhasil dimulai dengan Run ID: {run_data['id']}")
         return run_data['id'], run_data['status']
     else:
-        print(f"[APIFY DEBUG] Error response: {response.text}")
-        raise Exception(f"Failed to start actor: {response.text}")
+        error_text = response.text
+        
+        # Handle specific Apify errors with user-friendly messages
+        if "actor-is-not-rented" in error_text.lower():
+            raise Exception("Apify Actor tidak tersedia. Free trial telah berakhir dan memerlukan subscription berbayar. Silakan hubungi administrator untuk mengaktifkan akun Apify berbayar.")
+        elif "insufficient-credit" in error_text.lower():
+            raise Exception("Kredit Apify tidak mencukupi. Silakan hubungi administrator untuk menambah kredit Apify.")
+        elif "invalid-token" in error_text.lower() or "unauthorized" in error_text.lower():
+            raise Exception("Token Apify tidak valid atau tidak memiliki akses. Silakan hubungi administrator untuk memeriksa konfigurasi API.")
+        elif "actor-not-found" in error_text.lower():
+            raise Exception(f"Actor Apify untuk platform {platform} tidak ditemukan. Silakan hubungi administrator untuk memeriksa konfigurasi actor.")
+        else:
+            raise Exception(f"Gagal memulai scraping: {error_text}. Silakan coba lagi atau hubungi administrator jika masalah berlanjut.")
 
 
 def prepare_actor_input(platform, keyword, date_from=None, date_to=None, max_results=25, instagram_params=None):
@@ -584,19 +575,29 @@ def prepare_actor_input(platform, keyword, date_from=None, date_to=None, max_res
     
     if platform.lower() == 'twitter':
         # Format input untuk kaitoeasyapi/twitter-x-data-tweet-scraper-pay-per-result-cheapest
+        # Berdasarkan dokumentasi resmi Apify, gunakan searchTerms dengan format yang benar
+        search_query = keyword
+        
+        # Tambahkan filter tanggal ke dalam search query jika disediakan
+        if date_from and date_to:
+            # Format: "keyword since:YYYY-MM-DD until:YYYY-MM-DD"
+            search_query = f"{keyword} since:{date_from} until:{date_to}"
+        elif date_from:
+            search_query = f"{keyword} since:{date_from}"
+        elif date_to:
+            search_query = f"{keyword} until:{date_to}"
+            
         input_data = {
-            "searchTerms": [keyword] if isinstance(keyword, str) else keyword,
-            "maxTweets": max_results,
-            "lang": "in"  # Bahasa Indonesia (kode yang valid untuk actor ini)
+            "searchTerms": [search_query],
+            "lang": "in",  # Bahasa Indonesia (sesuai dengan nilai yang diizinkan Apify)
+            "sort": "Latest",  # Urutkan berdasarkan terbaru
+            "maxItems": max_results  # Sesuaikan dengan input Maksimal Hasil dari UI
         }
         
-        # Tambahkan rentang tanggal jika disediakan (format YYYY-MM-DD)
-        if date_from:
-            input_data["since"] = date_from
-            
-        if date_to:
-            input_data["until"] = date_to
-            
+        # CATATAN: Actor ini memiliki batasan untuk akun gratis
+        # Untuk mengatasi batasan 200 tweets, perlu upgrade ke akun berbayar
+        # atau gunakan multiple search queries dengan rentang waktu yang lebih kecil
+        
         return input_data
         
     elif platform.lower() == 'facebook':
@@ -843,8 +844,23 @@ def scrape_with_apify(platform, keyword, date_from=None, date_to=None, max_resul
             
     except Exception as e:
         pass
-        # No fallback - raise error to force proper API usage
-        raise Exception(f"Apify scraping failed: {str(e)}. Please check your API configuration and try again.")
+        # Enhanced error handling with specific Apify error messages
+        error_message = str(e)
+        
+        # Check for specific Apify errors and provide user-friendly messages
+        if "actor-is-not-rented" in error_message.lower():
+            raise Exception("Apify Actor tidak tersedia. Free trial telah berakhir dan memerlukan subscription berbayar. Silakan hubungi administrator untuk mengaktifkan akun Apify berbayar.")
+        elif "insufficient-credit" in error_message.lower():
+            raise Exception("Kredit Apify tidak mencukupi. Silakan hubungi administrator untuk menambah kredit Apify.")
+        elif "invalid-token" in error_message.lower() or "unauthorized" in error_message.lower():
+            raise Exception("Token Apify tidak valid atau tidak memiliki akses. Silakan hubungi administrator untuk memeriksa konfigurasi API.")
+        elif "actor not configured" in error_message.lower():
+            raise Exception(f"Platform {platform} belum dikonfigurasi untuk scraping. Silakan hubungi administrator.")
+        elif "api token not configured" in error_message.lower():
+            raise Exception("API Token Apify belum dikonfigurasi. Silakan hubungi administrator untuk mengatur konfigurasi Apify.")
+        else:
+            # Provide more user-friendly error message
+            raise Exception(f"Terjadi kesalahan saat scraping: {error_message}. Silakan coba lagi atau hubungi administrator jika masalah berlanjut.")
 
 
 def process_apify_results(raw_results, platform, max_results=None):

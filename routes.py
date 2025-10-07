@@ -1679,8 +1679,6 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
         except Exception as e:
             import traceback
             error_details = traceback.format_exc()
-            print(f"Upload data error: {str(e)}")
-            print(f"Full traceback: {error_details}")
             
             db.session.rollback()
             if 'filepath' in locals() and os.path.exists(filepath):
@@ -1939,6 +1937,7 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                 
                 # Skip empty content
                 if not content_value or not str(content_value).strip():
+                    app.logger.debug(f"Skipping empty content: {content_value}")
                     continue
                 
                 # Ensure username is not empty
@@ -1956,6 +1955,7 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                 
                 if existing_scraper_data:
                     # Skip duplicate content
+                    app.logger.debug(f"Skipping duplicate content: {content_to_check[:50]}...")
                     continue
                 
                 # Extract engagement data based on platform
@@ -1999,6 +1999,7 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                 if records_added <= 5:  # Log first 5 records
                     app.logger.info(f"Record {records_added} - Platform: {platform}, Username: {username_value}, Content length: {len(content_to_check)}, Likes: {likes}, Views: {views}")
             
+            app.logger.info(f"Processing completed - Total scraped: {len(scraped_data)}, Records added: {records_added}, Skipped: {len(scraped_data) - records_added}")
             app.logger.info(f"About to commit {records_added} records to database")
             db.session.commit()
             app.logger.info(f"Successfully committed {records_added} records to database")

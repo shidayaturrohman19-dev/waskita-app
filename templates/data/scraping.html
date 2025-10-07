@@ -386,25 +386,8 @@ function initializeScrapingHistoryTable() {
             }
         });
         
-        // Only add search event listener if it hasn't been added before
-        const tableElement = $('#scrapingHistoryTable');
-        if (!tableElement.hasClass('search-initialized')) {
-            tableElement.addClass('search-initialized');
-            
-            // Add custom search functionality that calls server-side search
-            let searchTimeout;
-            table.on('search.dt', function() {
-                clearTimeout(searchTimeout);
-                const searchValue = table.search();
-                
-                // Debounce search to avoid too many API calls
-                searchTimeout = setTimeout(function() {
-                    if (searchValue.length >= 2 || searchValue.length === 0) {
-                        loadScrapingHistoryWithoutReinit(searchValue);
-                    }
-                }, 500);
-            });
-        }
+        // REMOVED: Search event listener that was causing infinite loop
+        // DataTable will use built-in client-side search functionality instead
     }
 }
 
@@ -502,7 +485,6 @@ function toggleInstagramOptions() {
 }
 
 function executeScrapingProcess() {
-    console.log('executeScrapingProcess called'); // Debug log
     isScrapingActive = true;
     
     // Update UI - langsung tampilkan progress bar
@@ -519,8 +501,6 @@ function executeScrapingProcess() {
     $('.progress-percentage').text('5%');
     $('.progress-text').text('Memulai scraping...');
     $('#timeEstimate').text('Menghitung...');
-    
-    console.log('Progress bar displayed immediately after button click'); // Debug log
     
     // Results will be shown in the history table
     
@@ -558,8 +538,6 @@ function executeScrapingProcess() {
         formData.instagram_params = instagramParams;
     }
     
-
-    
     // Make AJAX call to start scraping
     $.ajax({
         url: '/start_scraping',
@@ -570,26 +548,20 @@ function executeScrapingProcess() {
             'X-CSRFToken': $('meta[name=csrf-token]').attr('content')
         },
         beforeSend: function() {
-            console.log('AJAX request starting...'); // Debug log
             // Don't show progress bar yet - wait for response
             $('.progress-text').text('Memulai scraping...');
         },
         success: function(response) {
-            console.log('AJAX Response:', response); // Debug log
             if (response.success) {
-                console.log('Success response received, updating progress bar'); // Debug log
                 
                 // Update progress bar yang sudah ditampilkan
                 $('.progress-bar').css('width', '10%').attr('aria-valuenow', 10);
                 $('.progress-percentage').text('10%');
                 $('.progress-text').text('Scraping sedang berjalan...');
                 
-                console.log('Progress bar updated after successful response'); // Debug log
-                
                 // Mulai simulasi progress dan tracking
                 simulateScrapingProgress(response.job_id, response);
             } else {
-                console.log('Error response:', response.message); // Debug log
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
@@ -599,7 +571,6 @@ function executeScrapingProcess() {
             }
         },
         error: function(xhr) {
-            console.log('AJAX Error:', xhr); // Debug log
             let errorMsg = 'Terjadi kesalahan saat memulai scraping';
             if (xhr.responseJSON && xhr.responseJSON.message) {
                 errorMsg = xhr.responseJSON.message;
@@ -661,7 +632,6 @@ function trackRealTimeProgress(runId, jobId, responseData, startTime) {
                 }
             },
             error: function(xhr, status, error) {
-                console.log('Real-time progress API error:', error);
                 // Only fallback to simulation if this is the first error
                 if (!window.progressFallbackUsed) {
                     window.progressFallbackUsed = true;
@@ -806,7 +776,7 @@ function handleScrapingError(progressData) {
     });
 }
 
-function resetScrapingUI() {
+function resetScrapingUI(successCount = 0, responseData = null) {
     isScrapingActive = false;
     
     // Clear interval properly
@@ -820,7 +790,38 @@ function resetScrapingUI() {
     
     $('#scrapingBtn').show();
     $('#stopBtn').hide();
-    $('#scrapingProgress').addClass('d-none-custom').removeClass('show-progress').hide();
+    
+    // Update riwayat scraping dan statistik segera setelah scraping selesai
+    updateStatistics();
+    loadScrapingHistoryWithoutReinit(); // Refresh riwayat scraping langsung
+    
+    // Reset progress bar immediately after data saving
+    $('#scrapingProgress').addClass('d-none-custom');
+    $('.custom-progress-bar').css('width', '0%').attr('aria-valuenow', 0);
+    $('.progress-percentage').text('0%');
+    $('.progress-inner-text').text('');
+    $('.progress-text').text('Siap untuk scraping...');
+    
+    // Tampilkan dialog sukses dengan progress bar sudah tersembunyi
+    Swal.fire({
+        icon: 'success',
+        title: 'Scraping Selesai',
+        text: `Berhasil mengumpulkan ${successCount || responseData?.total_records || 0} data dari ${responseData?.platform || 'media sosial'}`,
+        showCancelButton: true,
+        confirmButtonText: 'Lihat Hasil',
+        cancelButtonText: 'Tutup'
+    }).then(function(result) {
+        if (result.isConfirmed && lastScrapingDatasetId) {
+            window.location.href = `/dataset/${lastScrapingDatasetId}/details`;
+        }
+        
+        // Reset form setelah user menutup dialog
+        resetForm();
+        // Statistik dan riwayat sudah diupdate di atas, tidak perlu lagi di sini
+        if (lastScrapingDatasetId) {
+             $('#viewResultsBtn').removeClass('d-none');
+         }
+    });
 }
 
 function stopScraping() {
@@ -888,6 +889,10 @@ function completeScraping(successCount, jobId, responseData = null) {
     $('#scrapingBtn').show();
     $('#stopBtn').hide();
     
+    // Update riwayat scraping dan statistik segera setelah scraping selesai
+    updateStatistics();
+    loadScrapingHistoryWithoutReinit(); // Refresh riwayat scraping langsung
+    
     // Tampilkan dialog sukses tanpa menyembunyikan progress bar secara otomatis
     Swal.fire({
         icon: 'success',
@@ -905,7 +910,7 @@ function completeScraping(successCount, jobId, responseData = null) {
         resetScrapingUI();
         resetForm();
         updateStatistics();
-        loadScrapingHistory(); // Update riwayat scraping otomatis setelah scraping selesai
+        loadScrapingHistoryWithoutReinit(); // Update riwayat scraping tanpa reinit DataTable untuk mencegah loop
         if (lastScrapingDatasetId) {
              $('#viewResultsBtn').removeClass('d-none');
          }
@@ -915,8 +920,35 @@ function completeScraping(successCount, jobId, responseData = null) {
 function resetForm() {
     $('#scrapingForm')[0].reset();
     $('#date_from').val(new Date().toISOString().split('T')[0]);
-        $('#date_to').val(new Date().toISOString().split('T')[0]);
-     $('#viewResultsBtn').addClass('d-none');
+    $('#date_to').val(new Date().toISOString().split('T')[0]);
+    $('#viewResultsBtn').addClass('d-none');
+    
+    // Reset progress bar and hide it completely
+    $('.custom-progress-bar').css('width', '0%').attr('aria-valuenow', 0);
+    $('.progress-percentage').text('0%');
+    $('.progress-inner-text').text('');
+    $('.progress-text').text('Siap untuk scraping...');
+    $('#scrapingProgress').addClass('d-none-custom'); // Hide progress bar
+    
+    // Reset counters
+    $('#foundCount').text('0');
+    $('#successCount').text('0');
+    $('#timeElapsed').text('0s');
+    $('#timeEstimate').text('--');
+    $('#dataFound').text('0');
+    $('#processingRate').text('-- data/s');
+    
+    // Reset scraping state variables
+    isScrapingActive = false;
+    if (scrapingInterval) {
+        clearInterval(scrapingInterval);
+        scrapingInterval = null;
+    }
+    progressFallbackUsed = false;
+    
+    // Clear any pending data
+    window.pendingScrapingData = null;
+    window.currentScrapingJobData = null;
 }
 
 function loadScrapingHistory(searchQuery = '') {
@@ -1035,7 +1067,8 @@ function loadScrapingHistoryWithoutReinit(searchQuery = '') {
             
             // Don't reinitialize DataTable - just redraw the existing one
             if ($.fn.DataTable.isDataTable('#scrapingHistoryTable')) {
-                $('#scrapingHistoryTable').DataTable().draw();
+                // Use draw(false) to prevent triggering search events
+                $('#scrapingHistoryTable').DataTable().draw(false);
             }
         } else {
             tbody.append('<tr><td colspan="8" class="text-center text-muted"><i class="fas fa-info-circle mr-2"></i>Belum ada data scraping</td></tr>');
@@ -1066,7 +1099,7 @@ function updateStatistics() {
 }
 
 function refreshHistory() {
-    loadScrapingHistory();
+    loadScrapingHistoryWithoutReinit(); // Gunakan fungsi tanpa reinit untuk mencegah loop
     
     // Show loading animation
     $('.fa-sync-alt').addClass('fa-spin');
@@ -1424,7 +1457,7 @@ function deleteScrapingJob(scraperId) {
                             title: 'Berhasil',
                             text: 'Data scraping berhasil dihapus'
                         });
-                        loadScrapingHistory(); // Re-enabled to refresh history after deletion
+                        loadScrapingHistoryWithoutReinit(); // Re-enabled to refresh history after deletion tanpa reinit
                         updateStatistics();
                     } else {
                         Swal.fire({
