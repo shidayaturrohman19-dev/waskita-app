@@ -27,13 +27,13 @@
 
 #### Admin User
 - **Username**: `admin`
-- **Password**: `admin123`
+- **Password**: Lihat dokumentasi setup atau hubungi administrator
 - **Email**: `admin@waskita.com`
 - **Role**: Administrator (akses penuh)
 
 #### Test User
 - **Username**: `testuser`
-- **Password**: `test123`
+- **Password**: Lihat dokumentasi setup atau hubungi administrator
 - **Email**: `test@waskita.com`
 - **Role**: User biasa
 
@@ -99,7 +99,10 @@ docker-compose up -d --build
 
 ### Keamanan
 
-⚠️ **PENTING**: Ganti password default setelah login pertama!
+⚠️ **PENTING**: 
+- Ganti password default setelah login pertama!
+- Jangan gunakan kredensial default di production!
+- Generate SECRET_KEY yang unik untuk environment production!
 
 1. Login sebagai admin
 2. Masuk ke Profile/Settings

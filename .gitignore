@@ -196,7 +196,40 @@ config_local.py
 local_config.py
 production_config.py
 
-# SSL certificates
+# Environment files - CRITICAL SECURITY
+.env
+.env.local
+.env.docker
+.env.production
+.env.development
+.env.test
+*.env
+
+# Configuration files with credentials
+config.ini
+config.cfg
+secrets.json
+credentials.json
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+database.db
+
+# Model files (if containing sensitive data)
+models/
+*.pkl
+*.model
+*.joblib
+*.h5
+
+# Logs with potential sensitive data
+logs/
+*.log
+log/
+
+# SSL certificates and keys
 *.pem
 *.key
 *.crt
@@ -246,3 +279,31 @@ redis_data/
 
 # GitHub specific
 .github/workflows/secrets.yml
+
+# Security - Additional sensitive files
+admin_credentials.txt
+passwords.txt
+api_keys.txt
+tokens.txt
+setup_notes.txt
+
+# Temporary files that might contain sensitive data
+temp/
+tmp/
+*.tmp
+*.temp
+
+# IDE files that might contain sensitive info
+.vscode/settings.json
+.idea/workspace.xml
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

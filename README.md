@@ -2,6 +2,18 @@
 
 Waskita adalah aplikasi web berbasis Flask yang menggunakan teknologi Machine Learning untuk mengklasifikasikan konten media sosial sebagai **Radikal** atau **Non-Radikal** dengan akurasi tinggi menggunakan algoritma Naive Bayes.
 
+## ⚠️ PERINGATAN KEAMANAN
+
+**JANGAN PERNAH** menggunakan kredensial default di production:
+- Ganti semua password default sebelum deployment
+- Generate SECRET_KEY yang unik untuk setiap environment  
+- Gunakan environment variables untuk kredensial sensitif
+- Jangan commit file .env ke repository
+
+---
+
+## 📋 Daftar Isi
+
 ## ✨ Fitur Utama
 
 ### 🔐 Autentikasi & Manajemen Pengguna
@@ -181,7 +193,7 @@ Script ini akan:
 **Login Admin Default:**
 - **Username**: `admin`
 - **Email**: `admin@waskita.com`
-- **Password**: `admin123`
+- **Password**: Lihat dokumentasi setup atau hubungi administrator
 
 ### Setup PostgreSQL (Manual)
 
@@ -202,7 +214,7 @@ Jika ingin setup manual:
    sudo -u postgres psql
    CREATE DATABASE waskita_dev;
    CREATE DATABASE waskita_test;
-   CREATE USER waskita_user WITH PASSWORD 'waskita_password';
+   CREATE USER waskita_user WITH PASSWORD 'your_secure_password_here';
    GRANT ALL PRIVILEGES ON DATABASE waskita_dev TO waskita_user;
    GRANT ALL PRIVILEGES ON DATABASE waskita_test TO waskita_user;
    \q
@@ -215,9 +227,9 @@ Jika ingin setup manual:
    
    Edit `.env.local`:
    ```
-   DATABASE_URL=postgresql://waskita_user:waskita_password@localhost:5432/waskita_dev
-   TEST_DATABASE_URL=postgresql://waskita_user:waskita_password@localhost:5432/waskita_test
-   SECRET_KEY=your-secret-key-here
+   DATABASE_URL=postgresql://waskita_user:your_secure_password_here@localhost:5432/waskita_dev
+   TEST_DATABASE_URL=postgresql://waskita_user:your_secure_password_here@localhost:5432/waskita_test
+   SECRET_KEY=generate_your_own_secret_key_here
    ```
 
 4. **Jalankan Schema Database**
@@ -258,10 +270,10 @@ Edit file `.env.docker` untuk konfigurasi production:
 # Database Configuration
 POSTGRES_DB=waskita_prod
 POSTGRES_USER=waskita_user
-POSTGRES_PASSWORD=your-secure-password
+POSTGRES_PASSWORD=your_secure_password_here
 
 # Flask Configuration
-SECRET_KEY=your-secret-key-here
+SECRET_KEY=generate_your_own_secret_key_here
 FLASK_ENV=production
 
 # Model Paths (sudah dikonfigurasi)

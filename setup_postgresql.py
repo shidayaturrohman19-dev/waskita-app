@@ -127,9 +127,10 @@ def create_tables_and_admin(db_config):
         
         # Buat user admin default
         print("\n👑 Membuat user admin default...")
+        # Default admin credentials - CHANGE IN PRODUCTION!
         admin_username = "admin"
         admin_email = "admin@waskita.com"
-        admin_password = "admin123"
+        admin_password = input("Masukkan password untuk admin (default: admin123): ") or "admin123"
         admin_fullname = "Administrator"
         
         # Hash password dengan benar
@@ -157,7 +158,7 @@ def create_tables_and_admin(db_config):
         print(f"📊 Database: {db_config['db_name']}")
         print(f"👤 Admin: {admin_username}")
         print(f"📧 Email: {admin_email}")
-        print(f"🔑 Password: {admin_password}")
+        print(f"🔑 Password: [HIDDEN FOR SECURITY]")
         
         return True
         
@@ -181,7 +182,7 @@ DATABASE_USER={db_config['db_user']}
 DATABASE_PASSWORD={db_config['db_password']}
 
 # Flask Configuration
-SECRET_KEY=waskita_dev_secret_key_2024_change_in_production
+SECRET_KEY=generate_your_own_secret_key_here_change_in_production
 FLASK_ENV=development
 FLASK_DEBUG=True
 
@@ -241,7 +242,7 @@ LOG_LEVEL=INFO
 LOG_FILE=logs/waskita.log
 
 # API Configuration
-WASKITA_API_KEY=waskita_api_key_2024_secure_token_v1
+WASKITA_API_KEY=generate_your_own_api_key_here
 """
         
         with open('.env.local', 'w', encoding='utf-8') as f:
