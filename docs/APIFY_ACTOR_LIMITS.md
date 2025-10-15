@@ -32,7 +32,7 @@ Alternatif actor yang bisa digunakan:
 ```json
 {
   "searchTerms": ["keyword since:2024-01-01 until:2024-01-31"],
-  "lang": "id",
+  "lang": "in",
   "sort": "Latest"
 }
 ```

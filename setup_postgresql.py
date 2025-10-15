@@ -127,27 +127,26 @@ def create_tables_and_admin(db_config):
         
         # Buat user admin default
         print("\n👑 Membuat user admin default...")
-        admin_username = input("Username admin (default: admin): ").strip() or "admin"
-        admin_email = input("Email admin (default: admin@waskita.com): ").strip() or "admin@waskita.com"
-        admin_password = getpass.getpass("Password admin (default: admin123): ") or "admin123"
-        admin_fullname = input("Nama lengkap admin (default: Administrator): ").strip() or "Administrator"
+        admin_username = "admin"
+        admin_email = "admin@waskita.com"
+        admin_password = "admin123"
+        admin_fullname = "Administrator"
         
-        # Hash password
+        # Hash password dengan benar
         password_hash = generate_password_hash(admin_password)
         
-        # Insert admin user
+        # Insert admin user dengan ON CONFLICT untuk update password jika user sudah ada
         insert_admin_sql = """
         INSERT INTO users (username, email, password_hash, role, full_name, is_active, theme_preference) 
         VALUES (%s, %s, %s, 'admin', %s, TRUE, 'dark')
-        ON CONFLICT (username) DO NOTHING;
+        ON CONFLICT (username) DO UPDATE SET
+            password_hash = EXCLUDED.password_hash,
+            updated_at = CURRENT_TIMESTAMP;
         """
         
         cursor.execute(insert_admin_sql, (admin_username, admin_email, password_hash, admin_fullname))
         
-        if cursor.rowcount > 0:
-            print(f"✅ User admin '{admin_username}' berhasil dibuat")
-        else:
-            print(f"ℹ️ User admin '{admin_username}' sudah ada")
+        print(f"✅ User admin '{admin_username}' berhasil dibuat/diperbarui dengan password yang benar")
         
         # Commit perubahan
         conn.commit()

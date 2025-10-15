@@ -172,12 +172,29 @@ Tambahkan context atau screenshots lain tentang feature request.
 Jika Anda menemukan vulnerability keamanan, **JANGAN** buat public issue. 
 Hubungi tim development secara private melalui email atau Discord.
 
-## 📞 Bantuan
+## 📞 Bantuan & Kontak Pengembang
 
-Butuh bantuan? Hubungi kami melalui:
-- **GitHub Discussions**: Untuk pertanyaan umum
+Butuh bantuan atau ingin mendapatkan file model ML? Hubungi kami melalui:
+
+### Untuk Pertanyaan Umum:
+- **GitHub Discussions**: Untuk pertanyaan umum tentang penggunaan
 - **GitHub Issues**: Untuk bug reports dan feature requests
-- **Email**: [your-email@domain.com]
+
+### Untuk Mendapatkan Model ML:
+Aplikasi Waskita memerlukan file model berikut yang tidak disertakan dalam repository:
+- `models/embeddings/wiki_word2vec_csv_updated.model` (Word2Vec model)
+- `models/navesbayes/naive_bayes_model1.pkl` (Naive Bayes model 1)
+- `models/navesbayes/naive_bayes_model2.pkl` (Naive Bayes model 2)
+- `models/navesbayes/naive_bayes_model3.pkl` (Naive Bayes model 3)
+
+**Hubungi pengembang untuk mendapatkan file model:**
+- **Email**: waskita.dev@gmail.com
+- **Telegram**: @WaskitaDev
+- **WhatsApp**: +62-XXX-XXXX-XXXX (akan diupdate)
+
+### Untuk Security Issues:
+Jika Anda menemukan vulnerability keamanan, **JANGAN** buat public issue. 
+Hubungi tim development secara private melalui email: security@waskita.dev
 
 ## 🙏 Terima Kasih
 

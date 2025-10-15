@@ -7,6 +7,7 @@ DROP TABLE IF EXISTS clean_data_scraper CASCADE;
 DROP TABLE IF EXISTS clean_data_upload CASCADE;
 DROP TABLE IF EXISTS raw_data_scraper CASCADE;
 DROP TABLE IF EXISTS raw_data CASCADE;
+DROP TABLE IF EXISTS datasets CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 
 -- Create Users table
@@ -29,6 +30,19 @@ CREATE TABLE users (
     timezone VARCHAR(50) DEFAULT 'Asia/Jakarta',
     email_notifications BOOLEAN DEFAULT TRUE,
     theme_preference VARCHAR(20) DEFAULT 'dark'
+);
+
+-- Create Datasets table (must be created before raw_data)
+CREATE TABLE datasets (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    uploaded_by INTEGER NOT NULL REFERENCES users(id),
+    total_records INTEGER DEFAULT 0,
+    cleaned_records INTEGER DEFAULT 0,
+    classified_records INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create Raw Data table (for manual uploads)
@@ -81,6 +95,7 @@ CREATE TABLE clean_data_upload (
     cleaned_content TEXT NOT NULL,
     url TEXT,
     platform VARCHAR(50) NOT NULL,
+    dataset_id INTEGER REFERENCES datasets(id),
     cleaned_by INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -94,21 +109,10 @@ CREATE TABLE clean_data_scraper (
     cleaned_content TEXT NOT NULL,
     url TEXT,
     platform VARCHAR(50) NOT NULL,
+    keyword VARCHAR(255) NOT NULL,
+    dataset_id INTEGER REFERENCES datasets(id),
     cleaned_by INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Datasets Table
-CREATE TABLE datasets (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    uploaded_by INTEGER NOT NULL REFERENCES users(id),
-    total_records INTEGER DEFAULT 0,
-    cleaned_records INTEGER DEFAULT 0,
-    classified_records INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Dataset Statistics Table
@@ -162,21 +166,26 @@ CREATE INDEX idx_raw_data_scraper_created_at ON raw_data_scraper(created_at);
 CREATE INDEX idx_clean_data_upload_raw_data_id ON clean_data_upload(raw_data_id);
 CREATE INDEX idx_clean_data_upload_cleaned_by ON clean_data_upload(cleaned_by);
 CREATE INDEX idx_clean_data_upload_platform ON clean_data_upload(platform);
+CREATE INDEX idx_clean_data_upload_dataset_id ON clean_data_upload(dataset_id);
 CREATE INDEX idx_clean_data_upload_created_at ON clean_data_upload(created_at);
 
 CREATE INDEX idx_clean_data_scraper_raw_data_scraper_id ON clean_data_scraper(raw_data_scraper_id);
 CREATE INDEX idx_clean_data_scraper_cleaned_by ON clean_data_scraper(cleaned_by);
 CREATE INDEX idx_clean_data_scraper_platform ON clean_data_scraper(platform);
+CREATE INDEX idx_clean_data_scraper_dataset_id ON clean_data_scraper(dataset_id);
 CREATE INDEX idx_clean_data_scraper_created_at ON clean_data_scraper(created_at);
 
 CREATE INDEX idx_classification_results_classified_by ON classification_results(classified_by);
-CREATE INDEX idx_classification_results_classification ON classification_results(classification);
+CREATE INDEX idx_classification_results_prediction ON classification_results(prediction);
 CREATE INDEX idx_classification_results_created_at ON classification_results(created_at);
+CREATE INDEX idx_classification_results_data_type ON classification_results(data_type);
+CREATE INDEX idx_classification_results_data_id ON classification_results(data_id);
+CREATE INDEX idx_classification_results_model_name ON classification_results(model_name);
+CREATE INDEX idx_classification_results_data_type_id ON classification_results(data_type, data_id);
 
 -- Create full-text search indexes
 CREATE INDEX idx_clean_data_upload_content_fts ON clean_data_upload USING gin(to_tsvector('indonesian', content));
 CREATE INDEX idx_clean_data_scraper_content_fts ON clean_data_scraper USING gin(to_tsvector('indonesian', content));
-CREATE INDEX idx_classification_results_content_fts ON classification_results USING gin(to_tsvector('indonesian', content));
 
 -- Create views for easier data access
 CREATE VIEW v_user_statistics AS
@@ -192,8 +201,8 @@ SELECT
     COUNT(DISTINCT cdu.id) as total_cleaned_upload_data,
     COUNT(DISTINCT cds.id) as total_cleaned_scraper_data,
     COUNT(DISTINCT cr.id) as total_classifications,
-    COUNT(DISTINCT CASE WHEN cr.classification = 'radikal' THEN cr.id END) as radikal_count,
-    COUNT(DISTINCT CASE WHEN cr.classification = 'non-radikal' THEN cr.id END) as non_radikal_count
+    COUNT(DISTINCT CASE WHEN cr.prediction = 'radikal' THEN cr.id END) as radikal_count,
+    COUNT(DISTINCT CASE WHEN cr.prediction = 'non-radikal' THEN cr.id END) as non_radikal_count
 FROM users u
 LEFT JOIN raw_data rd ON u.id = rd.uploaded_by
 LEFT JOIN raw_data_scraper rds ON u.id = rds.scraped_by
@@ -205,13 +214,12 @@ GROUP BY u.id, u.username, u.email, u.role, u.created_at, u.last_login;
 CREATE VIEW v_classification_summary AS
 SELECT 
     DATE(created_at) as classification_date,
-    classification,
+    prediction,
     COUNT(*) as count,
-    AVG(confidence) as avg_confidence,
-    MIN(confidence) as min_confidence,
-    MAX(confidence) as max_confidence
+    AVG(probability_radikal) as avg_probability_radikal,
+    AVG(probability_non_radikal) as avg_probability_non_radikal
 FROM classification_results
-GROUP BY DATE(created_at), classification
+GROUP BY DATE(created_at), prediction
 ORDER BY classification_date DESC;
 
 CREATE VIEW v_platform_statistics AS
@@ -259,14 +267,14 @@ BEGIN
         COUNT(DISTINCT rds.id) as total_scraping_jobs,
         (COUNT(DISTINCT cdu.id) + COUNT(DISTINCT cds.id)) as total_cleaned_data,
         COUNT(DISTINCT cr.id) as total_classifications,
-        COUNT(DISTINCT CASE WHEN cr.classification = 'radikal' THEN cr.id END) as radikal_count,
-        COUNT(DISTINCT CASE WHEN cr.classification = 'non-radikal' THEN cr.id END) as non_radikal_count,
+        COUNT(DISTINCT CASE WHEN cr.prediction = 'radikal' THEN cr.id END) as radikal_count,
+        COUNT(DISTINCT CASE WHEN cr.prediction = 'non-radikal' THEN cr.id END) as non_radikal_count,
         GREATEST(
             MAX(rd.upload_date),
             MAX(rds.created_at),
             MAX(cdu.cleaned_at),
             MAX(cds.cleaned_at),
-            MAX(cr.classified_at)
+            MAX(cr.created_at)
         ) as last_activity
     FROM users u
     LEFT JOIN raw_data rd ON u.id = rd.uploaded_by

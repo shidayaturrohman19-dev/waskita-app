@@ -633,12 +633,20 @@ def prepare_actor_input(platform, keyword, date_from=None, date_to=None, max_res
             "searchTerms": [search_query],
             "lang": "in",  # Bahasa Indonesia (sesuai dengan nilai yang diizinkan Apify)
             "sort": "Latest",  # Urutkan berdasarkan terbaru
-            "maxItems": max_results  # Sesuaikan dengan input Maksimal Hasil dari UI
+            "maxItems": max_results,  # Sesuaikan dengan input Maksimal Hasil dari UI
+            "includeSearchTerms": False,  # Jangan sertakan search terms dalam hasil
+            "onlyImage": False,  # Tidak hanya gambar
+            "onlyQuote": False,  # Tidak hanya quote tweets
+            "onlyTwitterBlue": False,  # Tidak hanya Twitter Blue users
+            "onlyVerifiedUsers": False,  # Tidak hanya verified users
+            "onlyVideo": False,  # Tidak hanya video
+            "tweetLanguage": "in"  # Bahasa Indonesia untuk tweet
         }
         
-        # CATATAN: Actor ini memiliki batasan untuk akun gratis
-        # Untuk mengatasi batasan 200 tweets, perlu upgrade ke akun berbayar
-        # atau gunakan multiple search queries dengan rentang waktu yang lebih kecil
+        # CATATAN PENTING: Actor ini memiliki batasan untuk akun gratis
+        # Akun gratis Apify akan mendapat data dummy/demo maksimal 100-1000 hasil
+        # Untuk mendapatkan data real, perlu upgrade ke akun berbayar Apify
+        # Alternatif: gunakan actor lain seperti apidojo/tweet-scraper yang mungkin lebih baik untuk akun gratis
         
         return input_data
         
