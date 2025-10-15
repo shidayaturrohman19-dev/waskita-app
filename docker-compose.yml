@@ -54,7 +54,7 @@ services:
       - redis
     # Initialize admin user on first run
     command: >
-      sh -c "./init_admin.sh && python app.py"
+      sh -c "python /app/create_admin.py && python app.py"
     networks:
       - waskita_network
     restart: unless-stopped

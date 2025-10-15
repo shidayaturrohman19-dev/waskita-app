@@ -140,7 +140,9 @@ if __name__ == '__main__':
     logger.info("Automatic data cleanup scheduler started")
     
     try:
-        app.run(debug=True, host='0.0.0.0', port=5000)
+        # Use debug mode from environment variable
+        debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
+        app.run(debug=debug_mode, host='0.0.0.0', port=5000)
     except KeyboardInterrupt:
         logger.info("Shutting down application...")
         cleanup_scheduler.stop_scheduler()
