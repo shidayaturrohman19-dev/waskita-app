@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
 Script untuk membuat user admin otomatis di aplikasi Waskita
+Mendukung environment-based configuration untuk development dan production
 """
 
 import os
@@ -17,7 +18,7 @@ load_dotenv('.env.local')
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from config import Config
-from models import db, User
+from models import db, User, Dataset, RawData
 
 def create_app():
     """Create Flask application"""
@@ -28,6 +29,98 @@ def create_app():
     db.init_app(app)
     
     return app
+
+def should_create_sample_data():
+    """Cek apakah harus membuat sample data berdasarkan environment"""
+    flask_env = os.getenv('FLASK_ENV', 'production')
+    create_sample = os.getenv('CREATE_SAMPLE_DATA', 'false').lower() == 'true'
+    
+    return flask_env == 'development' or create_sample
+
+def create_sample_datasets():
+    """Membuat sample datasets untuk development/testing"""
+    if not should_create_sample_data():
+        return []
+    
+    print("\n3. Membuat Sample Datasets untuk Development...")
+    
+    sample_datasets = [
+        {
+            'name': 'Sample Twitter Data',
+            'description': 'Dataset contoh dari Twitter untuk testing klasifikasi',
+            'source': 'twitter',
+            'total_data': 50
+        },
+        {
+            'name': 'Sample Facebook Data', 
+            'description': 'Dataset contoh dari Facebook untuk testing',
+            'source': 'facebook',
+            'total_data': 30
+        },
+        {
+            'name': 'Sample Instagram Data',
+            'description': 'Dataset contoh dari Instagram untuk testing',
+            'source': 'instagram', 
+            'total_data': 25
+        }
+    ]
+    
+    created_datasets = []
+    
+    try:
+        for dataset_info in sample_datasets:
+            # Cek apakah dataset sudah ada
+            existing = Dataset.query.filter_by(name=dataset_info['name']).first()
+            if existing:
+                print(f"  ✓ Dataset '{dataset_info['name']}' sudah ada")
+                created_datasets.append(existing)
+                continue
+            
+            # Buat dataset baru
+            dataset = Dataset(
+                name=dataset_info['name'],
+                description=dataset_info['description'],
+                source=dataset_info['source'],
+                total_data=dataset_info['total_data'],
+                created_at=datetime.utcnow(),
+                updated_at=datetime.utcnow()
+            )
+            
+            db.session.add(dataset)
+            db.session.flush()  # Untuk mendapatkan ID
+            
+            # Buat sample raw data
+            create_sample_raw_data(dataset.id, dataset_info['total_data'], dataset_info['source'])
+            
+            created_datasets.append(dataset)
+            print(f"  ✓ Dataset '{dataset_info['name']}' berhasil dibuat dengan {dataset_info['total_data']} data")
+        
+        db.session.commit()
+        print(f"✓ {len(created_datasets)} sample datasets berhasil dibuat!")
+        return created_datasets
+        
+    except Exception as e:
+        print(f"✗ Error membuat sample datasets: {str(e)}")
+        db.session.rollback()
+        return []
+
+def create_sample_raw_data(dataset_id, count, source):
+    """Membuat sample raw data untuk dataset"""
+    from utils import generate_sample_data
+    
+    sample_data = generate_sample_data(count, source)
+    
+    for data in sample_data:
+        raw_data = RawData(
+            dataset_id=dataset_id,
+            content=data['content'],
+            username=data['username'],
+            timestamp=data['timestamp'],
+            platform=source,
+            engagement_count=data.get('engagement_count', 0),
+            created_at=datetime.utcnow()
+        )
+        db.session.add(raw_data)
 
 def create_admin_user():
     """Membuat user admin dengan kredensial default"""
@@ -168,26 +261,49 @@ def main():
     print("WASKITA - Setup User Admin & Test")
     print("=" * 50)
     
-    # Buat admin user
-    print("\n1. Membuat User Admin...")
-    admin = create_admin_user()
+    # Create Flask app and application context
+    app = create_app()
     
-    # Buat test user
-    print("\n2. Membuat User Test...")
-    test_user = create_test_user()
-    
-    print("\n" + "=" * 50)
-    if admin and test_user:
-        print("✓ Setup berhasil! Anda dapat login dengan:")
-        print("\nAdmin:")
-        print("  Username: admin")
-        print("  Password: admin123")
-        print("\nTest User:")
-        print("  Username: testuser")
-        print("  Password: test123")
-    else:
-        print("✗ Setup gagal! Periksa error di atas.")
-    print("=" * 50)
+    with app.app_context():
+        # Create all tables
+        db.create_all()
+        
+        flask_env = os.getenv('FLASK_ENV', 'production')
+        create_sample = should_create_sample_data()
+        
+        print(f"Environment: {flask_env}")
+        print(f"Create Sample Data: {'Ya' if create_sample else 'Tidak'}")
+        
+        # Buat admin user
+        print("\n1. Membuat User Admin...")
+        admin = create_admin_user()
+        
+        # Buat test user
+        print("\n2. Membuat User Test...")
+        test_user = create_test_user()
+        
+        # Buat sample datasets jika dalam mode development
+        sample_datasets = []
+        if create_sample:
+            sample_datasets = create_sample_datasets()
+        
+        print("\n" + "=" * 50)
+        if admin and test_user:
+            print("✓ Setup berhasil! Anda dapat login dengan:")
+            print("\nAdmin:")
+            print("  Username: admin")
+            print("  Password: admin123")
+            print("\nTest User:")
+            print("  Username: testuser")
+            print("  Password: testuser123")
+            
+            if sample_datasets:
+                print(f"\n✓ {len(sample_datasets)} sample datasets telah dibuat untuk development")
+                total_sample_data = sum(ds.total_data for ds in sample_datasets)
+                print(f"  Total sample data: {total_sample_data} records")
+        else:
+            print("✗ Setup gagal! Periksa error di atas.")
+        print("=" * 50)
 
 if __name__ == '__main__':
     main()

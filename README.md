@@ -145,6 +145,71 @@ python app.py
 
 Aplikasi akan berjalan di `http://localhost:5000`
 
+### 🐳 Quick Start dengan Docker
+
+#### Prerequisites
+- Docker Desktop terinstall dan berjalan
+- Git untuk clone repository
+- PowerShell (Windows) atau Terminal (Linux/Mac)
+
+#### 🔥 Fresh Build (Menghapus Semua Data)
+**⚠️ PERINGATAN: Fresh build akan menghapus SEMUA data yang ada!**
+
+Fresh build akan menghapus semua data dan membuat database baru dengan sample data.
+
+```bash
+# Menggunakan PowerShell script (Windows)
+.\fresh-build.ps1
+
+# Atau menggunakan Makefile (Linux/Mac/Windows dengan WSL)
+make fresh-build
+
+# Atau manual dengan Docker Compose
+docker-compose down --volumes --remove-orphans
+docker volume rm waskita_postgres_data -f
+CREATE_SAMPLE_DATA=true docker-compose up --build -d
+```
+
+#### 🛠️ Normal Build (Data Persistent)
+Normal build menggunakan database persistent tanpa menghapus data yang ada.
+
+```bash
+# Menggunakan Makefile
+make build
+
+# Atau manual dengan Docker Compose
+docker-compose up --build -d
+```
+
+#### 📋 Makefile Commands
+```bash
+make help          # Tampilkan bantuan
+make fresh-build   # Fresh build dengan menghapus semua data
+make build         # Normal build dengan data persistent
+make clean         # Hapus semua container dan volume
+make status        # Tampilkan status container
+make logs          # Tampilkan logs aplikasi
+make restart       # Restart services
+make stop          # Stop semua services
+```
+
+#### 🔐 Login Default
+Setelah build berhasil, gunakan kredensial berikut:
+
+**Admin User:**
+- Username: `admin`
+- Password: `admin123`
+- Role: Administrator (akses penuh)
+
+**Test User:**
+- Username: `testuser`
+- Password: `testuser123`
+- Role: User biasa (akses terbatas)
+
+#### 🌐 Akses Aplikasi
+- **Web App**: http://localhost:5000
+- **Nginx**: http://localhost:80
+
 ### Quick Start dengan Docker
 
 #### Prasyarat
