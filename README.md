@@ -93,7 +93,7 @@ Untuk dokumentasi yang lebih detail, silakan kunjungi folder **[docs/](docs/)**:
 
 #### 1. Clone Repository
 ```bash
-git clone https://github.com/your-username/waskita.git
+git clone https://github.com/kaptenusop/waskita.git
 cd waskita
 ```
 
@@ -163,7 +163,7 @@ Aplikasi akan berjalan di `http://localhost:5000`
 #### Setup Development Environment
 ```bash
 # Clone repository
-git clone <repository-url>
+git clone https://github.com/kaptenusop/waskita.git
 cd waskita
 
 # Buat virtual environment dengan Python 3.11 ONLY
@@ -274,7 +274,7 @@ Jika ingin setup manual:
 
 1. **Clone Repository**
 ```bash
-git clone <repository-url>
+git clone https://github.com/kaptenusop/waskita.git
 cd waskita
 ```
 
@@ -330,7 +330,7 @@ NAIVE_BAYES_MODEL3_PATH=/app/models/navesbayes/naive_bayes_model3.pkl
 ### Setup Development Environment
 ```bash
 # Clone repository
-git clone https://github.com/your-username/waskita.git
+git clone https://github.com/kaptenusop/waskita.git
 cd waskita
 
 # Setup virtual environment
@@ -403,10 +403,9 @@ mypy app/
 
 Distributed under the MIT License. See `LICENSE` for more information.
 
-## 👥 Team
+## 👥 Developer
 
-- **Developer**: [Your Name]
-- **Project Supervisor**: [Supervisor Name]
+- **Developer**: samshidayaturrohman@student.telkomuniversity.ac.id
 - **Institution**: Telkom University
 
 ## 📞 Support
