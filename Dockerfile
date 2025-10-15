@@ -25,6 +25,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy project (includes models directory now)
 COPY . .
 
+# Copy admin initialization script
+COPY create_admin.py .
+COPY init_admin.sh .
+
+# Make shell script executable
+RUN chmod +x init_admin.sh
+
 # Create necessary directories
 RUN mkdir -p uploads logs static/uploads data
 

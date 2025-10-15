@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # PostgreSQL Database
   db:
@@ -29,7 +27,9 @@ services:
 
   # Waskita Application
   web:
-    image: waskita-app:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: waskita_app
     env_file:
       - .env.docker
@@ -52,6 +52,9 @@ services:
     depends_on:
       - db
       - redis
+    # Initialize admin user on first run
+    command: >
+      sh -c "./init_admin.sh && python app.py"
     networks:
       - waskita_network
     restart: unless-stopped

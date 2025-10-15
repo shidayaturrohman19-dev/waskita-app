@@ -61,9 +61,7 @@ class DevelopmentConfig(Config):
 
 class TestingConfig(Config):
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = os.environ.get('TEST_DATABASE_URL')
-    if not SQLALCHEMY_DATABASE_URI:
-        raise ValueError("TEST_DATABASE_URL environment variable is required")
+    SQLALCHEMY_DATABASE_URI = os.environ.get('TEST_DATABASE_URL', 'sqlite:///:memory:')
     WTF_CSRF_ENABLED = False
     SESSION_COOKIE_SECURE = False
 
