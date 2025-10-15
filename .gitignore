@@ -170,7 +170,7 @@ models/
 *.npy
 
 # Docker
-.dockerignore
+# .dockerignore should be tracked for consistent Docker builds
 
 # Temporary files
 temp/
