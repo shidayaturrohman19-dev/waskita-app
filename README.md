@@ -43,7 +43,6 @@ Waskita adalah aplikasi web berbasis Flask yang menggunakan teknologi Machine Le
 
 ### Prasyarat
 - **Python 3.11.x ONLY** (Wajib untuk kompatibilitas optimal dengan Gensim dan semua dependencies)
-  ⚠️ **TIDAK menggunakan Python 3.12 atau 3.13** (ada masalah kompatibilitas)
 - **PostgreSQL 15+** 
 - **Git** (untuk clone repository)
 
