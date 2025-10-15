@@ -124,15 +124,59 @@ print(f"waskita_api_{api_key}")
 
 ---
 
-## 📞 Kontak Keamanan
+## 🔄 Tugas Keamanan Berkala
 
-Jika menemukan vulnerability atau masalah keamanan:
-- **Email**: security@waskita.com
-- **Priority**: URGENT untuk masalah keamanan kritis
+### Mingguan
+- [ ] Review log files untuk anomali
+- [ ] Check update security patches
+- [ ] Monitor pola penggunaan API
+
+### Bulanan
+- [ ] Rotate API keys (jika memungkinkan)
+- [ ] Review akses dan permissions pengguna
+- [ ] Update dependencies dengan security patches
+
+### Triwulanan
+- [ ] Full security audit
+- [ ] Penetration testing (jika memungkinkan)
+- [ ] Review dan update security policies
+- [ ] Test disaster recovery procedures
 
 ---
 
-## 📚 Referensi Keamanan
+## 🚨 Incident Response
+
+### Jika Credentials Terekspos
+1. **Tindakan Segera:**
+   - Rotate semua credentials yang terekspos
+   - Generate SECRET_KEY baru
+   - Ganti password database
+   - Revoke dan generate ulang API keys
+
+2. **Investigasi:**
+   - Check log untuk aktivitas mencurigakan
+   - Audit akses yang tidak authorized
+   - Identifikasi scope of exposure
+
+3. **Recovery:**
+   - Update environment dengan credentials baru
+   - Restart aplikasi dengan config baru
+   - Monitor aktivitas abnormal
+   - Dokumentasi incident untuk pembelajaran
+
+---
+
+## 📞 Kontak Keamanan
+
+Jika menemukan masalah keamanan:
+- **JANGAN** posting di public issue tracker
+- Hubungi tim security secara langsung
+- Email: security@waskita.com
+- Ikuti responsible disclosure practices
+
+---
+
+## 📚 Referensi
 
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
 - [Flask Security Best Practices](https://flask.palletsprojects.com/en/2.3.x/security/)
