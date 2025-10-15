@@ -15,13 +15,15 @@ CREATE TABLE users (
     username VARCHAR(80) UNIQUE NOT NULL,
     email VARCHAR(120) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
+    full_name VARCHAR(255),
+    bio TEXT,
+    preferences JSON,
     role VARCHAR(20) NOT NULL DEFAULT 'user' CHECK (role IN ('admin', 'user')),
     is_active BOOLEAN DEFAULT TRUE,
+    last_login TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    last_login TIMESTAMP,
     profile_picture VARCHAR(255),
-    full_name VARCHAR(100),
     phone_number VARCHAR(20),
     language_preference VARCHAR(10) DEFAULT 'id',
     timezone VARCHAR(50) DEFAULT 'Asia/Jakarta',
@@ -38,6 +40,10 @@ CREATE TABLE raw_data (
     platform VARCHAR(50) NOT NULL,
     source_type VARCHAR(20) DEFAULT 'upload',
     status VARCHAR(20) DEFAULT 'raw',
+    file_size BIGINT,
+    original_filename VARCHAR(255),
+    dataset_id INTEGER REFERENCES datasets(id),
+    dataset_name VARCHAR(255),
     uploaded_by INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -53,7 +59,15 @@ CREATE TABLE raw_data_scraper (
     keyword VARCHAR(255) NOT NULL,
     scrape_date DATE NOT NULL,
     status VARCHAR(20) DEFAULT 'raw',
+    dataset_id INTEGER REFERENCES datasets(id),
+    dataset_name VARCHAR(255),
     scraped_by INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    likes INTEGER DEFAULT 0,
+    retweets INTEGER DEFAULT 0,
+    replies INTEGER DEFAULT 0,
+    comments INTEGER DEFAULT 0,
+    shares INTEGER DEFAULT 0,
+    views INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -84,17 +98,48 @@ CREATE TABLE clean_data_scraper (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create Classification Results table
-CREATE TABLE classification_results (
+-- Datasets Table
+CREATE TABLE datasets (
     id SERIAL PRIMARY KEY,
-    clean_data_upload_id INTEGER REFERENCES clean_data_upload(id) ON DELETE CASCADE,
-    clean_data_scraper_id INTEGER REFERENCES clean_data_scraper(id) ON DELETE CASCADE,
-    content TEXT NOT NULL,
-    classification VARCHAR(20) NOT NULL,
-    confidence DECIMAL(5,4) NOT NULL,
-    classified_by INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    uploaded_by INTEGER NOT NULL REFERENCES users(id),
+    total_records INTEGER DEFAULT 0,
+    cleaned_records INTEGER DEFAULT 0,
+    classified_records INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Dataset Statistics Table
+CREATE TABLE dataset_statistics (
+    id SERIAL PRIMARY KEY,
+    total_raw_upload INTEGER DEFAULT 0,
+    total_raw_scraper INTEGER DEFAULT 0,
+    total_clean_upload INTEGER DEFAULT 0,
+    total_clean_scraper INTEGER DEFAULT 0,
+    total_classified INTEGER DEFAULT 0,
+    total_radikal INTEGER DEFAULT 0,
+    total_non_radikal INTEGER DEFAULT 0,
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Classification Results Table
+CREATE TABLE classification_results (
+    id SERIAL PRIMARY KEY,
+    data_type VARCHAR(20) NOT NULL, -- 'upload' or 'scraper'
+    data_id INTEGER NOT NULL, -- ID from clean_data_upload or clean_data_scraper
+    model_name VARCHAR(20) NOT NULL, -- model1, model2, model3
+    prediction VARCHAR(20) NOT NULL, -- radikal, non-radikal
+    probability_radikal FLOAT NOT NULL,
+    probability_non_radikal FLOAT NOT NULL,
+    classified_by INTEGER NOT NULL REFERENCES users(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_corrected BOOLEAN DEFAULT FALSE, -- Whether the result has been manually corrected
+    corrected_prediction VARCHAR(20), -- Manual correction: radikal, non-radikal
+    corrected_by INTEGER REFERENCES users(id), -- Who made the correction
+    corrected_at TIMESTAMP -- When the correction was made
 );
 
 -- Create indexes for better performance

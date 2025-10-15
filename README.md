@@ -39,9 +39,72 @@ Waskita adalah aplikasi web berbasis Flask yang menggunakan teknologi Machine Le
 - **Containerization**: Docker & Docker Compose
 - **Web Server**: Nginx sebagai reverse proxy
 
-## 🚀 Quick Start dengan Docker
+## 🚀 Quick Start
 
 ### Prasyarat
+- **Python 3.11+** (Recommended: Python 3.11)
+- **PostgreSQL 15+** 
+- **Git** (untuk clone repository)
+
+### 🔧 Setup Cepat
+
+#### 1. Clone Repository
+```bash
+git clone https://github.com/your-username/waskita.git
+cd waskita
+```
+
+#### 2. Setup Python Environment
+```bash
+# Windows
+python -m venv venv
+venv\Scripts\activate
+
+# macOS/Linux
+python3 -m venv venv
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+#### 3. Setup Database PostgreSQL
+
+**Opsi A: Setup Otomatis (Recommended)**
+```bash
+python setup_postgresql.py
+```
+
+**Opsi B: Setup Manual**
+```sql
+-- Buat database dan user
+CREATE DATABASE waskita_dev;
+CREATE DATABASE waskita_test;
+CREATE USER waskita_user WITH PASSWORD 'waskita_password';
+GRANT ALL PRIVILEGES ON DATABASE waskita_dev TO waskita_user;
+GRANT ALL PRIVILEGES ON DATABASE waskita_test TO waskita_user;
+
+-- Import schema
+psql -U waskita_user -d waskita_dev -f database_schema.sql
+```
+
+#### 4. Konfigurasi Environment
+```bash
+# Copy dan edit file environment
+cp .env.example .env.local
+# Edit .env.local sesuai konfigurasi database Anda
+```
+
+#### 5. Jalankan Aplikasi
+```bash
+python app.py
+```
+
+Aplikasi akan berjalan di `http://localhost:5000`
+
+### Quick Start dengan Docker
+
+#### Prasyarat
 - Docker Desktop 4.0+
 - 4GB RAM minimum (8GB recommended)
 - 2GB free disk space
@@ -51,6 +114,7 @@ Waskita adalah aplikasi web berbasis Flask yang menggunakan teknologi Machine Le
 #### Prasyarat
 - **Python 3.11.x ONLY** (Wajib untuk kompatibilitas optimal dengan Gensim dan semua dependencies)
 - ⚠️ **TIDAK menggunakan Python 3.12 atau 3.13** (ada masalah kompatibilitas)
+- **PostgreSQL 15+** (Database utama)
 - 4GB RAM minimum (8GB recommended)
 - 2GB free disk space
 
@@ -80,13 +144,87 @@ python -m pip install --upgrade pip setuptools wheel
 # Install dependencies
 pip install -r requirements.txt
 
-# Setup environment variables
+# 🗄️ SETUP DATABASE POSTGRESQL (WAJIB)
+# Jalankan script setup otomatis untuk membuat database dan user admin
+python setup_database.py
+
+# ATAU setup manual PostgreSQL:
+# 1. Install PostgreSQL 15+
+# 2. Buat database: waskita_dev dan waskita_test
+# 3. Buat user: waskita_user dengan password
+# 4. Import schema: psql -U waskita_user -d waskita_dev -f database_schema.sql
+
+# Setup environment variables (sudah otomatis jika pakai setup_database.py)
 cp .env.example .env.local
 # Edit .env.local sesuai kebutuhan development
 
 # Jalankan aplikasi
 python app.py
 ```
+
+## 🗄️ Database Setup
+
+### Setup PostgreSQL (Otomatis)
+
+**Untuk instalasi baru**, gunakan script setup otomatis:
+
+```bash
+python setup_postgresql.py
+```
+
+Script ini akan:
+- ✅ Membuat database PostgreSQL (`waskita_dev` dan `waskita_test`)
+- ✅ Membuat user database (`waskita_user`)
+- ✅ Menjalankan schema database
+- ✅ Membuat user admin default
+- ✅ Mengupdate file `.env.local`
+
+**Login Admin Default:**
+- **Username**: `admin`
+- **Email**: `admin@waskita.com`
+- **Password**: `admin123`
+
+### Setup PostgreSQL (Manual)
+
+Jika ingin setup manual:
+
+1. **Install PostgreSQL**
+   ```bash
+   # Ubuntu/Debian
+   sudo apt update
+   sudo apt install postgresql postgresql-contrib
+
+   # Windows: Download dari https://www.postgresql.org/download/windows/
+   # macOS: brew install postgresql
+   ```
+
+2. **Buat Database dan User**
+   ```sql
+   sudo -u postgres psql
+   CREATE DATABASE waskita_dev;
+   CREATE DATABASE waskita_test;
+   CREATE USER waskita_user WITH PASSWORD 'waskita_password';
+   GRANT ALL PRIVILEGES ON DATABASE waskita_dev TO waskita_user;
+   GRANT ALL PRIVILEGES ON DATABASE waskita_test TO waskita_user;
+   \q
+   ```
+
+3. **Copy dan Edit .env.local**
+   ```bash
+   cp .env.example .env.local
+   ```
+   
+   Edit `.env.local`:
+   ```
+   DATABASE_URL=postgresql://waskita_user:waskita_password@localhost:5432/waskita_dev
+   TEST_DATABASE_URL=postgresql://waskita_user:waskita_password@localhost:5432/waskita_test
+   SECRET_KEY=your-secret-key-here
+   ```
+
+4. **Jalankan Schema Database**
+   ```bash
+   psql -h localhost -U waskita_user -d waskita_dev -f database_schema.sql
+   ```
 
 ### 🐳 Production dengan Docker
 
@@ -134,11 +272,64 @@ NAIVE_BAYES_MODEL2_PATH=/app/models/navesbayes/naive_bayes_model2.pkl
 NAIVE_BAYES_MODEL3_PATH=/app/models/navesbayes/naive_bayes_model3.pkl
 ```
 
-## 📖 Dokumentasi Lengkap
+## 📚 Dokumentasi
 
-- **[User Guide Lengkap](USER_GUIDE_LENGKAP.md)** - Panduan penggunaan komprehensif
-- **[Security Guide](SECURITY_GUIDE.md)** - Panduan keamanan dan best practices
-- **[Database Schema](database_schema.sql)** - Struktur database dan relasi
+### 📖 Panduan Lengkap
+- **[User Guide Lengkap](docs/USER_GUIDE_LENGKAP.md)** - Panduan komprehensif untuk pengguna
+- **[API Documentation](docs/API_DOCUMENTATION.md)** - Dokumentasi API lengkap
+- **[Security Guide](docs/SECURITY_GUIDE.md)** - Panduan keamanan aplikasi
+
+### 🔧 Setup & Konfigurasi
+- **[Apify Setup Guide](docs/APIFY_SETUP_GUIDE.md)** - Konfigurasi API Apify untuk scraping
+- **[Docker Export Guide](docs/DOCKER_EXPORT_GUIDE.md)** - Panduan deployment Docker
+- **[Apify Actor Limits](docs/APIFY_ACTOR_LIMITS.md)** - Batasan dan limitasi Apify
+## 🛠️ Development
+
+### Setup Development Environment
+```bash
+# Clone repository
+git clone https://github.com/your-username/waskita.git
+cd waskita
+
+# Setup virtual environment
+python -m venv venv
+source venv/bin/activate  # Linux/macOS
+# atau
+venv\Scripts\activate     # Windows
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Setup database
+python setup_postgresql.py
+
+# Copy environment file
+cp .env.example .env.local
+
+# Run application
+python app.py
+```
+
+### Testing
+```bash
+# Run unit tests
+python -m pytest tests/
+
+# Run with coverage
+python -m pytest --cov=app tests/
+```
+
+### Code Quality
+```bash
+# Format code
+black app/
+
+# Lint code
+flake8 app/
+
+# Type checking
+mypy app/
+```
 
 ## 🔒 Keamanan
 
@@ -149,110 +340,42 @@ NAIVE_BAYES_MODEL3_PATH=/app/models/navesbayes/naive_bayes_model3.pkl
 - XSS protection
 - Rate limiting untuk API
 
-## 📊 Performa
+## 📊 Performa & Spesifikasi
 
 - **Akurasi Model**: 85-92% (tergantung jenis konten)
 - **Processing Speed**: ~1000 data/menit
 - **Memory Usage**: 2-4GB (tergantung dataset)
 - **Response Time**: <200ms untuk klasifikasi tunggal
+- **Database**: PostgreSQL 15+ dengan optimasi query
+- **Concurrent Users**: Mendukung hingga 100 pengguna bersamaan
 
-## Konfigurasi
+## 🤝 Contributing
 
-Sesuaikan file `.env` dengan konfigurasi Anda:
-
-```env
-# Database
-DATABASE_URL=postgresql://username:password@localhost:5432/waskita_db
-
-# Flask
-FLASK_SECRET_KEY=your-secret-key
-FLASK_DEBUG=False
-
-# File Upload
-UPLOAD_FOLDER=uploads
-MAX_CONTENT_LENGTH=16777216
-
-# Model Paths
-WORD2VEC_MODEL_PATH=../embeddings/wiki_word2vec_csv_updated.model
-NAIVE_BAYES_MODEL_PATH=../navesbayes/
-
-# API Keys (untuk scraping)
-APIFY_API_TOKEN=your-apify-token
-```
-
-## Struktur Database
-
-Aplikasi menggunakan PostgreSQL dengan tabel utama:
-- `users` - Data pengguna dan role
-- `datasets` - Metadata dataset
-- `raw_data` - Data mentah dari upload
-- `raw_data_scraper` - Data mentah dari scraping
-- `clean_data_upload` - Data bersih dari upload
-- `clean_data_scraper` - Data bersih dari scraping
-- `classification_results` - Hasil klasifikasi
-- `dataset_statistics` - Statistik real-time
-
-## API Endpoints
-
-### Autentikasi
-- `POST /login` - Login pengguna
-- `POST /register` - Registrasi pengguna
-- `GET /logout` - Logout pengguna
-
-### Dataset Management
-- `GET /dataset_management` - Halaman manajemen dataset
-- `POST /upload_data` - Upload file dataset
-- `POST /process_column_mapping` - Proses mapping kolom
-- `GET /dataset/<id>/details` - Detail dataset
-- `POST /api/dataset/<id>/clean` - Bersihkan dataset
-
-### Scraping
-- `GET /scraping` - Halaman scraping
-- `POST /start_scraping` - Mulai scraping data
-- `POST /process_scraping_column_mapping` - Proses data scraping
-
-### Klasifikasi
-- `POST /classify_data` - Klasifikasi data
-- `GET /classification/results` - Hasil klasifikasi
-
-### Admin
-- `GET /admin` - Panel admin
-- `GET /admin/users` - Manajemen pengguna
-
-## Fitur Keamanan
-
-- Password hashing dengan Werkzeug
-- Session-based authentication
-- Role-based access control
-- CSRF protection
-- Input validation dan sanitization
-- SQL injection prevention dengan ORM
-
-## Monitoring & Logging
-
-- Real-time statistics dengan database triggers
-- User activity logging
-- Error tracking dan debugging
-- Performance monitoring
-
-## 🤝 Kontribusi
-
-1. Fork repository
+1. Fork repository ini
 2. Buat feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
+3. Commit perubahan (`git commit -m 'Add some AmazingFeature'`)
 4. Push ke branch (`git push origin feature/AmazingFeature`)
 5. Buat Pull Request
 
-## 📄 Lisensi
+## 📄 License
 
 Distributed under the MIT License. See `LICENSE` for more information.
 
+## 👥 Team
+
+- **Developer**: [Your Name]
+- **Project Supervisor**: [Supervisor Name]
+- **Institution**: Telkom University
+
 ## 📞 Support
 
-- **Documentation**: Baca [User Guide Lengkap](USER_GUIDE_LENGKAP.md)
-- **Issues**: Laporkan bug di GitHub Issues
-- **Email**: support@waskita.app
+Jika Anda mengalami masalah atau memiliki pertanyaan:
+
+1. Cek [dokumentasi lengkap](docs/)
+2. Buka [GitHub Issues](https://github.com/your-username/waskita/issues)
+3. Hubungi tim development
 
 ---
 
-**© 2024 Waskita - Sistem Klasifikasi Konten Radikal Media Sosial**
+**Waskita** - Sistem Klasifikasi Konten Media Sosial dengan AI  
+Made with ❤️ by Telkom University Students

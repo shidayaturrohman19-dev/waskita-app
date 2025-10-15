@@ -509,9 +509,9 @@ def generate_sample_data(platform, keyword):
 # Apify API Integration Functions
 def get_apify_config():
     """
-    Get Apify configuration from environment variables
+    Get Apify configuration from environment variables with validation
     """
-    return {
+    config = {
         'api_token': os.getenv('APIFY_API_TOKEN'),
         'base_url': os.getenv('APIFY_BASE_URL', 'https://api.apify.com/v2'),
         'actors': {
@@ -519,52 +519,94 @@ def get_apify_config():
             'facebook': os.getenv('APIFY_FACEBOOK_ACTOR', 'apify/facebook-scraper'),
             'instagram': os.getenv('APIFY_INSTAGRAM_ACTOR', 'apify/instagram-scraper'),
             'tiktok': os.getenv('APIFY_TIKTOK_ACTOR', 'clockworks/free-tiktok-scraper')
-        }
+        },
+        'timeout': int(os.getenv('APIFY_TIMEOUT', '30')),  # Default 30 seconds
+        'max_retries': int(os.getenv('APIFY_MAX_RETRIES', '3')),  # Default 3 retries
+        'retry_delay': int(os.getenv('APIFY_RETRY_DELAY', '5'))  # Default 5 seconds delay
     }
+    
+    # Validate configuration
+    if not config['api_token']:
+        raise Exception("APIFY_API_TOKEN tidak dikonfigurasi. Silakan set environment variable APIFY_API_TOKEN.")
+    
+    return config
 
 
 def start_apify_actor(platform, keyword, date_from=None, date_to=None, max_results=25, instagram_params=None):
     """
-    Start Apify actor for specific platform
+    Start Apify actor for specific platform with improved error handling and retry mechanism
     """
     config = get_apify_config()
     
-    if not config['api_token']:
-        raise Exception("Apify API token not configured")
-    
     actor_id = config['actors'].get(platform.lower())
     if not actor_id:
-        raise Exception(f"Actor not configured for platform: {platform}")
+        raise Exception(f"Actor tidak dikonfigurasi untuk platform: {platform}. Silakan hubungi administrator untuk mengatur konfigurasi actor.")
     
     # Prepare input based on platform
     input_data = prepare_actor_input(platform, keyword, date_from, date_to, max_results, instagram_params)
     
-    # Start actor run
+    # Start actor run with retry mechanism
     url = f"{config['base_url']}/acts/{actor_id.replace('/', '~')}/runs"
     headers = {
         'Authorization': f"Bearer {config['api_token']}",
         'Content-Type': 'application/json'
     }
     
-    response = requests.post(url, json=input_data, headers=headers)
+    last_error = None
+    for attempt in range(config['max_retries']):
+        try:
+            response = requests.post(
+                url, 
+                json=input_data, 
+                headers=headers, 
+                timeout=config['timeout']
+            )
+            
+            if response.status_code == 201:
+                run_data = response.json()['data']
+                return run_data['id'], run_data['status']
+            else:
+                error_text = response.text
+                
+                # Handle specific Apify errors with user-friendly messages
+                if "actor-is-not-rented" in error_text.lower():
+                    raise Exception("Apify Actor tidak tersedia. Free trial telah berakhir dan memerlukan subscription berbayar. Silakan hubungi administrator untuk mengaktifkan akun Apify berbayar.")
+                elif "insufficient-credit" in error_text.lower() or "not enough credit" in error_text.lower():
+                    raise Exception("Kredit Apify tidak mencukupi. Silakan hubungi administrator untuk menambah kredit Apify.")
+                elif "invalid-token" in error_text.lower() or "unauthorized" in error_text.lower():
+                    raise Exception("Token Apify tidak valid atau tidak memiliki akses. Silakan hubungi administrator untuk memeriksa konfigurasi API.")
+                elif "actor-not-found" in error_text.lower():
+                    raise Exception(f"Actor Apify untuk platform {platform} tidak ditemukan. Silakan hubungi administrator untuk memeriksa konfigurasi actor.")
+                elif "rate limit" in error_text.lower():
+                    if attempt < config['max_retries'] - 1:
+                        time.sleep(config['retry_delay'] * (attempt + 1))  # Exponential backoff
+                        continue
+                    else:
+                        raise Exception("Rate limit Apify tercapai. Silakan tunggu beberapa menit sebelum mencoba lagi.")
+                else:
+                    raise Exception(f"Gagal memulai scraping (HTTP {response.status_code}): {error_text}. Silakan coba lagi atau hubungi administrator jika masalah berlanjut.")
+                    
+        except requests.exceptions.Timeout:
+            last_error = f"Timeout saat menghubungi Apify API (attempt {attempt + 1}/{config['max_retries']})"
+            if attempt < config['max_retries'] - 1:
+                time.sleep(config['retry_delay'])
+                continue
+        except requests.exceptions.ConnectionError:
+            last_error = f"Gagal terhubung ke Apify API (attempt {attempt + 1}/{config['max_retries']})"
+            if attempt < config['max_retries'] - 1:
+                time.sleep(config['retry_delay'])
+                continue
+        except Exception as e:
+            # Don't retry for configuration errors
+            if "tidak dikonfigurasi" in str(e) or "tidak tersedia" in str(e) or "tidak mencukupi" in str(e):
+                raise e
+            last_error = str(e)
+            if attempt < config['max_retries'] - 1:
+                time.sleep(config['retry_delay'])
+                continue
     
-    if response.status_code == 201:
-        run_data = response.json()['data']
-        return run_data['id'], run_data['status']
-    else:
-        error_text = response.text
-        
-        # Handle specific Apify errors with user-friendly messages
-        if "actor-is-not-rented" in error_text.lower():
-            raise Exception("Apify Actor tidak tersedia. Free trial telah berakhir dan memerlukan subscription berbayar. Silakan hubungi administrator untuk mengaktifkan akun Apify berbayar.")
-        elif "insufficient-credit" in error_text.lower():
-            raise Exception("Kredit Apify tidak mencukupi. Silakan hubungi administrator untuk menambah kredit Apify.")
-        elif "invalid-token" in error_text.lower() or "unauthorized" in error_text.lower():
-            raise Exception("Token Apify tidak valid atau tidak memiliki akses. Silakan hubungi administrator untuk memeriksa konfigurasi API.")
-        elif "actor-not-found" in error_text.lower():
-            raise Exception(f"Actor Apify untuk platform {platform} tidak ditemukan. Silakan hubungi administrator untuk memeriksa konfigurasi actor.")
-        else:
-            raise Exception(f"Gagal memulai scraping: {error_text}. Silakan coba lagi atau hubungi administrator jika masalah berlanjut.")
+    # If we get here, all retries failed
+    raise Exception(f"Gagal memulai scraping setelah {config['max_retries']} percobaan. Error terakhir: {last_error}")
 
 
 def prepare_actor_input(platform, keyword, date_from=None, date_to=None, max_results=25, instagram_params=None):
@@ -666,7 +708,7 @@ def prepare_actor_input(platform, keyword, date_from=None, date_to=None, max_res
 
 def check_apify_run_status(run_id):
     """
-    Check the status of an Apify actor run
+    Check the status of an Apify actor run with improved error handling
     """
     config = get_apify_config()
     
@@ -675,17 +717,25 @@ def check_apify_run_status(run_id):
         'Authorization': f"Bearer {config['api_token']}"
     }
     
-    response = requests.get(url, headers=headers)
-    
-    if response.status_code == 200:
-        return response.json()['data']
-    else:
-        raise Exception(f"Failed to get run status: {response.text}")
+    try:
+        response = requests.get(url, headers=headers, timeout=config['timeout'])
+        
+        if response.status_code == 200:
+            return response.json()['data']
+        elif response.status_code == 404:
+            raise Exception(f"Run ID {run_id} tidak ditemukan. Mungkin run telah dihapus atau ID tidak valid.")
+        else:
+            raise Exception(f"Gagal mendapatkan status run (HTTP {response.status_code}): {response.text}")
+            
+    except requests.exceptions.Timeout:
+        raise Exception("Timeout saat mengecek status Apify run. Silakan coba lagi.")
+    except requests.exceptions.ConnectionError:
+        raise Exception("Gagal terhubung ke Apify API untuk mengecek status. Periksa koneksi internet Anda.")
 
 
 def get_apify_run_results(run_id):
     """
-    Get results from completed Apify actor run
+    Get results from completed Apify actor run with improved error handling
     """
     config = get_apify_config()
     
@@ -694,32 +744,57 @@ def get_apify_run_results(run_id):
         'Authorization': f"Bearer {config['api_token']}"
     }
     
-    response = requests.get(url, headers=headers)
-    
-    if response.status_code == 200:
-        return response.json()
-    else:
-        raise Exception(f"Failed to get run results: {response.text}")
+    try:
+        response = requests.get(url, headers=headers, timeout=config['timeout'] * 2)  # Longer timeout for results
+        
+        if response.status_code == 200:
+            results = response.json()
+            if not results:
+                raise Exception("Tidak ada data yang berhasil di-scrape. Coba dengan keyword atau parameter yang berbeda.")
+            return results
+        elif response.status_code == 404:
+            raise Exception(f"Data hasil scraping untuk run ID {run_id} tidak ditemukan.")
+        else:
+            raise Exception(f"Gagal mendapatkan hasil scraping (HTTP {response.status_code}): {response.text}")
+            
+    except requests.exceptions.Timeout:
+        raise Exception("Timeout saat mengambil hasil scraping. Data mungkin terlalu besar, silakan coba dengan max_results yang lebih kecil.")
+    except requests.exceptions.ConnectionError:
+        raise Exception("Gagal terhubung ke Apify API untuk mengambil hasil. Periksa koneksi internet Anda.")
 
 
 def wait_for_apify_completion(run_id, max_wait_time=300, check_interval=10):
     """
-    Wait for Apify actor run to complete
+    Wait for Apify actor run to complete with better progress tracking
     """
     start_time = time.time()
+    last_status = None
     
     while time.time() - start_time < max_wait_time:
-        status_data = check_apify_run_status(run_id)
-        status = status_data['status']
-        
-        if status == 'SUCCEEDED':
-            return True, 'completed'
-        elif status == 'FAILED':
-            return False, 'failed'
-        elif status in ['ABORTED', 'TIMED-OUT']:
-            return False, status.lower()
-        
-        time.sleep(check_interval)
+        try:
+            status_data = check_apify_run_status(run_id)
+            status = status_data['status']
+            
+            # Log status changes
+            if status != last_status:
+                print(f"Apify run {run_id} status: {status}")
+                last_status = status
+            
+            if status == 'SUCCEEDED':
+                return True, 'completed'
+            elif status == 'FAILED':
+                # Get failure reason if available
+                failure_reason = status_data.get('statusMessage', 'Unknown error')
+                return False, f'failed: {failure_reason}'
+            elif status in ['ABORTED', 'TIMED-OUT']:
+                return False, status.lower()
+            
+            time.sleep(check_interval)
+            
+        except Exception as e:
+            # If we can't check status, wait a bit and try again
+            print(f"Error checking status: {e}")
+            time.sleep(check_interval)
     
     return False, 'timeout'
 
@@ -809,58 +884,72 @@ def get_apify_run_progress(run_id):
 
 def scrape_with_apify(platform, keyword, date_from=None, date_to=None, max_results=25, instagram_params=None):
     """
-    Main function to scrape data using Apify API
+    Main function to scrape data using Apify API with comprehensive error handling
     """
     try:
-        pass
+        print(f"Starting Apify scraping for {platform} with keyword: {keyword}")
         
         # Start the actor
         run_id, initial_status = start_apify_actor(platform, keyword, date_from, date_to, max_results, instagram_params)
-        pass
+        print(f"Apify actor started with run ID: {run_id}, initial status: {initial_status}")
         
         # Wait for completion
-        pass
+        print("Waiting for scraping to complete...")
         success, final_status = wait_for_apify_completion(run_id)
-        pass
+        print(f"Scraping completed with status: {final_status}")
         
         if success:
             # Get results
-            pass
+            print("Retrieving scraping results...")
             raw_results = get_apify_run_results(run_id)
-            pass
+            print(f"Retrieved {len(raw_results)} raw results")
             
             if raw_results and len(raw_results) > 0:
-                pass
-            
-            # Process results based on platform
-            pass
-            processed_results = process_apify_results(raw_results, platform, max_results)
-            pass
-            
-            return processed_results, run_id
+                print("Processing results...")
+                # Process results based on platform
+                processed_results = process_apify_results(raw_results, platform, max_results)
+                print(f"Processed {len(processed_results)} results")
+                
+                return processed_results, run_id
+            else:
+                raise Exception("Tidak ada data yang berhasil di-scrape. Coba dengan keyword yang berbeda atau periksa konfigurasi Apify.")
         else:
-            pass
-            raise Exception(f"Scraping failed with status: {final_status}")
+            print(f"Scraping failed: {final_status}")
+            
+            # Provide specific error messages based on failure type
+            if "failed:" in final_status:
+                raise Exception(f"Scraping gagal: {final_status.replace('failed:', '').strip()}")
+            elif final_status == 'timeout':
+                raise Exception("Scraping timeout. Proses memakan waktu terlalu lama. Coba dengan max_results yang lebih kecil atau keyword yang lebih spesifik.")
+            elif final_status == 'aborted':
+                raise Exception("Scraping dibatalkan oleh sistem Apify. Silakan coba lagi.")
+            else:
+                raise Exception(f"Scraping gagal dengan status: {final_status}")
             
     except Exception as e:
-        pass
+        print(f"Scraping error: {e}")
+        
         # Enhanced error handling with specific Apify error messages
         error_message = str(e)
         
         # Check for specific Apify errors and provide user-friendly messages
-        if "actor-is-not-rented" in error_message.lower():
+        if "tidak dikonfigurasi" in error_message.lower():
+            raise Exception("Konfigurasi Apify belum lengkap. Silakan hubungi administrator untuk mengatur konfigurasi Apify.")
+        elif "actor-is-not-rented" in error_message.lower():
             raise Exception("Apify Actor tidak tersedia. Free trial telah berakhir dan memerlukan subscription berbayar. Silakan hubungi administrator untuk mengaktifkan akun Apify berbayar.")
-        elif "insufficient-credit" in error_message.lower():
+        elif "insufficient-credit" in error_message.lower() or "not enough credit" in error_message.lower():
             raise Exception("Kredit Apify tidak mencukupi. Silakan hubungi administrator untuk menambah kredit Apify.")
         elif "invalid-token" in error_message.lower() or "unauthorized" in error_message.lower():
             raise Exception("Token Apify tidak valid atau tidak memiliki akses. Silakan hubungi administrator untuk memeriksa konfigurasi API.")
         elif "actor not configured" in error_message.lower():
             raise Exception(f"Platform {platform} belum dikonfigurasi untuk scraping. Silakan hubungi administrator.")
-        elif "api token not configured" in error_message.lower():
-            raise Exception("API Token Apify belum dikonfigurasi. Silakan hubungi administrator untuk mengatur konfigurasi Apify.")
+        elif "timeout" in error_message.lower():
+            raise Exception("Koneksi ke Apify API timeout. Periksa koneksi internet Anda atau coba lagi nanti.")
+        elif "connection" in error_message.lower():
+            raise Exception("Gagal terhubung ke Apify API. Periksa koneksi internet Anda.")
         else:
             # Provide more user-friendly error message
-            raise Exception(f"Terjadi kesalahan saat scraping: {error_message}. Silakan coba lagi atau hubungi administrator jika masalah berlanjut.")
+            raise Exception(f"Terjadi kesalahan saat scraping: {error_message}")
 
 
 def process_apify_results(raw_results, platform, max_results=None):
