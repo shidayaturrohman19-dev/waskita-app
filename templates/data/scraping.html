@@ -596,8 +596,9 @@ function simulateScrapingProgress(jobId, responseData = null) {
         scrapingInterval = null;
     }
     
-    // Reset progress fallback flag
+    // Reset progress fallback flag and mapping modal flag
     window.progressFallbackUsed = false;
+    window.mappingModalShown = false;
     
     // Use real-time progress if run_id is available, otherwise fallback to simulation
     if (runId) {
@@ -633,8 +634,17 @@ function trackRealTimeProgress(runId, jobId, responseData, startTime) {
                     clearInterval(scrapingInterval);
                     scrapingInterval = null;
                     
+                    // Prevent duplicate mapping modal - check if already shown
+                    if (window.mappingModalShown) {
+                        console.log('Mapping modal already shown, skipping duplicate');
+                        return;
+                    }
+                    
                     // Check if mapping is required
                     if (responseData && responseData.requires_mapping) {
+                        // Mark mapping modal as shown
+                        window.mappingModalShown = true;
+                        
                         // Store response data for mapping
                         window.pendingScrapingData = responseData;
                         
@@ -659,8 +669,8 @@ function trackRealTimeProgress(runId, jobId, responseData, startTime) {
             },
             error: function(xhr, status, error) {
                 console.warn('Real-time progress API error:', error);
-                // Only fallback to simulation if this is the first error
-                if (!window.progressFallbackUsed) {
+                // Only fallback to simulation if this is the first error and mapping modal not shown
+                if (!window.progressFallbackUsed && !window.mappingModalShown) {
                     console.log('Falling back to simulated progress');
                     window.progressFallbackUsed = true;
                     clearInterval(scrapingInterval);
@@ -707,8 +717,20 @@ function trackSimulatedProgress(jobId, responseData, startTime) {
         updateProgressUI(simulatedData, startTime, jobId, responseData);
         
         if (progress >= 100) {
+            clearInterval(scrapingInterval);
+            scrapingInterval = null;
+            
+            // Prevent duplicate mapping modal - check if already shown
+            if (window.mappingModalShown) {
+                console.log('Mapping modal already shown in simulation, skipping duplicate');
+                return;
+            }
+            
             // Setelah progress selesai, tampilkan mapping modal jika diperlukan
             if (responseData && responseData.requires_mapping) {
+                // Mark mapping modal as shown
+                window.mappingModalShown = true;
+                
                 // Store response data for mapping
                 window.pendingScrapingData = responseData;
                 
@@ -843,16 +865,27 @@ function resetScrapingUI(successCount = 0, responseData = null) {
     updateStatistics();
     loadScrapingHistoryWithoutReinit(); // Refresh riwayat scraping langsung
     
+    // Prioritize responseData.total_records over successCount for accuracy
+    const actualCount = responseData?.total_records || successCount || 0;
+    const platformName = responseData?.platform || 'media sosial';
+    let notificationText;
+    
+    if (actualCount > 0) {
+        notificationText = `Berhasil mengumpulkan ${actualCount} data dari ${platformName}`;
+    } else {
+        notificationText = `Scraping selesai, namun tidak ada data yang ditemukan dari ${platformName}`;
+    }
+    
     // Tampilkan dialog sukses dengan progress bar sudah tersembunyi
     Swal.fire({
-        icon: 'success',
+        icon: actualCount > 0 ? 'success' : 'warning',
         title: 'Scraping Selesai',
-        text: `Berhasil mengumpulkan ${successCount || responseData?.total_records || 0} data dari ${responseData?.platform || 'media sosial'}`,
+        text: notificationText,
         showCancelButton: true,
-        confirmButtonText: 'Lihat Hasil',
+        confirmButtonText: actualCount > 0 ? 'Lihat Hasil' : 'Tutup',
         cancelButtonText: 'Tutup'
     }).then(function(result) {
-        if (result.isConfirmed && lastScrapingDatasetId) {
+        if (result.isConfirmed && lastScrapingDatasetId && actualCount > 0) {
             window.location.href = `/dataset/${lastScrapingDatasetId}/details`;
         }
         
@@ -919,9 +952,12 @@ function completeScraping(successCount, jobId, responseData = null) {
     $('.progress-text').text('Scraping selesai!');
     $('#timeEstimate').text('Selesai');
     
+    // Prioritize responseData.total_records over successCount for accuracy
+    const actualCount = responseData?.total_records || successCount || 0;
+    
     // Update counters with actual data
-    $('#foundCount').text(successCount || responseData?.total_records || 0);
-    $('#successCount').text(successCount || responseData?.total_records || 0);
+    $('#foundCount').text(actualCount);
+    $('#successCount').text(actualCount);
     
     // Store the dataset ID for later use
     lastScrapingDatasetId = responseData ? (responseData.dataset_id || responseData.job_id) : jobId;
@@ -939,16 +975,25 @@ function completeScraping(successCount, jobId, responseData = null) {
         $('#scrapingProgress').addClass('d-none-custom');
     }, 1000); // Give 1 second to show 100% completion
     
-    // Tampilkan dialog sukses dengan progress bar yang akan disembunyikan
+    // Tampilkan dialog sukses dengan jumlah data yang akurat
+    const platformName = responseData?.platform || 'media sosial';
+    let notificationText;
+    
+    if (actualCount > 0) {
+        notificationText = `Berhasil mengumpulkan ${actualCount} data dari ${platformName}`;
+    } else {
+        notificationText = `Scraping selesai, namun tidak ada data yang ditemukan dari ${platformName}`;
+    }
+    
     Swal.fire({
-        icon: 'success',
+        icon: actualCount > 0 ? 'success' : 'warning',
         title: 'Scraping Selesai',
-        text: `Berhasil mengumpulkan ${successCount || responseData?.total_records || 0} data dari ${responseData?.platform || 'media sosial'}`,
+        text: notificationText,
         showCancelButton: true,
-        confirmButtonText: 'Lihat Hasil',
+        confirmButtonText: actualCount > 0 ? 'Lihat Hasil' : 'Tutup',
         cancelButtonText: 'Tutup'
     }).then(function(result) {
-        if (result.isConfirmed && lastScrapingDatasetId) {
+        if (result.isConfirmed && lastScrapingDatasetId && actualCount > 0) {
             window.location.href = `/dataset/${lastScrapingDatasetId}/details`;
         }
         
@@ -1459,6 +1504,9 @@ let shouldResetScrapingModal = false;
 
 // Handle modal close event
 $('#scrapingColumnMappingModal').on('hidden.bs.modal', function() {
+    // Reset mapping modal flag when modal is closed
+    window.mappingModalShown = false;
+    
     // Only reset if explicitly cancelled or processing completed successfully
     if (shouldResetScrapingModal) {
         // Clear stored job data

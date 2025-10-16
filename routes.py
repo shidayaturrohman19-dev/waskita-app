@@ -521,7 +521,7 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             page = request.args.get('page', 1, type=int)
             per_page = request.args.get('per_page', 25, type=int)  # More items per page for table
             search = request.args.get('search', '', type=str)
-            sort_by = request.args.get('sort_by', 'updated_at', type=str)
+            sort_by = request.args.get('sort_by', 'created_at', type=str)  # Changed default to created_at
             sort_order = request.args.get('sort_order', 'desc', type=str)
             
             # Build query for datasets
@@ -2051,7 +2051,8 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             return jsonify({
                 'success': True,
                 'message': success_msg,
-                'dataset_id': dataset.id
+                'dataset_id': dataset.id,
+                'total_records': records_added
             })
             
         except Exception as e:
@@ -3664,11 +3665,26 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             
             # Get unique scraping jobs grouped by keyword, platform, and dataset_id to show all scraping history
             if current_user.is_admin():
-                # Use DISTINCT ON to get one record per unique combination
-                base_query = db.session.query(RawDataScraper).distinct(
+                # Use subquery to get the latest record for each unique combination
+                subquery = db.session.query(
+                    RawDataScraper.keyword,
+                    RawDataScraper.platform,
+                    RawDataScraper.dataset_id,
+                    func.max(RawDataScraper.created_at).label('max_created_at')
+                ).group_by(
                     RawDataScraper.keyword,
                     RawDataScraper.platform,
                     RawDataScraper.dataset_id
+                ).subquery()
+                
+                base_query = db.session.query(RawDataScraper).join(
+                    subquery,
+                    db.and_(
+                        RawDataScraper.keyword == subquery.c.keyword,
+                        RawDataScraper.platform == subquery.c.platform,
+                        RawDataScraper.dataset_id == subquery.c.dataset_id,
+                        RawDataScraper.created_at == subquery.c.max_created_at
+                    )
                 )
                 
                 # Apply search filter if provided
@@ -3680,21 +3696,32 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                         )
                     )
                 
-                # Order by the grouping columns first, then by created_at desc to get latest record per group
-                base_query = base_query.order_by(
+                # Order by created_at desc to show newest first
+                base_query = base_query.order_by(desc(RawDataScraper.created_at))
+            else:
+                # Use subquery to get the latest record for each unique combination for current user
+                subquery = db.session.query(
                     RawDataScraper.keyword,
                     RawDataScraper.platform,
                     RawDataScraper.dataset_id,
-                    desc(RawDataScraper.created_at)
-                )
-            else:
-                # Use DISTINCT ON to get one record per unique combination for current user
-                base_query = db.session.query(RawDataScraper).distinct(
-                    RawDataScraper.keyword,
-                    RawDataScraper.platform,
-                    RawDataScraper.dataset_id
+                    func.max(RawDataScraper.created_at).label('max_created_at')
                 ).filter_by(
                     scraped_by=current_user.id
+                ).group_by(
+                    RawDataScraper.keyword,
+                    RawDataScraper.platform,
+                    RawDataScraper.dataset_id
+                ).subquery()
+                
+                base_query = db.session.query(RawDataScraper).join(
+                    subquery,
+                    db.and_(
+                        RawDataScraper.keyword == subquery.c.keyword,
+                        RawDataScraper.platform == subquery.c.platform,
+                        RawDataScraper.dataset_id == subquery.c.dataset_id,
+                        RawDataScraper.created_at == subquery.c.max_created_at,
+                        RawDataScraper.scraped_by == current_user.id
+                    )
                 )
                 
                 # Apply search filter if provided
@@ -3706,13 +3733,8 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                         )
                     )
                 
-                # Order by the grouping columns first, then by created_at desc to get latest record per group
-                base_query = base_query.order_by(
-                    RawDataScraper.keyword,
-                    RawDataScraper.platform,
-                    RawDataScraper.dataset_id,
-                    desc(RawDataScraper.created_at)
-                )
+                # Order by created_at desc to show newest first
+                base_query = base_query.order_by(desc(RawDataScraper.created_at))
             
             # Get total count for pagination
             total_count = base_query.count()
@@ -5202,3 +5224,67 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                 
         except Exception as e:
             return jsonify({'success': False, 'message': f'Error: {str(e)}'}), 500
+
+    @app.route('/api/v1/scraping/progress/<run_id>', methods=['GET'])
+    @csrf.exempt
+    def api_get_scraping_progress(run_id):
+        """API endpoint for getting scraping progress - CSRF exempt for external API access"""
+        try:
+            # Check for API key authentication
+            api_key = request.headers.get('X-API-Key')
+            if not api_key:
+                return jsonify({'success': False, 'message': 'API key required'}), 401
+            
+            # Validate API key
+            expected_api_key = os.getenv('WASKITA_API_KEY')
+            if expected_api_key and api_key != expected_api_key:
+                return jsonify({'success': False, 'message': 'Invalid API key'}), 401
+            
+            from utils import get_apify_run_progress
+            
+            # Get progress information from Apify API
+            progress_info = get_apify_run_progress(run_id)
+            
+            # Add user-friendly status messages
+            status_messages = {
+                'READY': 'Mempersiapkan scraping...',
+                'RUNNING': 'Sedang melakukan scraping data...',
+                'SUCCEEDED': 'Scraping berhasil diselesaikan!',
+                'FAILED': 'Scraping gagal, silakan coba lagi.',
+                'ABORTED': 'Scraping dibatalkan.',
+                'TIMED-OUT': 'Scraping timeout, waktu habis.',
+                'ERROR': 'Terjadi kesalahan saat mengecek progress.'
+            }
+            
+            progress_info['status_message'] = status_messages.get(
+                progress_info['status'], 
+                'Status tidak diketahui'
+            )
+            
+            # Format time remaining
+            if progress_info.get('estimated_time_remaining'):
+                remaining_seconds = int(progress_info['estimated_time_remaining'])
+                if remaining_seconds > 60:
+                    minutes = remaining_seconds // 60
+                    seconds = remaining_seconds % 60
+                    progress_info['time_remaining_formatted'] = f"{minutes}m {seconds}s"
+                else:
+                    progress_info['time_remaining_formatted'] = f"{remaining_seconds}s"
+            
+            return jsonify({
+                'success': True,
+                'progress': progress_info
+            })
+            
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'message': f'Error getting progress: {str(e)}',
+                'progress': {
+                    'run_id': run_id,
+                    'status': 'ERROR',
+                    'progress_percentage': 0,
+                    'status_message': 'Terjadi kesalahan saat mengecek progress.',
+                    'error': str(e)
+                }
+            }), 500

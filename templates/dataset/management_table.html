@@ -281,11 +281,17 @@
                         <i class="fas fa-sort"></i> Urutkan
                     </button>
                     <div class="dropdown-menu">
+                        <a class="dropdown-item" href="?search={{ search }}&sort_by=created_at&sort_order=desc&per_page={{ per_page }}">
+                            <i class="fas fa-clock"></i> Terbaru Dibuat
+                        </a>
+                        <a class="dropdown-item" href="?search={{ search }}&sort_by=created_at&sort_order=asc&per_page={{ per_page }}">
+                            <i class="fas fa-clock"></i> Terlama Dibuat
+                        </a>
                         <a class="dropdown-item" href="?search={{ search }}&sort_by=updated_at&sort_order=desc&per_page={{ per_page }}">
-                            <i class="fas fa-clock"></i> Terbaru
+                            <i class="fas fa-sync"></i> Terbaru Diupdate
                         </a>
                         <a class="dropdown-item" href="?search={{ search }}&sort_by=updated_at&sort_order=asc&per_page={{ per_page }}">
-                            <i class="fas fa-clock"></i> Terlama
+                            <i class="fas fa-sync"></i> Terlama Diupdate
                         </a>
                         <a class="dropdown-item" href="?search={{ search }}&sort_by=name&sort_order=asc&per_page={{ per_page }}">
                             <i class="fas fa-sort-alpha-down"></i> A-Z
