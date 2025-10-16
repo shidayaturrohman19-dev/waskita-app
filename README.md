@@ -2,13 +2,19 @@
 
 Waskita adalah aplikasi web berbasis Flask yang menggunakan teknologi Machine Learning untuk mengklasifikasikan konten media sosial sebagai **Radikal** atau **Non-Radikal** dengan akurasi tinggi menggunakan algoritma Naive Bayes.
 
-## ⚠️ PERINGATAN KEAMANAN
+## ⚠️ PERINGATAN KEAMANAN KRITIS
 
-**JANGAN PERNAH** menggunakan kredensial default di production:
-- Ganti semua password default sebelum deployment
-- Generate SECRET_KEY yang unik untuk setiap environment  
-- Gunakan environment variables untuk kredensial sensitif
-- Jangan commit file .env ke repository
+**🚨 BAHAYA: JANGAN PERNAH menggunakan kredensial default di production!**
+
+**WAJIB DILAKUKAN SEBELUM DEPLOYMENT:**
+- 🔑 Ganti SEMUA password default sebelum deployment
+- 🔐 Generate SECRET_KEY yang unik dan kuat untuk setiap environment  
+- 🛡️ Gunakan environment variables untuk SEMUA kredensial sensitif
+- ❌ JANGAN PERNAH commit file .env ke repository
+- 🔒 Aktifkan HTTPS/SSL untuk production
+- 📊 Monitor akses dan aktivitas mencurigakan
+
+**⚠️ KREDENSIAL DEFAULT HANYA UNTUK DEVELOPMENT - SEGERA GANTI!**
 
 ---
 
@@ -193,18 +199,26 @@ make restart       # Restart services
 make stop          # Stop semua services
 ```
 
-#### 🔐 Login Default
-Setelah build berhasil, gunakan kredensial berikut:
+#### 🔐 Login Default (HANYA UNTUK DEVELOPMENT)
 
-**Admin User:**
+**🚨 PERINGATAN: Kredensial ini HANYA untuk testing development!**
+**WAJIB DIGANTI sebelum production deployment!**
+
+**Admin User (DEVELOPMENT ONLY):**
 - Username: `admin`
-- Password: `admin123`
+- Password: `admin123` **← GANTI SEGERA!**
 - Role: Administrator (akses penuh)
 
-**Test User:**
+**Test User (DEVELOPMENT ONLY):**
 - Username: `testuser`
-- Password: `testuser123`
+- Password: `testuser123` **← GANTI SEGERA!**
 - Role: User biasa (akses terbatas)
+
+**🔒 Untuk Production:**
+1. Login dengan kredensial default
+2. **SEGERA** ganti password melalui menu Profile
+3. Buat user admin baru dengan kredensial yang kuat
+4. Hapus atau nonaktifkan user default
 
 #### 🌐 Akses Aplikasi
 - **Web App**: http://localhost:5000
@@ -361,23 +375,139 @@ docker-compose up -d --build
 
 ### 🔧 Konfigurasi Environment
 
-Edit file `.env.docker` untuk konfigurasi production:
-```env
-# Database Configuration
-POSTGRES_DB=waskita_prod
-POSTGRES_USER=waskita_user
-POSTGRES_PASSWORD=your_secure_password_here
+#### File Environment Variables
 
-# Flask Configuration
-SECRET_KEY=generate_your_own_secret_key_here
-FLASK_ENV=production
+Aplikasi Waskita menggunakan 3 jenis file environment variables:
 
-# Model Paths (sudah dikonfigurasi)
-WORD2VEC_MODEL_PATH=/app/models/embeddings/wiki_word2vec_csv_updated.model
-NAIVE_BAYES_MODEL1_PATH=/app/models/navesbayes/naive_bayes_model1.pkl
-NAIVE_BAYES_MODEL2_PATH=/app/models/navesbayes/naive_bayes_model2.pkl
-NAIVE_BAYES_MODEL3_PATH=/app/models/navesbayes/naive_bayes_model3.pkl
+- **`.env.example`** - Template konfigurasi dengan placeholder values
+- **`.env.local`** - Untuk development lokal (tidak di-commit ke git)
+- **`.env.docker`** - Untuk deployment Docker (tidak di-commit ke git)
+
+#### Konfigurasi .env.docker untuk Docker Deployment
+
+Sebelum menjalankan aplikasi dengan Docker, copy dan edit file `.env.docker`:
+
+```bash
+cp .env.example .env.docker
+# Edit .env.docker sesuai konfigurasi production Anda
 ```
+
+**Contoh konfigurasi `.env.docker` lengkap:**
+
+```env
+# ===== DATABASE CONFIGURATION =====
+# PostgreSQL Configuration untuk Docker
+# 🚨 PERINGATAN: Ganti password default untuk production!
+DATABASE_URL=postgresql://waskita_user:CHANGE_THIS_PASSWORD_IN_PRODUCTION@postgres:5432/waskita_dev
+TEST_DATABASE_URL=postgresql://waskita_user:CHANGE_THIS_PASSWORD_IN_PRODUCTION@postgres:5432/waskita_test
+DATABASE_HOST=postgres
+DATABASE_PORT=5432
+DATABASE_NAME=waskita_dev
+DATABASE_USER=waskita_user
+DATABASE_PASSWORD=CHANGE_THIS_PASSWORD_IN_PRODUCTION
+
+# ===== FLASK CONFIGURATION =====
+# 🔐 WAJIB: Generate SECRET_KEY yang unik dan kuat!
+SECRET_KEY=GENERATE_UNIQUE_SECRET_KEY_HERE_MINIMUM_32_CHARACTERS
+FLASK_ENV=production
+FLASK_DEBUG=False
+
+# ===== UPLOAD CONFIGURATION =====
+UPLOAD_FOLDER=uploads
+MAX_CONTENT_LENGTH=16777216
+
+# ===== MODEL PATHS (Docker Container Paths) =====
+WORD2VEC_MODEL_PATH=models/embeddings/wiki_word2vec_csv_updated.model
+NAIVE_BAYES_MODEL1_PATH=models/navesbayes/naive_bayes_model1.pkl
+NAIVE_BAYES_MODEL2_PATH=models/navesbayes/naive_bayes_model2.pkl
+NAIVE_BAYES_MODEL3_PATH=models/navesbayes/naive_bayes_model3.pkl
+
+# ===== APIFY API CONFIGURATION =====
+# 🔑 PENTING: Ganti dengan Apify API token Anda yang sebenarnya
+APIFY_API_TOKEN=YOUR_REAL_APIFY_API_TOKEN_HERE
+APIFY_BASE_URL=https://api.apify.com/v2
+
+# Apify Actor IDs (sudah dikonfigurasi optimal)
+APIFY_TWITTER_ACTOR=kaitoeasyapi/twitter-x-data-tweet-scraper-pay-per-result-cheapest
+APIFY_FACEBOOK_ACTOR=apify/facebook-scraper
+APIFY_INSTAGRAM_ACTOR=apify/instagram-scraper
+APIFY_TIKTOK_ACTOR=clockworks/free-tiktok-scraper
+
+# ===== REDIS CONFIGURATION (Optional) =====
+REDIS_URL=redis://redis:6379/0
+
+# ===== SECURITY CONFIGURATION =====
+WTF_CSRF_ENABLED=True
+WTF_CSRF_TIME_LIMIT=3600
+
+# ===== LOGGING CONFIGURATION =====
+LOG_LEVEL=INFO
+LOG_FILE=logs/waskita.log
+```
+
+#### ⚠️ KRITIS: Keamanan Production
+
+**🚨 WAJIB DILAKUKAN SEBELUM PRODUCTION:**
+
+**1. Kredensial & Authentication:**
+- 🔑 **SECRET_KEY** - Generate secret key yang unik dan kuat (minimum 32 karakter)
+- 🔐 **DATABASE_PASSWORD** - Gunakan password yang kompleks dan unik
+- 🔑 **APIFY_API_TOKEN** - Masukkan token Apify API Anda yang valid
+- 👤 **User Accounts** - Ganti SEMUA password default admin dan user
+
+**2. Environment & Configuration:**
+- 🛡️ Set `FLASK_ENV=production` dan `FLASK_DEBUG=False`
+- 🔒 Aktifkan HTTPS/SSL untuk semua komunikasi
+- 🚫 Jangan pernah commit file `.env*` ke repository
+- 📁 Set permission file `.env` hanya untuk owner (600)
+
+**3. Database Security:**
+- 🔐 Gunakan password database yang kuat (min 16 karakter)
+- 🌐 Batasi akses database hanya dari aplikasi
+- 🔒 Aktifkan SSL/TLS untuk koneksi database
+- 💾 Setup backup database otomatis dan terenkripsi
+
+**Generate SECRET_KEY yang aman:**
+```bash
+# Metode 1: Python
+python -c "import secrets; print(secrets.token_hex(32))"
+
+# Metode 2: OpenSSL
+openssl rand -hex 32
+
+# Metode 3: PowerShell (Windows)
+[System.Web.Security.Membership]::GeneratePassword(64, 10)
+```
+
+**Generate Password Database yang kuat:**
+```bash
+# Generate password 20 karakter dengan karakter khusus
+python -c "import secrets, string; chars = string.ascii_letters + string.digits + '!@#$%^&*'; print(''.join(secrets.choice(chars) for _ in range(20)))"
+```
+
+#### 🔍 Perbedaan Konfigurasi Database
+
+**Development (.env.local):**
+```env
+DATABASE_HOST=localhost  # Database di host lokal
+DATABASE_PASSWORD=waskita_password  # ⚠️ Password default - OK untuk development
+```
+
+**Docker (.env.docker):**
+```env
+DATABASE_HOST=postgres   # Nama service PostgreSQL di docker-compose.yml
+DATABASE_PASSWORD=CHANGE_THIS_PASSWORD_IN_PRODUCTION  # 🚨 WAJIB diganti untuk production
+```
+
+**🔒 Checklist Keamanan Deployment:**
+- [ ] ✅ SECRET_KEY sudah di-generate dengan aman
+- [ ] ✅ Password database sudah diganti dari default
+- [ ] ✅ Password admin default sudah diganti
+- [ ] ✅ APIFY_API_TOKEN sudah diisi dengan token yang valid
+- [ ] ✅ FLASK_DEBUG=False untuk production
+- [ ] ✅ File .env tidak di-commit ke repository
+- [ ] ✅ HTTPS/SSL sudah diaktifkan
+- [ ] ✅ Firewall dan network security sudah dikonfigurasi
 
 ## 📚 Dokumentasi
 
