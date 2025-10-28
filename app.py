@@ -5,12 +5,18 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_wtf.csrf import CSRFProtect
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from datetime import datetime
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
-load_dotenv('.env.local')
+load_dotenv(override=True)  # Use override=True to ensure .env values take precedence
 
+# Routes will be initialized using init_routes function
+from models import db, User
+from models_otp import RegistrationRequest, AdminNotification, OTPEmailLog
+from otp_routes import otp_bp
 from config import Config
 
 # Setup logging
@@ -54,6 +60,14 @@ migrate = Migrate(app, db)
 
 # Initialize CSRF protection
 csrf = CSRFProtect(app)
+
+# Initialize rate limiter
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=["500 per day", "200 per hour"],
+    storage_uri="memory://"
+)
 
 # Initialize scheduler
 cleanup_scheduler.init_app(app)
@@ -129,11 +143,17 @@ def load_user(user_id):
     from models import User
     return User.query.get(int(user_id))
 
+# Load models and initialize routes
+load_models()
+from routes import init_routes
+init_routes(app, word2vec_model, naive_bayes_models)
+
+# Register OTP blueprint
+app.register_blueprint(otp_bp, url_prefix='/otp')
+
+logger.info("OTP authentication blueprint registered with rate limiting")
+
 if __name__ == '__main__':
-    load_models()
-    # Initialize routes with loaded models
-    from routes import init_routes
-    init_routes(app, word2vec_model, naive_bayes_models)
     
     # Start automatic cleanup scheduler
     cleanup_scheduler.start_scheduler()

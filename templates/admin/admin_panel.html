@@ -88,6 +88,267 @@ select.form-control option {
     visibility: hidden !important;
     margin-bottom: 0.5rem !important;
 }
+
+/* Enhanced User Management Table Styling */
+.user-management-table {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.user-management-table .table {
+    margin-bottom: 0;
+    font-size: 14px;
+}
+
+.user-management-table .table thead th {
+    background: #ffffff;
+    color: #333333;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    border: 1px solid #dee2e6;
+    border-bottom: 2px solid #dee2e6;
+    padding: 15px 12px;
+    vertical-align: middle;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.user-management-table .table tbody tr {
+    transition: all 0.3s ease;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.user-management-table .table tbody tr:hover {
+    background-color: #f8f9ff;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.user-management-table .table tbody td {
+    padding: 12px;
+    vertical-align: middle;
+    border-top: none;
+}
+
+/* Column specific styling */
+.user-management-table .table tbody td:first-child {
+    font-weight: 600;
+    color: #6c757d;
+    font-size: 13px;
+}
+
+.user-management-table .table tbody td:nth-child(2) {
+    font-weight: 600;
+    color: #495057;
+}
+
+.user-management-table .table tbody td:nth-child(3) {
+    color: #6c757d;
+    font-size: 13px;
+}
+
+/* Badge improvements */
+.badge {
+    font-size: 11px;
+    padding: 6px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    background: #ffffff !important;
+    color: #333333 !important;
+    border: 1px solid #dee2e6;
+}
+
+.badge.bg-danger {
+    background: #ffffff !important;
+    color: #dc3545 !important;
+    border: 1px solid #dc3545;
+}
+
+.badge.bg-primary {
+    background: #ffffff !important;
+    color: #007bff !important;
+    border: 1px solid #007bff;
+}
+
+.badge.bg-success {
+    background: #ffffff !important;
+    color: #28a745 !important;
+    border: 1px solid #28a745;
+}
+
+.badge.bg-secondary {
+    background: #ffffff !important;
+    color: #6c757d !important;
+    border: 1px solid #6c757d;
+}
+
+.badge.bg-info {
+    background: #ffffff !important;
+    color: #17a2b8 !important;
+    border: 1px solid #17a2b8;
+}
+
+/* Action buttons styling */
+.btn-group .btn {
+    margin: 0 1px;
+    border-radius: 6px !important;
+    padding: 6px 10px;
+    font-size: 12px;
+    transition: all 0.3s ease;
+}
+
+.btn-group .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.btn-sm {
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+    .user-management-table .table-responsive {
+        border-radius: 8px;
+    }
+    
+    .user-management-table .table thead th {
+        font-size: 11px;
+        padding: 10px 8px;
+    }
+    
+    .user-management-table .table tbody td {
+        padding: 8px;
+        font-size: 13px;
+    }
+    
+    .btn-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2px;
+    }
+    
+    .btn-group .btn {
+        margin: 1px;
+        padding: 4px 8px;
+        font-size: 11px;
+    }
+}
+
+/* Empty state styling */
+.empty-state {
+    padding: 60px 20px;
+    text-align: center;
+    color: #6c757d;
+}
+
+.empty-state i {
+    color: #dee2e6;
+    margin-bottom: 20px;
+}
+
+.empty-state h5 {
+    color: #495057;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.empty-state p {
+    color: #6c757d;
+    margin-bottom: 0;
+}
+
+/* Card header improvements */
+.card-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-bottom: 2px solid #dee2e6;
+}
+
+.card-header .card-title {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0;
+}
+
+/* Card header enhanced styling */
+.card-header-enhanced {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-bottom: 2px solid #dee2e6;
+    padding: 15px 20px;
+}
+
+.card-header-enhanced .card-title {
+    margin: 0;
+    font-weight: 600;
+    color: #495057;
+}
+
+/* Statistics refresh styling */
+.stats-refresh {
+    position: relative;
+    overflow: hidden;
+}
+
+.stats-refresh.shimmer::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+/* Statistics boxes improvements */
+.small-box {
+    border-radius: 10px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.small-box:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.small-box .inner {
+    padding: 20px;
+}
+
+.small-box .inner h3 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.small-box .inner p {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 0;
+    opacity: 0.9;
+}
+
+.small-box .icon {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    font-size: 3rem;
+    opacity: 0.3;
+}
 </style>
 {% endblock extra_css %}
 {% block content %}
@@ -96,7 +357,7 @@ select.form-control option {
             <!-- Statistik Admin -->
             <div class="row mb-4">
                 <div class="col-lg-3 col-6">
-                    <div class="small-box bg-info">
+                    <div class="small-box bg-info stats-refresh" id="totalUsersStats">
                         <div class="inner">
                             <h3>{{ total_users }}</h3>
                             <p>Total Pengguna</p>
@@ -107,7 +368,7 @@ select.form-control option {
                     </div>
                 </div>
                 <div class="col-lg-3 col-6">
-                    <div class="small-box bg-success">
+                    <div class="small-box bg-success stats-refresh" id="activeUsersStats">
                         <div class="inner">
                             <h3>{{ active_users }}</h3>
                             <p>Pengguna Aktif</p>
@@ -118,7 +379,7 @@ select.form-control option {
                     </div>
                 </div>
                 <div class="col-lg-3 col-6">
-                    <div class="small-box bg-warning">
+                    <div class="small-box bg-warning stats-refresh" id="adminUsersStats">
                         <div class="inner">
                             <h3>{{ admin_users }}</h3>
                             <p>Administrator</p>
@@ -129,7 +390,7 @@ select.form-control option {
                     </div>
                 </div>
                 <div class="col-lg-3 col-6">
-                    <div class="small-box bg-danger">
+                    <div class="small-box bg-danger stats-refresh" id="inactiveUsersStats">
                         <div class="inner">
                             <h3>{{ inactive_users }}</h3>
                             <p>Pengguna Nonaktif</p>
@@ -140,78 +401,21 @@ select.form-control option {
                     </div>
                 </div>
             </div>
-            <!-- Filter dan Pencarian -->
+            <!-- Header Admin Panel -->
             <div class="row mb-3">
                 <div class="col-md-12">
-                    <div class="card">
+                    <div class="card" role="region" aria-labelledby="admin-header">
                         <div class="card-header">
-                            <h3 class="card-title">Filter Pengguna</h3>
+                            <h3 class="card-title" id="admin-header">Kelola Pengguna</h3>
                             <div class="card-tools">
                                 <button type="button"
                                         class="btn btn-primary"
                                         data-toggle="modal"
-                                        data-target="#addUserModal">
-                                    <i class="fas fa-plus"></i> Tambah Pengguna
+                                        data-target="#addUserModal"
+                                        aria-label="Tambah pengguna baru">
+                                    <i class="fas fa-plus" aria-hidden="true"></i> Tambah Pengguna
                                 </button>
                             </div>
-                        </div>
-                        <div class="card-body">
-                            <form method="get" id="filterForm">
-                                <div class="row">
-                                    <div class="col-md-3">
-                                        <div class="form-group">
-                                            <label>Role</label>
-                                            <select name="role" class="form-control">
-                                                <option value="">Semua Role</option>
-                                                <option value="admin" {{ 'selected' if request.args.get("role") == 'admin' }}>Administrator
-                                                </option>
-                                                <option value="user" {{ 'selected' if request.args.get("role") == 'user' }}>User
-                                                </option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="form-group">
-                                            <label>Status</label>
-                                            <select name="status" class="form-control">
-                                                <option value="">Semua Status</option>
-                                                <option value="1" {{ 'selected' if request.args.get("status") == '1' }}>Aktif
-                                                </option>
-                                                <option value="0" {{ 'selected' if request.args.get("status") == '0' }}>Nonaktif
-                                                </option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-group">
-                                            <label>Pencarian</label>
-                                            <div class="input-group">
-                                                <input type="text"
-                                                       name="search"
-                                                       class="form-control"
-                                                       placeholder="Cari username atau email..."
-                                                       value="{{ request.args.get('search', '') }}">
-                                                <div class="input-group-append">
-                                                    <button type="submit" class="btn btn-primary">
-                                                        <i class="fas fa-search"></i>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-2">
-                                        <div class="form-group">
-                                            <label class="invisible-label">.</label>
-                                            <div>
-                                                <a href="{{ url_for("admin_panel") }}"
-                                                   class="btn btn-secondary btn-block">
-                                                    <i class="fas fa-undo"></i> Reset
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </form>
                         </div>
                     </div>
                 </div>
@@ -219,105 +423,217 @@ select.form-control option {
             <!-- Tabel Pengguna -->
             <div class="row">
                 <div class="col-md-12">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Daftar Pengguna</h3>
+                    <div class="card user-management-table" role="region" aria-labelledby="user-table-header">
+                        <div class="card-header card-header-enhanced">
+                            <h3 class="card-title" id="user-table-header">
+                                <i class="fas fa-users mr-2" aria-hidden="true"></i>
+                                Daftar Pengguna
+                            </h3>
                             <div class="card-tools">
-                                <span class="badge bg-info">Total: {{ users|length }} pengguna</span>
+                                <button type="button" class="btn btn-primary btn-sm" onclick="refreshStats()" aria-label="Refresh data pengguna">
+                                    <i class="fas fa-sync-alt" id="refreshIcon" aria-hidden="true"></i>
+                                    Refresh
+                                </button>
+                                <span class="badge bg-info ml-2" role="status" aria-label="Total {{ users|length }} pengguna">
+                                    <i class="fas fa-user-friends mr-1" aria-hidden="true"></i>
+                                    Total: {{ users|length }} pengguna
+                                </span>
                             </div>
                         </div>
                         <div class="card-body table-responsive p-0">
-                            <table class="table table-hover text-nowrap">
+                            <table class="table table-hover text-nowrap" role="table" aria-labelledby="user-table-header" aria-describedby="user-table-description">
+                                <caption id="user-table-description" class="sr-only">Tabel daftar pengguna dengan informasi ID, username, email, role, status, dan aksi yang dapat dilakukan</caption>
                                 <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Username</th>
-                                        <th>Email</th>
-                                        <th>Role</th>
-                                        <th>Status</th>
-                                        <th>Terakhir Login</th>
-                                        <th>Tanggal Daftar</th>
-                                        <th>Aksi</th>
+                                    <tr role="row">
+                                        <th scope="col" style="width: 60px;">
+                                            <i class="fas fa-hashtag mr-1" aria-hidden="true"></i>
+                                            ID
+                                        </th>
+                                        <th scope="col" style="width: 150px;">
+                                            <i class="fas fa-user mr-1" aria-hidden="true"></i>
+                                            Username
+                                        </th>
+                                        <th scope="col" style="width: 200px;">
+                                            <i class="fas fa-envelope mr-1" aria-hidden="true"></i>
+                                            Email
+                                        </th>
+                                        <th scope="col" style="width: 120px;">
+                                            <i class="fas fa-user-tag mr-1" aria-hidden="true"></i>
+                                            Role
+                                        </th>
+                                        <th scope="col" style="width: 100px;">
+                                            <i class="fas fa-toggle-on mr-1" aria-hidden="true"></i>
+                                            Status
+                                        </th>
+                                        <th scope="col" style="width: 150px;">
+                                            <i class="fas fa-clock mr-1" aria-hidden="true"></i>
+                                            Terakhir Login
+                                        </th>
+                                        <th scope="col" style="width: 150px;">
+                                            <i class="fas fa-calendar-plus mr-1" aria-hidden="true"></i>
+                                            Tanggal Daftar
+                                        </th>
+                                        <th scope="col" style="width: 180px;">
+                                            <i class="fas fa-cogs mr-1" aria-hidden="true"></i>
+                                            Aksi
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {% for user in users %}
-                                        <tr>
-                                            <td>{{ user.id }}</td>
-                                            <td>
-                                                <strong>{{ user.username }}</strong>
-                                                {% if user.id == current_user.id %}<span class="badge bg-info ml-1">Anda</span>{% endif %}
+                                        <tr role="row">
+                                            <td class="text-center">
+                                                <span class="badge badge-light" aria-label="ID pengguna {{ user.id }}">#{{ user.id }}</span>
                                             </td>
-                                            <td>{{ user.email }}</td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="user-avatar mr-2">
+                                                        <i class="fas fa-user-circle fa-2x text-muted" aria-hidden="true"></i>
+                                                    </div>
+                                                    <div>
+                                                        <strong>{{ user.username }}</strong>
+                                                        {% if user.id == current_user.id %}
+                                                            <span class="badge bg-info ml-1" aria-label="Akun Anda saat ini">
+                                                                <i class="fas fa-star mr-1" aria-hidden="true"></i>Anda
+                                                            </span>
+                                                        {% endif %}
+                                                        {% if user.full_name %}
+                                                            <br><small class="text-muted">{{ user.full_name }}</small>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fas fa-at text-muted mr-2" aria-hidden="true"></i>
+                                                    <span>{{ user.email }}</span>
+                                                </div>
+                                            </td>
                                             <td>
                                                 {% if user.role == 'admin' %}
-                                                    <span class="badge bg-danger">Administrator</span>
+                                                    <span class="badge bg-danger" aria-label="Role Administrator">
+                                                        <i class="fas fa-crown mr-1" aria-hidden="true"></i>Administrator
+                                                    </span>
                                                 {% else %}
-                                                    <span class="badge bg-primary">User</span>
+                                                    <span class="badge bg-primary" aria-label="Role User">
+                                                        <i class="fas fa-user mr-1" aria-hidden="true"></i>User
+                                                    </span>
                                                 {% endif %}
                                             </td>
                                             <td>
                                                 {% if user.is_active %}
-                                                    <span class="badge bg-success">Aktif</span>
+                                                    <span class="badge bg-success" aria-label="Status Aktif">
+                                                        <i class="fas fa-check-circle mr-1" aria-hidden="true"></i>Aktif
+                                                    </span>
                                                 {% else %}
-                                                    <span class="badge bg-secondary">Nonaktif</span>
+                                                    <span class="badge bg-secondary" aria-label="Status Nonaktif">
+                                                        <i class="fas fa-times-circle mr-1" aria-hidden="true"></i>Nonaktif
+                                                    </span>
                                                 {% endif %}
                                             </td>
                                             <td>
                                                 {% if user.last_login %}
-                                                    {{ user.last_login | format_datetime }}
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="fas fa-history text-success mr-2" aria-hidden="true"></i>
+                                                        <div>
+                                                            <small>{{ user.last_login | format_datetime }}</small>
+                                                        </div>
+                                                    </div>
                                                 {% else %}
-                                                    <span class="text-muted">Belum pernah</span>
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="fas fa-minus-circle text-muted mr-2" aria-hidden="true"></i>
+                                                        <span class="text-muted">Belum pernah</span>
+                                                    </div>
                                                 {% endif %}
                                             </td>
-                                            <td>{{ user.created_at | format_datetime }}</td>
                                             <td>
-                                                <div class="btn-group">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fas fa-calendar text-info mr-2" aria-hidden="true"></i>
+                                                    <small>{{ user.created_at | format_datetime }}</small>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group" role="group">
                                                     <button type="button"
                                                             class="btn btn-sm btn-info"
-                                                            onclick="viewUser({{ user.id }})">
+                                                            onclick="viewUser({{ user.id }})"
+                                                            title="Lihat Detail">
                                                         <i class="fas fa-eye"></i>
                                                     </button>
                                                     {% if user.id != current_user.id %}
                                                         <button type="button"
                                                                 class="btn btn-sm btn-warning"
-                                                                onclick="editUser({{ user.id }})">
+                                                                onclick="editUser({{ user.id }})"
+                                                                title="Edit Pengguna">
                                                             <i class="fas fa-edit"></i>
                                                         </button>
                                                         {% if user.is_active %}
                                                             <button type="button"
                                                                     class="btn btn-sm btn-secondary"
-                                                                    onclick="toggleUserStatus({{ user.id }}, false)">
+                                                                    onclick="toggleUserStatus({{ user.id }}, false)"
+                                                                    title="Nonaktifkan">
                                                                 <i class="fas fa-user-slash"></i>
                                                             </button>
                                                         {% else %}
                                                             <button type="button"
                                                                     class="btn btn-sm btn-success"
-                                                                    onclick="toggleUserStatus({{ user.id }}, true)">
+                                                                    onclick="toggleUserStatus({{ user.id }}, true)"
+                                                                    title="Aktifkan">
                                                                 <i class="fas fa-user-check"></i>
                                                             </button>
                                                         {% endif %}
                                                         <button type="button"
                                                                 class="btn btn-sm btn-danger"
-                                                                onclick="deleteUser({{ user.id }})">
+                                                                onclick="deleteUser({{ user.id }})"
+                                                                title="Hapus Pengguna">
                                                             <i class="fas fa-trash"></i>
                                                         </button>
+                                                    {% else %}
+                                                        <span class="badge badge-light">
+                                                            <i class="fas fa-lock mr-1"></i>Akun Anda
+                                                        </span>
                                                     {% endif %}
                                                 </div>
                                             </td>
                                         </tr>
                                     {% else %}
                                         <tr>
-                                            <td colspan="8" class="text-center text-muted py-4">
-                                                <i class="fas fa-users fa-3x mb-3"></i>
-                                                <br>
-                                                Tidak ada pengguna yang ditemukan
+                                            <td colspan="8" class="empty-state">
+                                                <div>
+                                                    <i class="fas fa-users fa-4x"></i>
+                                                    <h5>Tidak ada pengguna yang ditemukan</h5>
+                                                    <p>Belum ada pengguna yang terdaftar dalam sistem.</p>
+                                                    <button type="button"
+                                                            class="btn btn-primary mt-3"
+                                                            data-toggle="modal"
+                                                            data-target="#addUserModal">
+                                                        <i class="fas fa-plus mr-2"></i>Tambah Pengguna Pertama
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     {% endfor %}
                                 </tbody>
                             </table>
                         </div>
+                        {% if users|length > 0 %}
+                        <div class="card-footer">
+                            <div class="row align-items-center">
+                                <div class="col-sm-6">
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        Menampilkan {{ users|length }} pengguna
+                                    </small>
+                                </div>
+                                <div class="col-sm-6 text-right">
+                                    <small class="text-muted">
+                                        <i class="fas fa-clock mr-1"></i>
+                                        Terakhir diperbarui: {{ current_time | format_datetime('datetime') }}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -537,12 +853,17 @@ $('#addUserForm').submit(function(e) {
     formData.append('role', $('#addRole').val());
     formData.append('is_active', $('#addIsActive').is(':checked') ? 'true' : 'false');
     
+    const csrfToken = $('meta[name=csrf-token]').attr('content');
+    
     $.ajax({
         url: '/api/admin/users',
         type: 'POST',
         data: formData,
         processData: false,
         contentType: false,
+        headers: {
+            'X-CSRFToken': csrfToken
+        },
         success: function(response) {
             if (response.success) {
                 Swal.fire('Berhasil', 'Pengguna berhasil ditambahkan', 'success').then(() => {
@@ -640,12 +961,17 @@ $('#editUserForm').submit(function(e) {
         formData.append('password', $('#editPassword').val());
     }
     
+    const csrfToken = $('meta[name=csrf-token]').attr('content');
+    
     $.ajax({
         url: '/api/admin/users/' + userId,
         type: 'PUT',
         data: formData,
         processData: false,
         contentType: false,
+        headers: {
+            'X-CSRFToken': csrfToken
+        },
         success: function(response) {
             if (response.success) {
                 Swal.fire('Berhasil', 'Pengguna berhasil diperbarui', 'success').then(() => {
@@ -679,6 +1005,7 @@ function toggleUserStatus(userId, status) {
         cancelButtonText: 'Batal'
     }).then((result) => {
         if (result.isConfirmed) {
+            const csrfToken = $('meta[name=csrf-token]').attr('content');
             var formData = new FormData();
             formData.append('is_active', status ? 'true' : 'false');
             
@@ -688,6 +1015,9 @@ function toggleUserStatus(userId, status) {
                 data: formData,
                 processData: false,
                 contentType: false,
+                headers: {
+                    'X-CSRFToken': csrfToken
+                },
                 success: function(response) {
                     if (response.success) {
                         Swal.fire('Berhasil', `Pengguna berhasil ${status ? 'diaktifkan' : 'dinonaktifkan'}`, 'success').then(() => {
@@ -707,6 +1037,29 @@ function toggleUserStatus(userId, status) {
             });
         }
     });
+}
+
+function refreshStats() {
+    // Animate refresh icon
+    const refreshIcon = document.getElementById('refreshIcon');
+    refreshIcon.classList.add('fa-spin');
+    
+    // Add shimmer effect to all stats boxes
+    const statsBoxes = document.querySelectorAll('.stats-refresh');
+    statsBoxes.forEach(box => {
+        box.classList.add('shimmer');
+    });
+    
+    // Simulate refresh (in real implementation, this would be an AJAX call)
+    setTimeout(() => {
+        refreshIcon.classList.remove('fa-spin');
+        statsBoxes.forEach(box => {
+            box.classList.remove('shimmer');
+        });
+        
+        // Reload the page to get fresh data
+        location.reload();
+    }, 1500);
 }
 
 // Delete User

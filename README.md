@@ -38,6 +38,7 @@ Untuk dokumentasi yang lebih detail, silakan kunjungi folder **[docs/](docs/)**:
 
 ### 🔧 **Setup & Konfigurasi**
 - **[docs/MODEL_SETUP_GUIDE.md](docs/MODEL_SETUP_GUIDE.md)** - Setup model Machine Learning
+- **[dev-to-docker.md](dev-to-docker.md)** - 🔄 Workflow lengkap: Local Development ke Docker Deployment
 - **[SECURITY.md](SECURITY.md)** - Panduan keamanan production
 
 ### 🐳 **Docker & API**
@@ -89,6 +90,8 @@ Untuk dokumentasi yang lebih detail, silakan kunjungi folder **[docs/](docs/)**:
 - **Web Server**: Nginx sebagai reverse proxy
 
 ## 🚀 Quick Start
+
+**⚡ Ingin mulai cepat? Lihat:** **[quick-start.md](quick-start.md)** - Panduan 5 menit untuk memulai!
 
 ### Prasyarat
 - **Python 3.11.x ONLY** (Wajib untuk kompatibilitas optimal dengan Gensim dan semua dependencies)

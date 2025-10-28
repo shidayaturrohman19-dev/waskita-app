@@ -7,7 +7,9 @@
               content="Waskita - Sistem Klasifikasi Konten Radikal menggunakan Machine Learning untuk menganalisis dan mengklasifikasikan konten media sosial">
         <meta name="keywords"
               content="klasifikasi konten, machine learning, naive bayes, analisis sentimen, media sosial, radikal, non-radikal">
+        {% if csrf_token %}
         <meta name="csrf-token" content="{{ csrf_token() }}">
+        {% endif %}
         
         <!-- Favicon -->
         <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">
@@ -49,6 +51,24 @@
               href="{{ url_for('static', filename='css/custom.css') }}">
         <!-- Chart.js CSS tidak diperlukan - Chart.js hanya membutuhkan JavaScript -->
         <style>
+        /* Skip Link for Screen Readers */
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 6px;
+            background: #000;
+            color: #fff;
+            padding: 8px;
+            text-decoration: none;
+            z-index: 100000;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .skip-link:focus {
+            top: 6px;
+            color: #fff;
+        }
+        
         .dark-mode {
             background-color: #1a1a1a;
             color: #ffffff;
@@ -166,6 +186,12 @@
             color: #ffffff;
             transform: translateX(4px);
         }
+        .nav-sidebar .nav-link:focus {
+            background-color: rgba(52, 152, 219, 0.3);
+            color: #ffffff;
+            outline: 2px solid #3498db;
+            outline-offset: 2px;
+        }
         .nav-sidebar .nav-link.active {
             background-color: #3498db;
             color: #ffffff;
@@ -208,6 +234,8 @@
         }
         .btn-primary:focus {
             box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.5);
+            outline: 2px solid #3498db;
+            outline-offset: 2px;
         }
         .navbar-light {
             background-color: #ffffff;
@@ -221,6 +249,11 @@
         }
         .navbar-nav .nav-link:hover {
             color: #3498db !important;
+        }
+        .navbar-nav .nav-link:focus {
+            color: #2980b9 !important;
+            outline: 2px solid #3498db;
+            outline-offset: 2px;
         }
         .dropdown-menu {
             border: none;
@@ -237,6 +270,12 @@
         .dropdown-item:hover {
             background-color: #f8f9fa;
             color: #3498db;
+        }
+        .dropdown-item:focus {
+            background-color: #e9ecef;
+            color: #2980b9;
+            outline: 2px solid #3498db;
+            outline-offset: -2px;
         }
         .dropdown-divider {
             margin: 0.5rem 0;
@@ -284,6 +323,12 @@
             background-color: #f8f9fa !important;
             color: #3498db !important;
         }
+        .navbar-nav .dropdown-item:focus {
+            background-color: #e9ecef !important;
+            color: #2980b9 !important;
+            outline: 2px solid #3498db !important;
+            outline-offset: -2px !important;
+        }
         .navbar-nav .dropdown-divider {
             margin: 4px 0 !important;
             border-top: 1px solid #e9ecef !important;
@@ -305,11 +350,16 @@
             padding: 0;
         }
         .breadcrumb-item a {
-            color: #6c757d;
+            color: #495057;
             text-decoration: none;
         }
         .breadcrumb-item a:hover {
             color: #3498db;
+        }
+        .breadcrumb-item a:focus {
+            color: #2980b9;
+            outline: 2px solid #3498db;
+            outline-offset: 2px;
         }
         .breadcrumb-item.active {
             color: #2c3e50;
@@ -325,6 +375,8 @@
         .form-control:focus {
             border-color: #3498db;
             box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+            outline: 2px solid #3498db;
+            outline-offset: 2px;
         }
         .form-label {
             color: #212529;
@@ -337,9 +389,14 @@
         a:hover {
             color: #003d82;
         }
-        /* Improved text contrast */
+        a:focus {
+            color: #003d82;
+            outline: 2px solid #0056b3;
+            outline-offset: 2px;
+        }
+        /* Improved text contrast - Fixed muted text color */
         .text-muted {
-            color: #6c757d !important;
+            color: #495057 !important;
         }
         .small-box .inner h3 {
             font-weight: 700;
@@ -369,34 +426,37 @@
         {% endblock extra_css %}
     </head>
     <body class="hold-transition sidebar-mini layout-fixed">
+        <!-- Skip Link for Screen Readers -->
+        <a href="#main-content" class="skip-link">Skip to main content</a>
+        
         <div class="wrapper">
             <!-- Navbar -->
-            <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+            <nav class="main-header navbar navbar-expand navbar-white navbar-light" role="navigation" aria-label="Navigasi utama">
                 <!-- Left navbar links -->
                 <ul class="navbar-nav">
                     <li class="nav-item">
-                        <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
+                        <a class="nav-link" data-widget="pushmenu" href="#" role="button" aria-label="Toggle sidebar navigation"><i class="fas fa-bars" aria-hidden="true"></i></a>
                     </li>
                 </ul>
                 <!-- Right navbar links -->
                 <ul class="navbar-nav ml-auto">
                     <li class="nav-item dropdown">
-                        <a class="nav-link" data-toggle="dropdown" href="#">
-                            <i class="fas fa-user"></i>
+                        <a class="nav-link" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false" aria-label="Menu pengguna">
+                            <i class="fas fa-user" aria-hidden="true"></i>
                             <span class="ml-1">{{ current_user.username if current_user.is_authenticated else 'Guest' }}</span>
                         </a>
-                        <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+                        <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right" role="menu">
                             {% if current_user.is_authenticated %}
-                                <a href="{{ url_for("profile") }}" class="dropdown-item">
-                                    <i class="fas fa-user mr-2"></i> Profil
+                                <a href="{{ url_for("profile") }}" class="dropdown-item" role="menuitem">
+                                    <i class="fas fa-user mr-2" aria-hidden="true"></i> Profil
                                 </a>
-                                <div class="dropdown-divider"></div>
-                                <a href="{{ url_for("logout") }}" class="dropdown-item">
-                                    <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                                <div class="dropdown-divider" role="separator"></div>
+                                <a href="{{ url_for("logout") }}" class="dropdown-item" role="menuitem">
+                                    <i class="fas fa-sign-out-alt mr-2" aria-hidden="true"></i> Logout
                                 </a>
                             {% else %}
-                                <a href="{{ url_for("login") }}" class="dropdown-item">
-                                    <i class="fas fa-sign-in-alt mr-2"></i> Login
+                                <a href="{{ url_for("login") }}" class="dropdown-item" role="menuitem">
+                                    <i class="fas fa-sign-in-alt mr-2" aria-hidden="true"></i> Login
                                 </a>
                             {% endif %}
                         </div>
@@ -404,82 +464,123 @@
                 </ul>
             </nav>
             <!-- Main Sidebar Container -->
-            <aside class="main-sidebar sidebar-dark-primary elevation-4">
+            <aside class="main-sidebar sidebar-dark-primary elevation-4" role="complementary" aria-label="Sidebar navigation">
                 <!-- Brand Logo -->
-                <a href="{{ url_for("dashboard") }}" class="brand-link">
-                    <i class="fas fa-shield-alt brand-icon"></i>
+                <a href="{{ url_for("dashboard") }}" class="brand-link" aria-label="Waskita - Kembali ke dashboard">
+                    <i class="fas fa-shield-alt brand-icon" aria-hidden="true"></i>
                     <span class="brand-text">Waskita</span>
                 </a>
                 <!-- Sidebar -->
                 <div class="sidebar">
                     <!-- Sidebar Menu -->
-                    <nav class="mt-2">
+                    <nav class="mt-2" aria-label="Menu navigasi sidebar">
                         <ul class="nav nav-pills nav-sidebar flex-column"
                             data-widget="treeview"
-                            role="menu"
+                            role="menubar"
                             data-accordion="false">
                             {% if current_user.is_authenticated %}
-                                <li class="nav-item">
+                                <li class="nav-item" role="none">
                                     <a href="{{ url_for("dashboard") }}"
-                                       class="nav-link {{ 'active' if request.endpoint == 'dashboard' }}">
-                                        <i class="nav-icon fas fa-tachometer-alt"></i>
+                                       class="nav-link {{ 'active' if request.endpoint == 'dashboard' }}"
+                                       role="menuitem"
+                                       aria-current="{{ 'page' if request.endpoint == 'dashboard' else 'false' }}">
+                                        <i class="nav-icon fas fa-tachometer-alt" aria-hidden="true"></i>
                                         <p>Dashboard</p>
                                     </a>
                                 </li>
-                                <li class="nav-item {{ 'menu-open' if request.endpoint in ['upload', 'scraping'] }}">
+                                <li class="nav-item {{ 'menu-open' if request.endpoint in ['upload', 'scraping'] }}" role="none">
                                     <a href="#"
-                                       class="nav-link {{ 'active' if request.endpoint in ['upload', 'scraping'] }}">
-                                        <i class="nav-icon fas fa-database"></i>
+                                       class="nav-link {{ 'active' if request.endpoint in ['upload', 'scraping'] }}"
+                                       role="menuitem"
+                                       aria-expanded="{{ 'true' if request.endpoint in ['upload', 'scraping'] else 'false' }}"
+                                       aria-haspopup="true">
+                                        <i class="nav-icon fas fa-database" aria-hidden="true"></i>
                                         <p>
                                             Data Source
-                                            <i class="right fas fa-angle-left"></i>
+                                            <i class="right fas fa-angle-left" aria-hidden="true"></i>
                                         </p>
                                     </a>
-                                    <ul class="nav nav-treeview">
-                                        <li class="nav-item">
+                                    <ul class="nav nav-treeview" role="menu">
+                                        <li class="nav-item" role="none">
                                             <a href="{{ url_for("upload_page") }}"
-                                               class="nav-link {{ 'active' if request.endpoint == 'upload_page' }}">
-                                                <i class="far fa-circle nav-icon"></i>
+                                               class="nav-link {{ 'active' if request.endpoint == 'upload_page' }}"
+                                               role="menuitem"
+                                               aria-current="{{ 'page' if request.endpoint == 'upload_page' else 'false' }}">
+                                                <i class="far fa-circle nav-icon" aria-hidden="true"></i>
                                                 <p>Upload Data</p>
                                             </a>
                                         </li>
-                                        <li class="nav-item">
+                                        <li class="nav-item" role="none">
                                             <a href="{{ url_for("scraping_page") }}"
-                                               class="nav-link {{ 'active' if request.endpoint == 'scraping_page' }}">
-                                                <i class="far fa-circle nav-icon"></i>
+                                               class="nav-link {{ 'active' if request.endpoint == 'scraping_page' }}"
+                                               role="menuitem"
+                                               aria-current="{{ 'page' if request.endpoint == 'scraping_page' else 'false' }}">
+                                                <i class="far fa-circle nav-icon" aria-hidden="true"></i>
                                                 <p>Scraping Data</p>
                                             </a>
                                         </li>
                                     </ul>
                                 </li>
-                                <li class="nav-item">
+                                <li class="nav-item" role="none">
                                       <a href="{{ url_for('dataset_management_table') }}"
-                                         class="nav-link {{ 'active' if request.endpoint == 'dataset_management_table' }}">
-                                          <i class="nav-icon fas fa-database"></i>
+                                         class="nav-link {{ 'active' if request.endpoint == 'dataset_management_table' }}"
+                                         role="menuitem"
+                                         aria-current="{{ 'page' if request.endpoint == 'dataset_management_table' else 'false' }}">
+                                          <i class="nav-icon fas fa-database" aria-hidden="true"></i>
                                           <p>Dataset Management</p>
                                       </a>
                                   </li>
-                                <li class="nav-item">
+                                <li class="nav-item" role="none">
                                     <a href="{{ url_for('classification') }}"
-                                       class="nav-link {{ 'active' if request.endpoint == 'classification' }}">
-                                        <i class="nav-icon fas fa-brain"></i>
+                                       class="nav-link {{ 'active' if request.endpoint == 'classification' }}"
+                                       role="menuitem"
+                                       aria-current="{{ 'page' if request.endpoint == 'classification' else 'false' }}">
+                                        <i class="nav-icon fas fa-brain" aria-hidden="true"></i>
                                         <p>Klasifikasi Data</p>
                                     </a>
                                 </li>
-                                <li class="nav-item">
+                                <li class="nav-item" role="none">
                                     <a href="{{ url_for('classification_results') }}"
-                                       class="nav-link {{ 'active' if request.endpoint == 'classification_results' }}">
-                                        <i class="nav-icon fas fa-chart-bar"></i>
+                                       class="nav-link {{ 'active' if request.endpoint == 'classification_results' }}"
+                                       role="menuitem"
+                                       aria-current="{{ 'page' if request.endpoint == 'classification_results' else 'false' }}">
+                                        <i class="nav-icon fas fa-chart-bar" aria-hidden="true"></i>
                                         <p>Hasil Klasifikasi</p>
                                     </a>
                                 </li>
                                 {% if current_user.is_admin() %}
-                                    <li class="nav-item">
-                                        <a href="{{ url_for("admin_panel") }}"
-                                           class="nav-link {{ 'active' if request.endpoint == 'admin_panel' }}">
-                                            <i class="nav-icon fas fa-users-cog"></i>
-                                            <p>Admin Panel</p>
+                                    <li class="nav-item {{ 'menu-open' if request.endpoint in ['admin_panel', 'otp.pending_registrations', 'otp.registration_history'] }}" role="none">
+                                        <a href="#"
+                                           class="nav-link {{ 'active' if request.endpoint in ['admin_panel', 'otp.pending_registrations', 'otp.registration_history'] }}"
+                                           role="menuitem"
+                                           aria-expanded="{{ 'true' if request.endpoint in ['admin_panel', 'otp.pending_registrations', 'otp.registration_history'] else 'false' }}"
+                                           aria-haspopup="true">
+                                            <i class="nav-icon fas fa-users-cog" aria-hidden="true"></i>
+                                            <p>
+                                                Admin Panel
+                                                <i class="right fas fa-angle-left" aria-hidden="true"></i>
+                                            </p>
                                         </a>
+                                        <ul class="nav nav-treeview" role="menu">
+                                            <li class="nav-item" role="none">
+                                                <a href="{{ url_for('admin_panel') }}"
+                                                   class="nav-link {{ 'active' if request.endpoint == 'admin_panel' }}"
+                                                   role="menuitem"
+                                                   aria-current="{{ 'page' if request.endpoint == 'admin_panel' else 'false' }}">
+                                                    <i class="far fa-circle nav-icon" aria-hidden="true"></i>
+                                                    <p>Kelola Pengguna</p>
+                                                </a>
+                                            </li>
+                                            <li class="nav-item" role="none">
+                                                <a href="{{ url_for('otp.pending_registrations') }}"
+                                                   class="nav-link {{ 'active' if request.endpoint == 'otp.pending_registrations' }}"
+                                                   role="menuitem"
+                                                   aria-current="{{ 'page' if request.endpoint == 'otp.pending_registrations' else 'false' }}">
+                                                    <i class="far fa-circle nav-icon" aria-hidden="true"></i>
+                                                    <p>Pending Registrasi</p>
+                                                </a>
+                                            </li>
+                                        </ul>
                                     </li>
                                 {% endif %}
                             {% endif %}
@@ -501,42 +602,46 @@
                                 </h1>
                             </div>
                             <div class="col-sm-6">
-                                <ol class="breadcrumb float-sm-right">
-                                    {% block breadcrumb %}
-                                        <li class="breadcrumb-item">
-                                            <a href="{{ url_for("dashboard") }}">Home</a>
-                                        </li>
-                                        <li class="breadcrumb-item active">Dashboard</li>
-                                    {% endblock breadcrumb %}
-                                </ol>
+                                <nav aria-label="breadcrumb">
+                                    <ol class="breadcrumb float-sm-right">
+                                        {% block breadcrumb %}
+                                            <li class="breadcrumb-item">
+                                                <a href="{{ url_for("dashboard") }}">Home</a>
+                                            </li>
+                                            <li class="breadcrumb-item active" aria-current="page">Dashboard</li>
+                                        {% endblock breadcrumb %}
+                                    </ol>
+                                </nav>
                             </div>
                         </div>
                     </div>
                 </div>
                 <!-- Main content -->
-                <section class="content">
+                <main class="content" id="main-content" role="main">
                     <div class="container-fluid">
                         <!-- Flash messages -->
                         {% with messages = get_flashed_messages(with_categories=true) %}
                             {% if messages %}
-                                {% for category, message in messages %}
-                                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show"
-                                         role="alert">
-                                        {{ message }}
-                                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                            <span aria-hidden="true">×</span>
-                                        </button>
-                                    </div>
-                                {% endfor %}
+                                <div role="alert" aria-live="polite" aria-atomic="true">
+                                    {% for category, message in messages %}
+                                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show"
+                                             role="alert">
+                                            {{ message }}
+                                            <button type="button" class="close" data-dismiss="alert" aria-label="Tutup pesan">
+                                                <span aria-hidden="true">×</span>
+                                            </button>
+                                        </div>
+                                    {% endfor %}
+                                </div>
                             {% endif %}
                         {% endwith %}
                         {% block content %}
                         {% endblock content %}
                     </div>
-                </section>
+                </main>
             </div>
             <!-- Footer -->
-            <footer class="main-footer">
+            <footer class="main-footer" role="contentinfo">
                 <strong>Copyright © 2025 <a href="#">Waskita</a>.</strong>
                 Sistem Klasifikasi Konten Media Sosial.
                 <div class="float-right d-none d-sm-inline-block">
@@ -545,12 +650,13 @@
             </footer>
         </div>
         <!-- Loading overlay -->
-        <div class="loading" id="loadingOverlay">
+        <div class="loading" id="loadingOverlay" role="dialog" aria-labelledby="loading-title" aria-describedby="loading-description" aria-modal="true">
             <div class="loading-content">
-                <div class="spinner-border text-primary" role="status">
+                <div class="spinner-border text-primary" role="status" aria-hidden="true">
                     <span class="sr-only">Loading...</span>
                 </div>
-                <p class="mt-2">Memproses data...</p>
+                <p class="mt-2" id="loading-title">Memproses data...</p>
+                <p class="sr-only" id="loading-description">Mohon tunggu, sistem sedang memproses permintaan Anda.</p>
             </div>
         </div>
         <!-- jQuery with modern fallback -->

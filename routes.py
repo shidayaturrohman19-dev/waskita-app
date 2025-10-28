@@ -98,64 +98,14 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
     
     @app.route('/register', methods=['GET', 'POST'])
     def register():
+        """
+        Redirect registrasi ke sistem OTP yang baru
+        """
         if current_user.is_authenticated:
             return redirect(url_for('dashboard'))
         
-        if request.method == 'POST':
-            username = request.form.get('username')
-            email = request.form.get('email')
-            password = request.form.get('password')
-            confirm_password = request.form.get('confirm_password')
-            
-            # Create form object for CSRF token
-            from flask_wtf import FlaskForm
-            form = FlaskForm()
-            
-            # Validation
-            if User.query.filter_by(username=username).first():
-                flash('Username sudah digunakan!', 'error')
-                return render_template('auth/register.html', form=form)
-            
-            if User.query.filter_by(email=email).first():
-                flash('Email sudah digunakan!', 'error')
-                return render_template('auth/register.html', form=form)
-            
-            if password != confirm_password:
-                flash('Password tidak cocok!', 'error')
-                return render_template('auth/register.html', form=form)
-            
-            if len(password) < 6:
-                flash('Password minimal 6 karakter!', 'error')
-                return render_template('auth/register.html', form=form)
-            
-            # Create new user
-            user = User(username=username, email=email)
-            user.set_password(password)
-            
-            try:
-                db.session.add(user)
-                db.session.commit()
-                
-                # Log activity for new user registration
-                generate_activity_log(
-                    action='register',
-                    description=f'Registrasi pengguna baru: {user.username}',
-                    user_id=user.id,
-                    icon='fas fa-user-plus',
-                    color='info'
-                )
-                
-                flash('Registrasi berhasil! Silakan login.', 'success')
-                return redirect(url_for('login'))
-            except Exception as e:
-                db.session.rollback()
-                flash('Terjadi kesalahan saat registrasi!', 'error')
-                return render_template('auth/register.html', form=form)
-        
-        # Create a simple form class for CSRF token
-        from flask_wtf import FlaskForm
-        form = FlaskForm()
-        return render_template('auth/register.html', form=form)
+        # Redirect ke sistem OTP registrasi
+        return redirect(url_for('otp.register_request'))
     
     @app.route('/logout')
     @login_required
@@ -808,6 +758,7 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
         if dataset_id:
             # Get specific dataset information
             selected_dataset = Dataset.query.get(dataset_id)
+            
             if selected_dataset:
                 # Get clean data for this specific dataset
                 clean_upload_data = CleanDataUpload.query.filter_by(dataset_id=dataset_id).all()
@@ -854,6 +805,18 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                              clean_scraper_data=clean_scraper_data,
                              selected_dataset=selected_dataset,
                              classified_count=classified_count)
+
+    # Add redirect route for /classify to /classification
+    @app.route('/classify')
+    @login_required
+    @active_user_required
+    def classify_redirect():
+        return redirect(url_for('classification'))
+    
+    # Add redirect route for /admin/login to regular login
+    @app.route('/admin/login')
+    def admin_login_redirect():
+        return redirect(url_for('login'))
     
     @app.route('/classification/classify/<data_type>/<int:data_id>')
     @login_required
@@ -4870,7 +4833,7 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                     User.email.ilike(f'%{search_query}%')
                 )
             )
-        
+
         users = query.order_by(User.created_at.desc()).all()
         
         # Calculate statistics
@@ -4884,7 +4847,8 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                              total_users=total_users,
                              active_users=active_users,
                              admin_users=admin_users,
-                             inactive_users=inactive_users)
+                             inactive_users=inactive_users,
+                             current_time=datetime.now())
     
     # Admin API Routes
     @app.route('/api/admin/users', methods=['POST'])
@@ -5288,3 +5252,103 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                     'error': str(e)
                 }
             }), 500
+
+    # Health Check API Endpoint
+    @app.route('/api/health', methods=['GET'])
+    def api_health():
+        """
+        Health check endpoint to verify if the application is running
+        """
+        try:
+            # Test database connection
+            db.session.execute(text('SELECT 1'))
+            db_status = 'healthy'
+        except Exception as e:
+            db_status = f'unhealthy: {str(e)}'
+        
+        # Check if models are loaded
+        models_status = 'loaded' if hasattr(app, 'models_loaded') and app.models_loaded else 'not_loaded'
+        
+        health_data = {
+            'status': 'healthy' if db_status == 'healthy' else 'unhealthy',
+            'timestamp': datetime.now().isoformat(),
+            'version': '1.0.0',
+            'database': db_status,
+            'models': models_status,
+            'uptime': str(datetime.now() - app.start_time) if hasattr(app, 'start_time') else 'unknown'
+        }
+        
+        status_code = 200 if health_data['status'] == 'healthy' else 503
+        return jsonify(health_data), status_code
+
+    # Status API Endpoint
+    @app.route('/api/status', methods=['GET'])
+    def api_status():
+        """
+        Detailed status endpoint with application statistics
+        """
+        try:
+            # Get database statistics
+            total_users = User.query.count()
+            active_users = User.query.filter_by(is_active=True).count()
+            inactive_users = User.query.filter_by(is_active=False).count()
+            
+            # Get data statistics
+            total_raw_data = RawData.query.count()
+            total_scraper_data = RawDataScraper.query.count()
+            total_classifications = ClassificationResult.query.count()
+            
+            # Get recent activity count (last 24 hours)
+            from datetime import timedelta
+            yesterday = datetime.now() - timedelta(days=1)
+            recent_uploads = RawData.query.filter(RawData.created_at >= yesterday).count()
+            recent_scraping = RawDataScraper.query.filter(RawDataScraper.created_at >= yesterday).count()
+            recent_classifications = ClassificationResult.query.filter(ClassificationResult.created_at >= yesterday).count()
+            
+            status_data = {
+                'application': {
+                    'name': 'Waskita',
+                    'version': '1.0.0',
+                    'status': 'running',
+                    'timestamp': datetime.now().isoformat()
+                },
+                'database': {
+                    'status': 'connected',
+                    'total_users': total_users,
+                    'active_users': active_users,
+                    'inactive_users': inactive_users
+                },
+                'data_statistics': {
+                    'total_raw_data': total_raw_data,
+                    'total_scraper_data': total_scraper_data,
+                    'total_classifications': total_classifications
+                },
+                'recent_activity': {
+                    'period': '24_hours',
+                    'uploads': recent_uploads,
+                    'scraping': recent_scraping,
+                    'classifications': recent_classifications
+                },
+                'system': {
+                    'models_loaded': hasattr(app, 'models_loaded') and app.models_loaded,
+                    'email_service': 'configured' if app.config.get('MAIL_SERVER') else 'not_configured',
+                    'scheduler_active': hasattr(app, 'scheduler') and app.scheduler.running if hasattr(app, 'scheduler') else False
+                }
+            }
+            
+            return jsonify(status_data), 200
+            
+        except Exception as e:
+            error_data = {
+                'application': {
+                    'name': 'Waskita',
+                    'version': '1.0.0',
+                    'status': 'error',
+                    'timestamp': datetime.now().isoformat()
+                },
+                'error': {
+                    'message': str(e),
+                    'type': type(e).__name__
+                }
+            }
+            return jsonify(error_data), 500

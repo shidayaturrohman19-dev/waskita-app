@@ -56,6 +56,8 @@
         .form-control:focus {
             border-color: #28a745;
             box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+            outline: 2px solid #28a745;
+            outline-offset: 2px;
         }
         .btn-success {
             background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
@@ -68,6 +70,10 @@
         .btn-success:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+        }
+        .btn-success:focus {
+            outline: 2px solid #ffffff;
+            outline-offset: 2px;
         }
         .input-group-text {
             background-color: transparent;
@@ -95,6 +101,10 @@
         .login-link a:hover {
             text-decoration: underline;
         }
+        .login-link a:focus {
+            outline: 2px solid #28a745;
+            outline-offset: 2px;
+        }
         .password-strength {
             margin-top: 5px;
             font-size: 0.875rem;
@@ -102,111 +112,170 @@
         .strength-weak { color: #dc3545; }
         .strength-medium { color: #ffc107; }
         .strength-strong { color: #28a745; }
+        .custom-control-input:focus ~ .custom-control-label::before {
+            outline: 2px solid #28a745;
+            outline-offset: 2px;
+        }
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
         </style>
     </head>
     <body class="hold-transition register-page">
         <div class="register-box">
             <div class="card card-outline card-success">
-                <div class="card-header">
-                    <div class="brand-logo">
+                <header class="card-header" role="banner">
+                    <div class="brand-logo" aria-hidden="true">
                         <i class="fas fa-user-plus"></i>
                     </div>
                     <h1>Daftar Akun</h1>
                     <p class="mb-0">Sistem Klasifikasi Konten</p>
-                </div>
-                <div class="card-body">
+                </header>
+                <main class="card-body" role="main">
                     <p class="login-box-msg">Buat akun baru untuk menggunakan sistem</p>
                     <!-- Flash messages -->
                     {% with messages = get_flashed_messages(with_categories=true) %}
                         {% if messages %}
-                            {% for category, message in messages %}
-                                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show"
-                                     role="alert">
-                                    {{ message }}
-                                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                        <span aria-hidden="true">×</span>
-                                    </button>
-                                </div>
-                            {% endfor %}
+                            <div role="alert" aria-live="polite" aria-atomic="true">
+                                {% for category, message in messages %}
+                                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show"
+                                         role="alert">
+                                        {{ message }}
+                                        <button type="button" class="close" data-dismiss="alert" aria-label="Tutup pesan">
+                                            <span aria-hidden="true">×</span>
+                                        </button>
+                                    </div>
+                                {% endfor %}
+                            </div>
                         {% endif %}
                     {% endwith %}
-                    <form method="post" id="registerForm">
+                    <form method="post" id="registerForm" aria-labelledby="register-heading" novalidate>
+                        <h2 id="register-heading" class="sr-only">Form Registrasi</h2>
                         {{ form.hidden_tag() if form }}
-                        <div class="input-group mb-3">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text">
-                                    <i class="fas fa-user"></i>
-                                </span>
+                        <div class="form-group">
+                            <label for="username" class="sr-only">Username</label>
+                            <div class="input-group mb-3">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text" aria-hidden="true">
+                                        <i class="fas fa-user"></i>
+                                    </span>
+                                </div>
+                                <input type="text"
+                                       id="username"
+                                       name="username"
+                                       class="form-control"
+                                       placeholder="Username"
+                                       aria-label="Username"
+                                       aria-describedby="username-help"
+                                       autocomplete="username"
+                                       required>
                             </div>
-                            <input type="text"
-                                   name="username"
-                                   class="form-control"
-                                   placeholder="Username"
-                                   required>
+                            <div id="username-help" class="sr-only">Masukkan username unik untuk akun Anda (minimal 3 karakter)</div>
                         </div>
-                        <div class="input-group mb-3">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text">
-                                    <i class="fas fa-envelope"></i>
-                                </span>
+                        <div class="form-group">
+                            <label for="email" class="sr-only">Email</label>
+                            <div class="input-group mb-3">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text" aria-hidden="true">
+                                        <i class="fas fa-envelope"></i>
+                                    </span>
+                                </div>
+                                <input type="email"
+                                       id="email"
+                                       name="email"
+                                       class="form-control"
+                                       placeholder="Email"
+                                       aria-label="Email"
+                                       aria-describedby="email-help"
+                                       autocomplete="email"
+                                       required>
                             </div>
-                            <input type="email"
-                                   name="email"
-                                   class="form-control"
-                                   placeholder="Email"
-                                   required>
+                            <div id="email-help" class="sr-only">Masukkan alamat email yang valid</div>
                         </div>
-                        <div class="input-group mb-3">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text">
-                                    <i class="fas fa-lock"></i>
-                                </span>
+                        <div class="form-group">
+                            <label for="password" class="sr-only">Password</label>
+                            <div class="input-group mb-3">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text" aria-hidden="true">
+                                        <i class="fas fa-lock"></i>
+                                    </span>
+                                </div>
+                                <input type="password"
+                                       name="password"
+                                       id="password"
+                                       class="form-control"
+                                       placeholder="Password"
+                                       aria-label="Password"
+                                       aria-describedby="password-help password-strength"
+                                       autocomplete="new-password"
+                                       required>
                             </div>
-                            <input type="password"
-                                   name="password"
-                                   id="password"
-                                   class="form-control"
-                                   placeholder="Password"
-                                   required>
+                            <div id="password-help" class="sr-only">Masukkan password yang kuat (minimal 8 karakter dengan kombinasi huruf, angka, dan simbol)</div>
+                            <div class="password-strength" id="passwordStrength" aria-live="polite"></div>
                         </div>
-                        <div class="password-strength" id="passwordStrength"></div>
-                        <div class="input-group mb-3">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text">
-                                    <i class="fas fa-lock"></i>
-                                </span>
+                        <div class="form-group">
+                            <label for="confirmPassword" class="sr-only">Konfirmasi Password</label>
+                            <div class="input-group mb-3">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text" aria-hidden="true">
+                                        <i class="fas fa-lock"></i>
+                                    </span>
+                                </div>
+                                <input type="password"
+                                       name="confirm_password"
+                                       id="confirmPassword"
+                                       class="form-control"
+                                       placeholder="Konfirmasi Password"
+                                       aria-label="Konfirmasi Password"
+                                       aria-describedby="confirm-password-help password-match"
+                                       autocomplete="new-password"
+                                       required>
                             </div>
-                            <input type="password"
-                                   name="confirm_password"
-                                   id="confirmPassword"
-                                   class="form-control"
-                                   placeholder="Konfirmasi Password"
-                                   required>
+                            <div id="confirm-password-help" class="sr-only">Masukkan ulang password yang sama</div>
+                            <div id="passwordMatch" class="mt-1" aria-live="polite"></div>
                         </div>
-                        <div id="passwordMatch" class="mt-1"></div>
                         <div class="row">
                             <div class="col-8">
-                                <div class="icheck-primary">
-                                    <input type="checkbox" id="agreeTerms" name="terms" value="agree" required>
-                                    <label for="agreeTerms">
-                                        Saya setuju dengan <a href="#">syarat dan ketentuan</a>
+                                <div class="custom-control custom-checkbox">
+                                    <input type="checkbox" 
+                                           class="custom-control-input" 
+                                           id="agreeTerms" 
+                                           name="terms" 
+                                           value="agree" 
+                                           aria-describedby="terms-help"
+                                           required>
+                                    <label class="custom-control-label" for="agreeTerms">
+                                        Saya setuju dengan <a href="#" aria-label="Baca syarat dan ketentuan">syarat dan ketentuan</a>
                                     </label>
+                                    <div id="terms-help" class="sr-only">Anda harus menyetujui syarat dan ketentuan untuk mendaftar</div>
                                 </div>
                             </div>
                             <div class="col-4">
                                 <button type="submit"
                                         class="btn btn-success btn-block"
                                         id="registerBtn"
-                                        disabled>Daftar</button>
+                                        aria-describedby="register-button-help"
+                                        disabled>
+                                    Daftar
+                                </button>
+                                <div id="register-button-help" class="sr-only">Klik untuk membuat akun baru</div>
                             </div>
                         </div>
                     </form>
-                    <div class="login-link">
+                    <nav class="login-link" aria-label="Link login">
                         <p>
-                            Sudah punya akun? <a href="{{ url_for("login") }}">Login di sini</a>
+                            Sudah punya akun? <a href="{{ url_for("login") }}" aria-label="Login ke akun yang sudah ada">Login di sini</a>
                         </p>
-                    </div>
-                </div>
+                    </nav>
+                </main>
             </div>
         </div>
         <!-- jQuery -->

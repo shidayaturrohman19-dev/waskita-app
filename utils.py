@@ -1406,3 +1406,9 @@ def generate_activity_log(action, description, user_id, details=None, icon='fa-i
         
         pass
         return log_entry
+
+def log_user_activity(user_id, action, description, details=None, icon='fa-info-circle', color='blue'):
+    """
+    Wrapper function untuk generate_activity_log dengan nama yang lebih sederhana
+    """
+    return generate_activity_log(action, description, user_id, details, icon, color)
