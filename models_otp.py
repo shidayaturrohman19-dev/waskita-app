@@ -40,10 +40,10 @@ class RegistrationRequest(db.Model):
         self.password_hash = password_hash
         self.full_name = full_name
         self.otp_code = self.generate_otp()
-        self.otp_expires_at = datetime.utcnow() + timedelta(hours=24)  # OTP valid 24 jam
+        self.otp_expires_at = datetime.utcnow() + timedelta(minutes=10)
     
     def generate_otp(self):
-        """Generate 6-digit OTP code"""
+        """Generate OTP code using configured length"""
         return ''.join(secrets.choice(string.digits) for _ in range(6))
     
     def is_otp_valid(self):
@@ -53,7 +53,7 @@ class RegistrationRequest(db.Model):
     def regenerate_otp(self):
         """Generate new OTP and extend expiry"""
         self.otp_code = self.generate_otp()
-        self.otp_expires_at = datetime.utcnow() + timedelta(hours=24)
+        self.otp_expires_at = datetime.utcnow() + timedelta(minutes=10)
         return self.otp_code
 
 class AdminNotification(db.Model):

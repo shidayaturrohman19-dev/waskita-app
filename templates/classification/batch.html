@@ -40,78 +40,80 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header pb-0">
-                    <div class="d-lg-flex">
+                    <div class="d-flex justify-content-between align-items-start">
                         <div>
                             <h5 class="mb-0">Klasifikasi Batch</h5>
                             <p class="text-sm mb-0">
                                 Pilih data yang ingin diklasifikasi secara batch menggunakan model machine learning.
                             </p>
                         </div>
-                        <div class="ms-auto my-auto mt-lg-0 mt-4">
-                            <div class="ms-auto my-auto">
-                                <a href="{{ url_for('classification') }}" class="btn btn-outline-primary btn-sm mb-0">
-                                    <i class="fas fa-arrow-left mr-1"></i> Kembali
-                                </a>
-                            </div>
+                        <div class="flex-shrink-0">
+                            <a href="{{ url_for('classification') }}" class="btn btn-outline-primary btn-sm mb-0">
+                                <i class="fas fa-arrow-left mr-1"></i> Kembali
+                            </a>
                         </div>
                     </div>
                 </div>
                 <div class="card-body px-0 pb-0">
+                    {% if unclassified_data %}
                     <div class="row">
                         <div class="col-md-8">
                             <div class="px-4">
-                                {% if unclassified_data %}
-                                    <div class="mb-3">
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="selectAll">
+                                        <label class="form-check-label" for="selectAll">
+                                            <strong>Pilih Semua ({{ unclassified_data|length }} data)</strong>
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div id="dataList">
+                                    {% for data in unclassified_data %}
+                                    <div class="data-card p-3" data-id="{{ data.id }}" data-type="{{ data.data_type }}">
                                         <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="selectAll">
-                                            <label class="form-check-label" for="selectAll">
-                                                <strong>Pilih Semua ({{ unclassified_data|length }} data)</strong>
+                                            <input class="form-check-input data-checkbox" type="checkbox" 
+                                                   id="data_{{ data.data_type }}_{{ data.id }}" 
+                                                   value="{{ data.data_type }}_{{ data.id }}">
+                                            <label class="form-check-label w-100" for="data_{{ data.data_type }}_{{ data.id }}">
+                                                <div class="row">
+                                                    <div class="col-md-8">
+                                                        <div class="content-preview">
+                                                            <strong>{{ data.username or 'Unknown' }}</strong><br>
+                                                            <small class="text-muted">{{ data.data_type|title }} Data</small><br>
+                                                            {{ data.cleaned_content[:200] }}{% if data.cleaned_content|length > 200 %}...{% endif %}
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4 text-end">
+                                                        <small class="text-muted">
+                                                            {{ data.created_at.strftime('%d/%m/%Y %H:%M') if data.created_at else 'N/A' }}
+                                                        </small>
+                                                        {% if data.url %}
+                                                        <br><small><a href="{{ data.url }}" target="_blank" class="text-primary">Lihat Sumber</a></small>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
                                             </label>
                                         </div>
                                     </div>
-                                    
-                                    <div id="dataList">
-                                        {% for data in unclassified_data %}
-                                        <div class="data-card p-3" data-id="{{ data.id }}" data-type="{{ data.data_type }}">
-                                            <div class="form-check">
-                                                <input class="form-check-input data-checkbox" type="checkbox" 
-                                                       id="data_{{ data.data_type }}_{{ data.id }}" 
-                                                       value="{{ data.data_type }}_{{ data.id }}">
-                                                <label class="form-check-label w-100" for="data_{{ data.data_type }}_{{ data.id }}">
-                                                    <div class="row">
-                                                        <div class="col-md-8">
-                                                            <div class="content-preview">
-                                                                <strong>{{ data.username or 'Unknown' }}</strong><br>
-                                                                <small class="text-muted">{{ data.data_type|title }} Data</small><br>
-                                                                {{ data.cleaned_content[:200] }}{% if data.cleaned_content|length > 200 %}...{% endif %}
-                                                            </div>
-                                                        </div>
-                                                        <div class="col-md-4 text-end">
-                                                            <small class="text-muted">
-                                                                {{ data.created_at.strftime('%d/%m/%Y %H:%M') if data.created_at else 'N/A' }}
-                                                            </small>
-                                                            {% if data.url %}
-                                                            <br><small><a href="{{ data.url }}" target="_blank" class="text-primary">Lihat Sumber</a></small>
-                                                            {% endif %}
-                                                        </div>
-                                                    </div>
-                                                </label>
-                                            </div>
-                                        </div>
-                                        {% endfor %}
-                                    </div>
-                                {% else %}
-                                    <div class="text-center py-5">
-                                        <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
-                                        <h5>Semua Data Sudah Diklasifikasi</h5>
-                                        <p class="text-muted">Tidak ada data yang perlu diklasifikasi. Semua data telah diproses.</p>
-                                        <a href="{{ url_for('classification_results') }}" class="btn btn-primary">
-                                            <i class="fas fa-eye mr-1"></i> Lihat Hasil Klasifikasi
-                                        </a>
-                                    </div>
-                                {% endif %}
+                                    {% endfor %}
+                                </div>
                             </div>
                         </div>
+                    {% else %}
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="text-center py-5">
+                                <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                                <h5>Semua Data Sudah Diklasifikasi</h5>
+                                <p class="text-muted">Tidak ada data yang perlu diklasifikasi. Semua data telah diproses.</p>
+                                <a href="{{ url_for('classification_results') }}" class="btn btn-primary">
+                                    <i class="fas fa-eye mr-1"></i> Lihat Hasil Klasifikasi
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
                         
                         {% if unclassified_data %}
                         <div class="col-md-4">

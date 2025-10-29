@@ -2,108 +2,303 @@
 
 {% block title %}Detail Dataset - {{ dataset.name }}{% endblock title %}
 
+{% block page_title %}Dataset Management{% endblock page_title %}
+
+{% block breadcrumb %}
+    <li class="breadcrumb-item">
+        <a href="{{ url_for('dashboard') }}">Home</a>
+    </li>
+    <li class="breadcrumb-item">
+        <a href="{{ url_for('dataset_management_table') }}">Dataset Management</a>
+    </li>
+    <li class="breadcrumb-item active">Detail Dataset</li>
+{% endblock breadcrumb %}
+
+{% block extra_css %}
+<style>
+/* Consistent styling with existing application design */
+
+/* Stats Card Styling - consistent with dashboard info-box */
+.stats-card {
+    text-align: center;
+    padding: 1rem;
+    background: white;
+    border-radius: 0.25rem;
+    border: 1px solid #dee2e6;
+    margin-bottom: 1rem;
+}
+
+.stats-number {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #495057;
+    display: block;
+    line-height: 1.2;
+}
+
+.stats-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    font-weight: 500;
+    margin-top: 0.5rem;
+}
+
+/* Badge Styling - consistent with existing badges */
+.badge-professional {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.25rem;
+    font-weight: 500;
+}
+
+.badge-upload {
+    background-color: #e3f2fd;
+    color: #0d6efd;
+}
+
+.badge-scraping {
+    background-color: #f3e5f5;
+    color: #7b1fa2;
+}
+
+.badge-status-raw {
+    background-color: #6c757d;
+    color: white;
+}
+
+.badge-status-clean {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.badge-status-classified {
+    background-color: #28a745;
+    color: white;
+}
+
+.badge-prediction-radikal {
+    background-color: #dc3545;
+    color: white;
+}
+
+.badge-prediction-nonradikal {
+    background-color: #28a745;
+    color: white;
+}
+
+/* Table styling - consistent with existing tables */
+.table thead th {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: #495057;
+    padding: 0.75rem;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.table td {
+    padding: 0.75rem;
+    font-size: 0.875rem;
+    vertical-align: middle;
+}
+
+/* Button styling - consistent with existing buttons */
+.btn-outline-secondary {
+    color: #6c757d;
+    border-color: #6c757d;
+}
+
+.btn-outline-secondary:hover {
+    color: #fff;
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+/* Probability Display Enhancement */
+.probability-text {
+    font-size: 0.75rem;
+    color: #6c757d;
+    font-weight: 500;
+    background: #f8f9fa;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    border: 1px solid #dee2e6;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .stats-card {
+        margin-bottom: 0.5rem;
+    }
+    
+    .stats-number {
+        font-size: 1.5rem;
+    }
+    
+    .table td {
+        padding: 0.5rem;
+        font-size: 0.8rem;
+    }
+}
+</style>
+{% endblock extra_css %}
+
 {% block content %}
 <div class="container-fluid py-4">
     <div class="row">
         <div class="col-12">
+            <!-- Breadcrumb Navigation -->
+            <nav aria-label="breadcrumb" class="mb-3">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('dataset_management_table') }}">Dataset Management</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Detail Dataset</li>
+                </ol>
+            </nav>
+
             <!-- Header -->
-            <div class="card mb-4">
-                <div class="card-header pb-0">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6>Detail Dataset: {{ dataset.name }}</h6>
-                            <p class="text-sm mb-0">Informasi lengkap tentang dataset dan data yang terkandung di dalamnya</p>
+    <div class="card mb-4">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="fas fa-database mr-2"></i>
+                    Detail Dataset: {{ dataset.name }}
+                </h6>
+                <a href="{{ url_for('dataset_management_table') }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-arrow-left mr-1"></i>
+                    Kembali
+                </a>
+            </div>
+        </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h4 class="mb-2">{{ dataset.name }}</h4>
+                            <p class="text-muted mb-0">
+                                <i class="fas fa-calendar mr-1"></i>
+                                Dibuat pada {{ dataset.created_at.strftime('%d %B %Y, %H:%M') }}
+                            </p>
                         </div>
-                        <div>
-                            <a href="{{ url_for('dataset_management_table') }}" class="btn btn-sm btn-outline-secondary">
-                                <i class="fas fa-arrow-left"></i> Kembali
-                            </a>
+                        <div class="col-md-4 text-right">
+                            {% set total_raw = raw_upload_data|length + raw_scraper_data|length %}
+                            {% set total_clean = clean_upload_data|length + clean_scraper_data|length %}
+                            {% set total_classified = classified_upload_data|length + classified_scraper_data|length %}
+                            
+                            {% if total_classified > 0 %}
+                                <span class="badge badge-professional badge-status-classified">
+                                    <i class="fas fa-check-circle mr-1"></i>Terklasifikasi
+                                </span>
+                            {% elif total_clean > 0 %}
+                                <span class="badge badge-professional badge-status-clean">
+                                    <i class="fas fa-broom mr-1"></i>Bersih
+                                </span>
+                            {% else %}
+                                <span class="badge badge-professional badge-status-raw">
+                                    <i class="fas fa-file-alt mr-1"></i>Mentah
+                                </span>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
             </div>
             
-            <!-- Dataset Info -->
+            <!-- Dataset Information -->
             <div class="row mb-4">
                 <div class="col-md-6">
                     <div class="card">
-                        <div class="card-header pb-0">
-                            <h6>Informasi Dataset</h6>
+                            <div class="card-header">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-info-circle mr-2"></i>
+                                    Informasi Dataset
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-2">
+                                    <div class="col-sm-4">
+                                        <strong>Nama Dataset:</strong>
+                                    </div>
+                                    <div class="col-sm-8">
+                                        {{ dataset.name }}
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-sm-4">
+                                        <strong>Deskripsi:</strong>
+                                    </div>
+                                    <div class="col-sm-8">
+                                        {{ dataset.description if dataset.description else 'Tidak ada deskripsi' }}
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-sm-4">
+                                        <strong>Tanggal Dibuat:</strong>
+                                    </div>
+                                    <div class="col-sm-8">
+                                        {{ dataset.created_at.strftime('%d %B %Y, %H:%M') }}
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-sm-4">
+                                        <strong>Status:</strong>
+                                    </div>
+                                    <div class="col-sm-8">
+                                        {% set total_raw = raw_upload_data|length + raw_scraper_data|length %}
+                                        {% set total_clean = clean_upload_data|length + clean_scraper_data|length %}
+                                        {% set total_classified = classified_upload_data|length + classified_scraper_data|length %}
+                                        
+                                        {% if total_classified > 0 %}
+                                            <span class="badge badge-professional badge-status-classified">Terklasifikasi</span>
+                                        {% elif total_clean > 0 %}
+                                            <span class="badge badge-professional badge-status-clean">Bersih</span>
+                                        {% else %}
+                                            <span class="badge badge-professional badge-status-raw">Mentah</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-sm-4">
-                                    <p class="mb-0 text-sm font-weight-bold">Nama:</p>
-                                </div>
-                                <div class="col-sm-8">
-                                    <p class="text-muted mb-0 text-sm">{{ dataset.name }}</p>
-                                </div>
-                            </div>
-                            <hr class="horizontal gray-light my-2">
-                            <div class="row">
-                                <div class="col-sm-4">
-                                    <p class="mb-0 text-sm font-weight-bold">Dibuat:</p>
-                                </div>
-                                <div class="col-sm-8">
-                                    <p class="text-muted mb-0 text-sm">{{ dataset.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
-                                </div>
-                            </div>
-                            <hr class="horizontal gray-light my-2">
-                            <div class="row">
-                                <div class="col-sm-4">
-                                    <p class="mb-0 text-sm font-weight-bold">Diperbarui:</p>
-                                </div>
-                                <div class="col-sm-8">
-                                    <p class="text-muted mb-0 text-sm">{{ dataset.updated_at.strftime('%d/%m/%Y %H:%M') }}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
                 
                 <div class="col-md-6">
                     <div class="card">
-                        <div class="card-header pb-0">
-                            <h6>Statistik Data</h6>
+                        <div class="card-header">
+                            <h6 class="mb-0">
+                                <i class="fas fa-chart-bar mr-2"></i>
+                                Statistik Data
+                            </h6>
                         </div>
                         <div class="card-body">
-                            <div class="row">
-                                <div class="col-6">
-                                    <div class="text-center">
-                                        <h4 class="font-weight-bolder">{{ raw_upload_data|length + raw_scraper_data|length }}</h4>
-                                        <p class="mb-0 text-sm">Total Data Mentah</p>
-                                    </div>
+                            {% set total_raw = raw_upload_data|length + raw_scraper_data|length %}
+                            {% set total_clean = clean_upload_data|length + clean_scraper_data|length %}
+                            {% set total_classified = classified_upload_data|length + classified_scraper_data|length %}
+                            
+                            <div class="row mb-2">
+                                <div class="col-sm-6">
+                                    <strong>Total Data Mentah:</strong>
                                 </div>
-                                <div class="col-6">
-                                    <div class="text-center">
-                                        <h4 class="font-weight-bolder text-success">{{ clean_upload_data|length + clean_scraper_data|length }}</h4>
-                                        <p class="mb-0 text-sm">Data Bersih</p>
-                                    </div>
+                                <div class="col-sm-6">
+                                    {{ total_raw }}
                                 </div>
                             </div>
-                            <hr class="horizontal gray-light my-3">
-                            <div class="row">
-                                <div class="col-6">
-                                    <div class="text-center">
-                                        <h4 class="font-weight-bolder text-info">{{ classified_upload_data|length + classified_scraper_data|length }}</h4>
-                                        <p class="mb-0 text-sm">Terklasifikasi</p>
-                                    </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-6">
+                                    <strong>Total Data Bersih:</strong>
                                 </div>
-                                <div class="col-6">
-                                    <div class="text-center">
-                                        {% set total_raw_data = raw_upload_data|length + raw_scraper_data|length %}
-                                        {% set clean_data = clean_upload_data|length + clean_scraper_data|length %}
-                                        {% set classified_data = classified_upload_data|length + classified_scraper_data|length %}
-                                        {% set raw_unprocessed = raw_upload_data|selectattr('status', 'equalto', 'raw')|list|length + raw_scraper_data|selectattr('status', 'equalto', 'raw')|list|length %}
-                                        {% if classified_data > 0 %}
-                                            <span class="badge badge-lg bg-gradient-primary">Terklasifikasi</span>
-                                        {% elif clean_data > 0 %}
-                                            <span class="badge badge-lg bg-gradient-success">Dibersihkan</span>
-                                        {% else %}
-                                            <span class="badge badge-lg bg-gradient-secondary">Mentah</span>
-                                        {% endif %}
-                                        <p class="mb-0 text-sm mt-2">Status Dataset</p>
-                                    </div>
+                                <div class="col-sm-6">
+                                    {{ total_clean }}
+                                </div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-sm-6">
+                                    <strong>Total Data Terklasifikasi:</strong>
+                                </div>
+                                <div class="col-sm-6">
+                                    {{ total_classified }}
                                 </div>
                             </div>
                         </div>
@@ -115,22 +310,22 @@
             <div class="row">
                 <div class="col-12">
                     <div class="card">
-                        <div class="card-header pb-0">
-                            <ul class="nav nav-tabs" id="dataTab" role="tablist">
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link active" id="raw-tab" data-toggle="tab" data-target="#raw" type="button" role="tab" aria-controls="raw" aria-selected="true">
-                                        <i class="fas fa-database mr-2"></i>Data Mentah ({{ raw_upload_data|length + raw_scraper_data|length }})
-                                    </button>
+                        <div class="card-header">
+                            <ul class="nav nav-tabs card-header-tabs" id="dataTab" role="tablist">
+                                <li class="nav-item">
+                                    <a class="nav-link active" id="raw-tab" data-toggle="tab" href="#raw" role="tab">
+                                        <i class="fas fa-file-alt mr-1"></i>Data Mentah
+                                    </a>
                                 </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link" id="clean-tab" data-toggle="tab" data-target="#clean" type="button" role="tab" aria-controls="clean" aria-selected="false">
-                                        <i class="fas fa-broom mr-2"></i>Data Bersih ({{ clean_upload_data|length + clean_scraper_data|length }})
-                                    </button>
+                                <li class="nav-item">
+                                    <a class="nav-link" id="clean-tab" data-toggle="tab" href="#clean" role="tab">
+                                        <i class="fas fa-broom mr-1"></i>Data Bersih
+                                    </a>
                                 </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link" id="classified-tab" data-toggle="tab" data-target="#classified" type="button" role="tab" aria-controls="classified" aria-selected="false">
-                                        <i class="fas fa-tags mr-2"></i>Hasil Klasifikasi ({{ classified_upload_data|length + classified_scraper_data|length }})
-                                    </button>
+                                <li class="nav-item">
+                                    <a class="nav-link" id="classified-tab" data-toggle="tab" href="#classified" role="tab">
+                                        <i class="fas fa-tags mr-1"></i>Hasil Klasifikasi
+                                    </a>
                                 </li>
                             </ul>
                         </div>
@@ -154,20 +349,20 @@
                                                 {% for data in raw_upload_data %}
                                                 <tr>
                                                     <td class="text-sm">{{ data.id }}</td>
-                                                    <td class="text-sm">{{ data.username if data.username else '-' }}</td>
-                                                    <td class="text-sm">{{ data.url[:50] if data.url else '-' }}{% if data.url and data.url|length > 50 %}...{% endif %}</td>
-                                                    <td class="text-sm">{{ data.content[:100] }}{% if data.content|length > 100 %}...{% endif %}</td>
-                                                    <td><span class="badge badge-sm bg-gradient-info">Upload</span></td>
+                                                    <td class="text-sm">{{ data.username if data.username and data.username|string|lower != 'nan' else '-' }}</td>
+                                                    <td class="text-sm">{{ data.url[:50] if data.url and data.url|string|lower != 'nan' else '-' }}{% if data.url and data.url|length > 50 and data.url|string|lower != 'nan' %}...{% endif %}</td>
+                                                    <td class="text-sm">{{ data.content[:100] if data.content and data.content|string|lower != 'nan' else '-' }}{% if data.content and data.content|length > 100 and data.content|string|lower != 'nan' %}...{% endif %}</td>
+                                                    <td><span class="badge badge-professional badge-upload">Upload</span></td>
                                                     <td class="text-sm">{{ data.created_at.strftime('%d/%m/%Y %H:%M') if data.created_at else '-' }}</td>
                                                 </tr>
                                                 {% endfor %}
                                                 {% for data in raw_scraper_data %}
                                                 <tr>
                                                     <td class="text-sm">{{ data.id }}</td>
-                                                    <td class="text-sm">{{ data.username if data.username else '-' }}</td>
-                                                    <td class="text-sm">{{ data.url[:50] if data.url else '-' }}{% if data.url and data.url|length > 50 %}...{% endif %}</td>
-                                                    <td class="text-sm">{{ data.content[:100] }}{% if data.content|length > 100 %}...{% endif %}</td>
-                                                    <td><span class="badge badge-sm bg-gradient-warning">Scraping</span></td>
+                                                    <td class="text-sm">{{ data.username if data.username and data.username|string|lower != 'nan' else '-' }}</td>
+                                                    <td class="text-sm">{{ data.url[:50] if data.url and data.url|string|lower != 'nan' else '-' }}{% if data.url and data.url|length > 50 and data.url|string|lower != 'nan' %}...{% endif %}</td>
+                                                    <td class="text-sm">{{ data.content[:100] if data.content and data.content|string|lower != 'nan' else '-' }}{% if data.content and data.content|length > 100 and data.content|string|lower != 'nan' %}...{% endif %}</td>
+                                                    <td><span class="badge badge-professional badge-scraping">Scraping</span></td>
                                                     <td class="text-sm">{{ data.created_at.strftime('%d/%m/%Y %H:%M') if data.created_at else '-' }}</td>
                                                 </tr>
                                                 {% endfor %}
@@ -194,20 +389,20 @@
                                                 {% for data in clean_upload_data %}
                                                 <tr>
                                                     <td>{{ data.id }}</td>
-                                                    <td>{{ data.username }}</td>
-                                                    <td>{{ data.url or '-' }}</td>
-                                                    <td>{{ data.cleaned_content[:100] }}...</td>
-                                                    <td><span class="badge bg-primary">Upload</span></td>
+                                                    <td>{{ data.username if data.username and data.username|string|lower != 'nan' else '-' }}</td>
+                                                    <td>{{ data.url if data.url and data.url|string|lower != 'nan' else '-' }}</td>
+                                                    <td>{{ data.cleaned_content[:100] if data.cleaned_content and data.cleaned_content|string|lower != 'nan' else '-' }}{% if data.cleaned_content and data.cleaned_content|length > 100 and data.cleaned_content|string|lower != 'nan' %}...{% endif %}</td>
+                                                    <td><span class="badge badge-professional badge-upload">Upload</span></td>
                                                     <td>{{ data.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
                                                 </tr>
                                                 {% endfor %}
                                                 {% for data in clean_scraper_data %}
                                                 <tr>
                                                     <td>{{ data.id }}</td>
-                                                    <td>{{ data.username }}</td>
-                                                    <td>{{ data.url or '-' }}</td>
-                                                    <td>{{ data.cleaned_content[:100] }}...</td>
-                                                    <td><span class="badge bg-success">Scraping</span></td>
+                                                    <td>{{ data.username if data.username and data.username|string|lower != 'nan' else '-' }}</td>
+                                                    <td>{{ data.url if data.url and data.url|string|lower != 'nan' else '-' }}</td>
+                                                    <td>{{ data.cleaned_content[:100] if data.cleaned_content and data.cleaned_content|string|lower != 'nan' else '-' }}{% if data.cleaned_content and data.cleaned_content|length > 100 and data.cleaned_content|string|lower != 'nan' %}...{% endif %}</td>
+                                                    <td><span class="badge badge-professional badge-scraping">Scraping</span></td>
                                                     <td>{{ data.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
                                                 </tr>
                                                 {% endfor %}
@@ -223,9 +418,9 @@
                                             <thead>
                                                 <tr>
                                                     <th>ID</th>
+                                                    <th>URL</th>
                                                     <th>Username</th>
                                                     <th>Konten</th>
-                                                    <th>URL</th>
                                                     <th>Tipe Data</th>
                                                     <th>Model 1</th>
                                                     <th>Model 2</th>
@@ -237,33 +432,33 @@
                                                 {% for data in classified_upload_data %}
                                                 <tr>
                                                     <td>{{ data.id }}</td>
-                                                    <td>{{ data.username or '-' }}</td>
-                                                    <td>{{ data.content[:100] }}...</td>
-                                                    <td>{{ data.url or '-' }}</td>
-                                                    <td><span class="badge bg-primary">Upload</span></td>
+                                                    <td>{{ data.url if data.url and data.url|string|lower != 'nan' else '-' }}</td>
+                                                    <td>{{ data.username if data.username and data.username|string|lower != 'nan' else '-' }}</td>
+                                                    <td>{{ data.content[:100] if data.content and data.content|string|lower != 'nan' else '-' }}{% if data.content and data.content|length > 100 and data.content|string|lower != 'nan' %}...{% endif %}</td>
+                                                    <td><span class="badge badge-professional badge-upload">Upload</span></td>
                                                     <td>
                                                         {% if data.prediction == 'radikal' %}
-                                                            <span class="badge bg-danger">Radikal</span>
+                                                            <span class="badge badge-professional badge-prediction-radikal">Radikal</span>
                                                         {% else %}
-                                                            <span class="badge bg-success">Non-Radikal</span>
+                                                            <span class="badge badge-professional badge-prediction-nonradikal">Non-Radikal</span>
                                                         {% endif %}
-                                                        <br><small>{{ "%.2f"|format(data.probability_radikal * 100) }}%</small>
+                                                        <br><small class="probability-text">{{ "%.2f"|format(data.probability_radikal * 100) }}%</small>
                                                     </td>
                                                     <td>
                                                         {% if data.prediction == 'radikal' %}
-                                                            <span class="badge bg-danger">Radikal</span>
+                                                            <span class="badge badge-professional badge-prediction-radikal">Radikal</span>
                                                         {% else %}
-                                                            <span class="badge bg-success">Non-Radikal</span>
+                                                            <span class="badge badge-professional badge-prediction-nonradikal">Non-Radikal</span>
                                                         {% endif %}
-                                                        <br><small>{{ "%.2f"|format(data.probability_radikal * 100) }}%</small>
+                                                        <br><small class="probability-text">{{ "%.2f"|format(data.probability_radikal * 100) }}%</small>
                                                     </td>
                                                     <td>
                                                         {% if data.prediction == 'radikal' %}
-                                                            <span class="badge bg-danger">Radikal</span>
+                                                            <span class="badge badge-professional badge-prediction-radikal">Radikal</span>
                                                         {% else %}
-                                                            <span class="badge bg-success">Non-Radikal</span>
+                                                            <span class="badge badge-professional badge-prediction-nonradikal">Non-Radikal</span>
                                                         {% endif %}
-                                                        <br><small>{{ "%.2f"|format(data.probability_radikal * 100) }}%</small>
+                                                        <br><small class="probability-text">{{ "%.2f"|format(data.probability_radikal * 100) }}%</small>
                                                     </td>
                                                     <td>{{ data.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
                                                 </tr>
@@ -271,33 +466,33 @@
                                                 {% for data in classified_scraper_data %}
                                                 <tr>
                                                     <td>{{ data.id }}</td>
-                                                    <td>{{ data.username or '-' }}</td>
-                                                    <td>{{ data.content[:100] }}...</td>
-                                                    <td>{{ data.url or '-' }}</td>
-                                                    <td><span class="badge bg-success">Scraping</span></td>
+                                                    <td>{{ data.url if data.url and data.url|string|lower != 'nan' else '-' }}</td>
+                                                    <td>{{ data.username if data.username and data.username|string|lower != 'nan' else '-' }}</td>
+                                                    <td>{{ data.content[:100] if data.content and data.content|string|lower != 'nan' else '-' }}{% if data.content and data.content|length > 100 and data.content|string|lower != 'nan' %}...{% endif %}</td>
+                                                    <td><span class="badge badge-professional badge-scraping">Scraping</span></td>
                                                     <td>
                                                         {% if data.prediction == 'radikal' %}
-                                                            <span class="badge bg-danger">Radikal</span>
+                                                            <span class="badge badge-professional badge-prediction-radikal">Radikal</span>
                                                         {% else %}
-                                                            <span class="badge bg-success">Non-Radikal</span>
+                                                            <span class="badge badge-professional badge-prediction-nonradikal">Non-Radikal</span>
                                                         {% endif %}
-                                                        <br><small>{{ "%.2f"|format(data.probability_radikal * 100) }}%</small>
+                                                        <br><small class="probability-text">{{ "%.2f"|format(data.probability_radikal * 100) }}%</small>
                                                     </td>
                                                     <td>
                                                         {% if data.prediction == 'radikal' %}
-                                                            <span class="badge bg-danger">Radikal</span>
+                                                            <span class="badge badge-professional badge-prediction-radikal">Radikal</span>
                                                         {% else %}
-                                                            <span class="badge bg-success">Non-Radikal</span>
+                                                            <span class="badge badge-professional badge-prediction-nonradikal">Non-Radikal</span>
                                                         {% endif %}
-                                                        <br><small>{{ "%.2f"|format(data.probability_radikal * 100) }}%</small>
+                                                        <br><small class="probability-text">{{ "%.2f"|format(data.probability_radikal * 100) }}%</small>
                                                     </td>
                                                     <td>
                                                         {% if data.prediction == 'radikal' %}
-                                                            <span class="badge bg-danger">Radikal</span>
+                                                            <span class="badge badge-professional badge-prediction-radikal">Radikal</span>
                                                         {% else %}
-                                                            <span class="badge bg-success">Non-Radikal</span>
+                                                            <span class="badge badge-professional badge-prediction-nonradikal">Non-Radikal</span>
                                                         {% endif %}
-                                                        <br><small>{{ "%.2f"|format(data.probability_radikal * 100) }}%</small>
+                                                        <br><small class="probability-text">{{ "%.2f"|format(data.probability_radikal * 100) }}%</small>
                                                     </td>
                                                     <td>{{ data.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
                                                 </tr>

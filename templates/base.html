@@ -7,9 +7,7 @@
               content="Waskita - Sistem Klasifikasi Konten Radikal menggunakan Machine Learning untuk menganalisis dan mengklasifikasikan konten media sosial">
         <meta name="keywords"
               content="klasifikasi konten, machine learning, naive bayes, analisis sentimen, media sosial, radikal, non-radikal">
-        {% if csrf_token %}
         <meta name="csrf-token" content="{{ csrf_token() }}">
-        {% endif %}
         
         <!-- Favicon -->
         <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/favicon.svg') }}">

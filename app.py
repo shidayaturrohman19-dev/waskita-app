@@ -54,9 +54,13 @@ pass
 from models import db
 from flask_migrate import Migrate
 from scheduler import cleanup_scheduler
+from security_middleware import SecurityMiddleware
 
 db.init_app(app)
 migrate = Migrate(app, db)
+
+# Initialize security middleware
+security_middleware = SecurityMiddleware(app)
 
 # Initialize CSRF protection
 csrf = CSRFProtect(app)
@@ -133,9 +137,14 @@ def internal_error(error):
     logger.error(f"Internal server error: {error}")
     return render_template('errors/500.html'), 500
 
+@app.errorhandler(415)
+def unsupported_media_type(error):
+    logger.error(f"Unsupported Media Type error: {error}")
+    return render_template('errors/404.html'), 415
+
 @app.errorhandler(404)
 def not_found_error(error):
-    logger.warning(f"Page not found: {request.url}")
+    logger.error(f"Page not found: {error}")
     return render_template('errors/404.html'), 404
 
 @login_manager.user_loader

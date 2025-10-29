@@ -15,53 +15,7 @@
         <!-- Main content -->
         <section class="content">
             <div class="container-fluid">
-                <!-- Classification Overview -->
-                <div class="row">
-                    <div class="col-lg-3 col-6">
-                        <div class="small-box bg-primary">
-                            <div class="inner">
-                                <h3 id="totalCleanData">{{ clean_data_count }}</h3>
-                                <p>Data Siap Klasifikasi</p>
-                            </div>
-                            <div class="icon">
-                                <i class="fas fa-database"></i>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-3 col-6">
-                        <div class="small-box bg-success">
-                            <div class="inner">
-                                <h3 id="classifiedData">{{ classified_count }}</h3>
-                                <p>Sudah Diklasifikasi</p>
-                            </div>
-                            <div class="icon">
-                                <i class="fas fa-check-circle"></i>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-3 col-6">
-                        <div class="small-box bg-warning">
-                            <div class="inner">
-                                <h3 id="radicalCount">{{ radical_count }}</h3>
-                                <p>Konten Radikal</p>
-                            </div>
-                            <div class="icon">
-                                <i class="fas fa-exclamation-triangle"></i>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-3 col-6">
-                        <div class="small-box bg-info">
-                            <div class="inner">
-                                <h3 id="nonRadicalCount">{{ non_radical_count }}</h3>
-                                <p>Konten Non-Radikal</p>
-                            </div>
-                            <div class="icon">
-                                <i class="fas fa-shield-alt"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+
                 <!-- Model Status -->
                 <div class="row">
                     <div class="col-md-12">
@@ -74,13 +28,13 @@
                             <div class="card-body">
                                 <div class="row">
                                     <div class="col-md-3">
-                                        <div class="info-box bg-gradient-primary">
+                                        <div class="info-box bg-gradient-info">
                                             <span class="info-box-icon"><i class="fas fa-vector-square"></i></span>
                                             <div class="info-box-content">
                                                 <span class="info-box-text">Word2Vec Model</span>
                                                 <span class="info-box-number">{{ 'Aktif' if word2vec_status else 'Tidak Aktif' }}</span>
                                                 <div class="progress">
-                                                    <div class="progress-bar"
+                                                    <div class="progress-bar bg-info"
                                                          style="width: {{ '100' if word2vec_status else '0' }}%"></div>
                                                 </div>
                                                 <span class="progress-description">{{ word2vec_info if word2vec_status else 'Model tidak ditemukan' }}</span>
@@ -88,13 +42,13 @@
                                         </div>
                                     </div>
                                     <div class="col-md-3">
-                                        <div class="info-box bg-gradient-success">
+                                        <div class="info-box bg-gradient-info">
                                             <span class="info-box-icon"><i class="fas fa-brain"></i></span>
                                             <div class="info-box-content">
                                                 <span class="info-box-text">Naive Bayes Model 1</span>
                                                 <span class="info-box-number">{{ 'Aktif' if nb1_status else 'Tidak Aktif' }}</span>
                                                 <div class="progress">
-                                                    <div class="progress-bar bg-success"
+                                                    <div class="progress-bar bg-info"
                                                          style="width: {{ '100' if nb1_status else '0' }}%"></div>
                                                 </div>
                                                 <span class="progress-description">{{ nb1_info if nb1_status else 'Model tidak ditemukan' }}</span>
@@ -102,13 +56,13 @@
                                         </div>
                                     </div>
                                     <div class="col-md-3">
-                                        <div class="info-box bg-gradient-warning">
+                                        <div class="info-box bg-gradient-info">
                                             <span class="info-box-icon"><i class="fas fa-brain"></i></span>
                                             <div class="info-box-content">
                                                 <span class="info-box-text">Naive Bayes Model 2</span>
                                                 <span class="info-box-number">{{ 'Aktif' if nb2_status else 'Tidak Aktif' }}</span>
                                                 <div class="progress">
-                                                    <div class="progress-bar bg-warning"
+                                                    <div class="progress-bar bg-info"
                                                          style="width: {{ '100' if nb2_status else '0' }}%"></div>
                                                 </div>
                                                 <span class="progress-description">{{ nb2_info if nb2_status else 'Model tidak ditemukan' }}</span>
@@ -116,13 +70,13 @@
                                         </div>
                                     </div>
                                     <div class="col-md-3">
-                                        <div class="info-box bg-gradient-danger">
+                                        <div class="info-box bg-gradient-info">
                                             <span class="info-box-icon"><i class="fas fa-brain"></i></span>
                                             <div class="info-box-content">
                                                 <span class="info-box-text">Naive Bayes Model 3</span>
                                                 <span class="info-box-number">{{ 'Aktif' if nb3_status else 'Tidak Aktif' }}</span>
                                                 <div class="progress">
-                                                    <div class="progress-bar bg-danger"
+                                                    <div class="progress-bar bg-info"
                                                          style="width: {{ '100' if nb3_status else '0' }}%"></div>
                                                 </div>
                                                 <span class="progress-description">{{ nb3_info if nb3_status else 'Model tidak ditemukan' }}</span>
@@ -149,6 +103,7 @@
                                 </div>
                             </div>
                             <div class="card-body">
+                                {% if type == 'batch' %}
                                 <!-- Data Selection -->
                                 <div class="form-group">
                                     <label for="dataSource">Pilih Sumber Data:</label>
@@ -158,6 +113,7 @@
                                         <option value="clean-scraper">Data Scraper Bersih ({{ clean_scraper_count }} data)</option>
                                     </select>
                                 </div>
+                                {% endif %}
                                 <!-- Data Table -->
                                 <div id="dataTableContainer" class="hidden">
                                     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -224,7 +180,7 @@
                                     <span class="progress-text">Model 1 (Naive Bayes)</span>
                                     <span class="float-right"><b id="model1Progress">0</b>/{{ clean_data_count }}</span>
                                     <div class="progress progress-sm">
-                                        <div class="progress-bar bg-primary progress-bar-initial"
+                                        <div class="progress-bar bg-info progress-bar-initial"
                                              id="model1ProgressBar"></div>
                                     </div>
                                 </div>
@@ -232,7 +188,7 @@
                                     <span class="progress-text">Model 2 (Naive Bayes)</span>
                                     <span class="float-right"><b id="model2Progress">0</b>/{{ clean_data_count }}</span>
                                     <div class="progress progress-sm">
-                                        <div class="progress-bar bg-success progress-bar-initial"
+                                        <div class="progress-bar bg-info progress-bar-initial"
                                              id="model2ProgressBar"></div>
                                     </div>
                                 </div>
@@ -240,7 +196,7 @@
                                     <span class="progress-text">Model 3 (Naive Bayes)</span>
                                     <span class="float-right"><b id="model3Progress">0</b>/{{ clean_data_count }}</span>
                                     <div class="progress progress-sm">
-                                        <div class="progress-bar bg-warning progress-bar-initial"
+                                        <div class="progress-bar bg-info progress-bar-initial"
                                              id="model3ProgressBar"></div>
                                     </div>
                                 </div>

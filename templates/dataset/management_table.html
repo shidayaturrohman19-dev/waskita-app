@@ -13,14 +13,196 @@
 
 {% block extra_css %}
 <style>
+/* Empty State Styling */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    margin: 20px;
+    border: 2px dashed #dee2e6;
+}
+
+.empty-state-icon {
+    font-size: 4rem;
+    color: #6c757d;
+    margin-bottom: 20px;
+    opacity: 0.7;
+}
+
+.empty-state-text {
+    color: #495057;
+    font-weight: 600;
+    margin-bottom: 10px;
+    font-size: 1.25rem;
+}
+
+.empty-state p {
+    color: #6c757d;
+    font-size: 0.95rem;
+    margin-bottom: 30px;
+}
+
+.btn-action {
+    padding: 10px 20px;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.btn-action i {
+    font-size: 0.9rem;
+}
+
+/* Peningkatan Responsivitas Tabel */
+.table-responsive {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.table thead th {
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 1;
+    box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
+}
+
+.table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.username-column {
+    width: 150px !important;
+}
+
+.status-column {
+    width: 150px !important;
+}
+
+.date-column {
+    width: 150px !important;
+}
+
 .action-column {
     min-width: 120px !important;
-    width: 120px;
+    width: 120px !important;
     text-align: center;
     position: relative;
 }
+
 .table td, .table th {
     white-space: nowrap;
+    vertical-align: middle !important;
+    padding: 12px 8px !important;
+    text-align: center;
+}
+
+.url-column {
+    width: 250px !important;
+    padding-right: 24px !important;
+}
+
+.stats-column {
+    width: 260px !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+}
+
+.stats-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 65px !important;
+}
+
+.stats-label {
+    font-size: 0.7rem;
+    color: #6c757d;
+    margin-bottom: 2px;
+}
+
+.stats-value {
+    display: flex;
+    align-items: center;
+    gap: 1px;
+}
+
+.stats-value i {
+    font-size: 0.7rem;
+    color: #6c757d;
+}
+
+.stats-value span {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #495057;
+}
+
+.stats-container {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    padding: 4px 0;
+    width: 100%;
+}
+
+.table th {
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #344767 !important;
+}
+
+.table td {
+    font-size: 13px !important;
+    color: #344767;
+}
+
+/* Peningkatan Status Badge */
+.status-badge {
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-width: 140px;
+    font-size: 12px;
+}
+
+.status-badge i {
+    font-size: 12px;
+}
+
+.status-badge.classified {
+    background-color: #e3f2fd;
+    color: #1976d2;
+}
+
+.status-badge.cleaned {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
+
+.status-badge.raw {
+    background-color: #f5f5f5;
+    color: #616161;
 }
 .dropdown {
     position: relative !important;
@@ -129,22 +311,70 @@
 }
 .action-buttons {
     display: flex;
-    gap: 5px;
+    gap: 8px;
     justify-content: center;
     align-items: center;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
 }
+
+.action-buttons:hover {
+    opacity: 1;
+}
+
 .action-btn {
-    width: 30px;
-    height: 30px;
+    width: 32px;
+    height: 32px;
     padding: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 4px;
+    border-radius: 6px;
     border: 1px solid #dee2e6;
     background: transparent;
     color: #6c757d;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    background-color: #f8f9fa;
+}
+
+/* Peningkatan Statistik Dataset */
+.dataset-stats {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    min-height: 40px;
+}
+
+.stat-badge {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: #f8f9fa;
+    color: #344767;
+    min-width: 100px;
+    height: 32px;
+    transition: all 0.2s ease;
+}
+
+.stat-badge:hover {
+    background: #e9ecef;
+}
+
+.stat-badge i {
+    font-size: 11px;
+    color: #1976d2;
 }
 .action-btn:hover {
     background-color: #f8f9fa;
@@ -346,119 +576,160 @@
                         <table class="table align-items-center mb-0">
                             <thead>
                                 <tr>
-                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="selectAll" title="Pilih Semua">
-                                        </div>
-                                    </th>
-                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Dataset</th>
-                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Konten</th>
-                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Username</th>
-                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">URL</th>
-                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 pl-2">Statistik</th>
-
-                                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Status</th>
-                                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Tanggal</th>
-                                    <th class="text-secondary opacity-7 action-column">Aksi</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center" style="width: 60px; padding: 12px 8px;">
+                        <div class="form-check d-flex justify-content-center align-items-center" style="margin-bottom: 0;">
+                            <input class="form-check-input" type="checkbox" id="selectAllCheckbox" style="transform: scale(1.1); margin: 0;">
+                        </div>
+                    </th>
+                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center align-middle" style="padding: 12px 16px;">Dataset</th>
+                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center align-middle" style="padding: 12px 16px;">Konten</th>
+                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center align-middle username-column">Username</th>
+                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center align-middle url-column">URL</th>
+                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center align-middle stats-column">Statistik</th>
+                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center align-middle status-column">Status</th>
+                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center align-middle date-column">Tanggal</th>
+                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 text-center align-middle action-column">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for stat in dataset_stats %}
                                 <tr>
-                                    <td>
-                                        <div class="form-check">
-                                            <input class="form-check-input dataset-checkbox" type="checkbox" value="{{ stat.dataset.id }}">
+                                    <td class="text-center align-middle" style="width: 60px;">
+                                        <div class="form-check d-flex justify-content-center align-items-center" style="margin-bottom: 0;">
+                                            <input class="form-check-input dataset-checkbox m-0" type="checkbox" value="{{ stat.dataset.id }}" style="transform: scale(1.1);">
                                         </div>
                                     </td>
                                     <td>
-                            <div class="d-flex px-2 py-1">
-                                <div class="d-flex flex-column justify-content-center">
-                                    <h6 class="mb-0 text-sm">{{ stat.dataset.name }}</h6>
-                                    <p class="text-xs text-muted mb-0">
-                                        {% if stat.raw_upload_count > 0 %}
-                                            <i class="fas fa-upload text-info"></i> Upload
-                                        {% endif %}
-                                        {% if stat.raw_scraper_count > 0 %}
-                                            {% if stat.raw_upload_count > 0 %} | {% endif %}
-                                            <i class="fas fa-spider text-warning"></i> Scraping
-                                        {% endif %}
-                                    </p>
-                                </div>
-                            </div>
-                        </td>
+                                        <div class="d-flex px-2 py-1 justify-content-center">
+                                            <div class="d-flex flex-column justify-content-center align-items-center">
+                                                <h6 class="mb-1 text-sm font-weight-bold">{{ stat.dataset.name }}</h6>
+                                                <p class="text-xs text-muted mb-0 d-flex align-items-center gap-2">
+                                                    {% if stat.raw_upload_count > 0 %}
+                                                        <span class="d-inline-flex align-items-center">
+                                                            <i class="fas fa-upload text-info mr-1"></i> Upload
+                                                        </span>
+                                                    {% endif %}
+                                                    {% if stat.raw_scraper_count > 0 %}
+                                                        {% if stat.raw_upload_count > 0 %}
+                                                            <span class="text-muted mx-1">|</span>
+                                                        {% endif %}
+                                                        <span class="d-inline-flex align-items-center">
+                                                            <i class="fas fa-spider text-warning mr-1"></i> Scraping
+                                                        </span>
+                                                    {% endif %}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </td>
                         <td>
-                            <div class="d-flex px-2 py-1">
-                                <div class="d-flex flex-column justify-content-center">
-                                    <p class="text-xs text-muted mb-0" title="{{ stat.sample_content }}">
+                            <div class="d-flex px-2 py-1 justify-content-center">
+                                <div class="content-preview text-center" style="max-width: 300px;">
+                                    <p class="text-xs mb-0" title="{{ stat.sample_content }}" style="line-height: 1.5;">
                                         {% if stat.sample_content and stat.sample_content != '-' %}
                                             {{ stat.sample_content[:100] }}{% if stat.sample_content|length > 100 %}...{% endif %}
                                         {% else %}
-                                            -
+                                            <span class="text-muted">-</span>
                                         {% endif %}
                                     </p>
                                 </div>
                             </div>
                         </td>
                         <td>
-                            <div class="d-flex px-2 py-1">
-                                <div class="d-flex flex-column justify-content-center">
-                                    <h6 class="mb-0 text-sm">{{ stat.sample_username }}</h6>
+                            <div class="d-flex px-2 py-1 justify-content-center">
+                                <div class="d-flex flex-column justify-content-center align-items-center">
+                                    <h6 class="mb-0 text-sm font-weight-bold">
+                                        {% if stat.sample_username and stat.sample_username != '-' and stat.sample_username != 'nan' %}
+                                            {{ stat.sample_username }}
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </h6>
                                 </div>
                             </div>
                         </td>
-                        <td>
-                            <div class="d-flex px-2 py-1">
-                                <div class="d-flex flex-column justify-content-center">
-                                    <p class="text-xs text-muted mb-0" title="{{ stat.sample_url }}">
+                        <td class="text-center align-middle url-column" style="padding-right: 48px !important;">
+                            <div class="d-flex px-2 py-1 justify-content-center">
+                                <div class="url-preview text-center" style="max-width: 250px;">
+                                    <p class="text-xs mb-0" title="{{ stat.sample_url }}" style="line-height: 1.5;">
                                         {% if stat.sample_url != '-' %}
                                             {{ stat.sample_url[:50] }}{% if stat.sample_url|length > 50 %}...{% endif %}
                                         {% else %}
-                                            -
+                                            <span class="text-muted">-</span>
                                         {% endif %}
                                     </p>
                                 </div>
                             </div>
                         </td>
-                                    <td>
-                                        <div class="text-xs">
-                                            <div class="mb-1">
-                                                <span class="badge badge-sm bg-gradient-primary">{{ stat.total_records }}</span> Total
-                                                <span class="badge badge-sm bg-gradient-success">{{ stat.clean_count }}</span> Bersih
+                                    <td class="text-center align-middle stats-column">
+                                        <div class="stats-container">
+                                            <div class="stats-item">
+                                                <span class="stats-label">Total</span>
+                                                <div class="stats-value">
+                                                    <i class="fas fa-database"></i>
+                                                    <span>{{ stat.total_records }}</span>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <span class="badge badge-sm bg-gradient-info">{{ stat.classified_count }}</span> Terklasifikasi
+                                            <div class="stats-item">
+                                                <span class="stats-label">Bersih</span>
+                                                <div class="stats-value">
+                                                    <i class="fas fa-broom"></i>
+                                                    <span>{{ stat.clean_count }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="stats-item">
+                                                <span class="stats-label">Klasifikasi</span>
+                                                <div class="stats-value">
+                                                    <i class="fas fa-check"></i>
+                                                    <span>{{ stat.classified_count }}</span>
+                                                </div>
                                             </div>
                                         </div>
                                     </td>
 
                                     <td class="align-middle text-center">
                                         {% if stat.classified_count > 0 %}
-                                            <span class="badge badge-sm bg-gradient-primary">Terklasifikasi</span>
+                                            <span class="status-badge classified">
+                                                <i class="fas fa-check-circle"></i>
+                                                Terklasifikasi
+                                            </span>
                                         {% elif stat.clean_count > 0 %}
-                                            <span class="badge badge-sm bg-gradient-success">Dibersihkan</span>
+                                            <span class="status-badge cleaned">
+                                                <i class="fas fa-broom"></i>
+                                                Dibersihkan
+                                            </span>
                                         {% else %}
-                                            <span class="badge badge-sm bg-gradient-secondary">Mentah</span>
+                                            <span class="status-badge raw">
+                                                <i class="fas fa-file-alt"></i>
+                                                Mentah
+                                            </span>
                                         {% endif %}
                                     </td>
                                     <td class="align-middle text-center">
-                                        <span class="text-secondary text-xs font-weight-bold">{{ stat.dataset.created_at.strftime('%d/%m/%Y') }}</span>
-                                        <br>
-                                        <span class="text-xs text-muted">{{ stat.dataset.updated_at.strftime('%H:%M') }}</span>
+                                        <div class="d-flex flex-column justify-content-center align-items-center">
+                                            <p class="text-xs text-muted mb-1" style="font-size: 0.75rem;">
+                                                <i class="far fa-calendar-alt me-1"></i>
+                                                {{ stat.dataset.created_at.strftime('%d/%m/%Y %H:%M') }}
+                                            </p>
+                                            <p class="text-xs text-muted mb-0" style="font-size: 0.75rem;">
+                                                <i class="fas fa-sync-alt me-1"></i>
+                                                {{ stat.dataset.updated_at.strftime('%d/%m/%Y %H:%M') }}
+                                            </p>
+                                        </div>
                                     </td>
-                                    <td class="align-middle">
-                                        <div class="action-buttons">
-                                            <button class="btn action-btn" title="Detail" onclick="viewDatasetDetails({{ stat.dataset.id }})">
+                                    <td class="align-middle text-center">
+                                        <div class="d-flex gap-2 justify-content-center">
+                                            <button class="btn action-btn" title="Detail" onclick="viewDatasetDetails({{ stat.dataset.id }})" style="min-width: 32px; height: 32px;">
                                                 <i class="fas fa-eye"></i>
                                             </button>
-                                            <button class="btn action-btn" title="Bersihkan" onclick="cleanDataset({{ stat.dataset.id }})">
+                                            <button class="btn action-btn" title="Bersihkan" onclick="cleanDataset({{ stat.dataset.id }})" style="min-width: 32px; height: 32px;">
                                                 <i class="fas fa-broom"></i>
                                             </button>
-                                            <button class="btn action-btn" title="Klasifikasi" onclick="classifyDataset({{ stat.dataset.id }})">
+                                            <button class="btn action-btn" title="Klasifikasi" onclick="classifyDataset({{ stat.dataset.id }})" style="min-width: 32px; height: 32px;">
                                                 <i class="fas fa-tags"></i>
                                             </button>
-                                            <button class="btn action-btn text-danger" title="Hapus" onclick="deleteDataset({{ stat.dataset.id }})">
-                                                 <i class="fas fa-trash"></i>
-                                             </button>
+                                            <button class="btn action-btn text-danger" title="Hapus" onclick="deleteDataset({{ stat.dataset.id }})" style="min-width: 32px; height: 32px;">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -467,12 +738,12 @@
                         </table>
                     </div>
                     {% else %}
-                    <div class="text-center py-5">
-                        <div class="mb-3">
-                            <i class="fas fa-database fa-3x text-muted"></i>
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <i class="fas fa-database"></i>
                         </div>
-                        <h5 class="text-muted">Belum ada dataset</h5>
-                        <p class="text-sm text-muted mb-3">Mulai dengan mengupload dataset pertama Anda</p>
+                        <h5 class="empty-state-text">Belum ada dataset</h5>
+                        <p class="text-sm text-muted mb-4">Mulai dengan mengupload dataset pertama Anda</p>
                         <div class="d-flex justify-content-center gap-3">
                             <a href="{{ url_for('upload_page') }}" class="btn btn-primary mr-2 btn-action">
                                 <i class="fas fa-upload mr-1"></i> Upload Data
@@ -560,7 +831,7 @@ $(document).ready(function() {
 
     
     // Select all functionality
-    $('#selectAll').change(function() {
+    $('#selectAllCheckbox').change(function() {
         $('.dataset-checkbox').prop('checked', this.checked);
         updateBulkToolbar();
     });
@@ -570,13 +841,13 @@ $(document).ready(function() {
         const totalCheckboxes = $('.dataset-checkbox').length;
         const checkedCheckboxes = $('.dataset-checkbox:checked').length;
         
-        $('#selectAll').prop('checked', totalCheckboxes === checkedCheckboxes);
+        $('#selectAllCheckbox').prop('checked', totalCheckboxes === checkedCheckboxes);
         updateBulkToolbar();
     });
     
     // Define functions globally after jQuery is loaded
     window.clearSelection = function() {
-        $('.dataset-checkbox, #selectAll').prop('checked', false);
+        $('.dataset-checkbox, #selectAllCheckbox').prop('checked', false);
         updateBulkToolbar();
     };
 

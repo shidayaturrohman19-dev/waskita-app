@@ -261,7 +261,7 @@
 
 <!-- Column Mapping Modal for Scraping -->
 <div class="modal fade" id="scrapingColumnMappingModal" tabindex="-1" role="dialog" aria-labelledby="scrapingColumnMappingModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-dialog modal-xl" role="document">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="scrapingColumnMappingModalLabel">Mapping Kolom Data Scraping</h5>
@@ -271,15 +271,15 @@
             </div>
             <div class="modal-body">
                 <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i>
+                    <i class="fas fa-info-circle mr-2"></i>
                     Pilih kolom yang sesuai untuk mapping data scraping. Kolom <strong>Content</strong> wajib dipilih.
                 </div>
                 
                 <div class="row">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="card">
                             <div class="card-header">
-                                <h6 class="mb-0">Mapping Kolom</h6>
+                                <h6 class="mb-0"><i class="fas fa-columns mr-2"></i>Mapping Kolom</h6>
                             </div>
                             <div class="card-body">
                                 <div class="mb-3">
@@ -294,7 +294,7 @@
                                         <option value="">Pilih kolom username...</option>
                                     </select>
                                 </div>
-                                <div class="mb-3">
+                                <div class="mb-0">
                                     <label for="scrapingUrlColumn" class="form-label">URL</label>
                                     <select class="form-control" id="scrapingUrlColumn">
                                         <option value="">Pilih kolom URL...</option>
@@ -303,15 +303,15 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-8">
+                    <div class="col-md-9">
                         <div class="card">
                             <div class="card-header">
-                                <h6 class="mb-0">Preview Data</h6>
+                                <h6 class="mb-0"><i class="fas fa-eye mr-2"></i>Preview Data</h6>
                             </div>
-                            <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="table table-sm" id="scrapingPreviewTable">
-                                        <thead>
+                            <div class="card-body p-0">
+                                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                    <table class="table table-sm table-bordered mb-0" id="scrapingPreviewTable">
+                                        <thead class="thead-light sticky-top">
                                             <tr id="scrapingPreviewHeader">
                                                 <!-- Headers will be populated dynamically -->
                                             </tr>
@@ -327,8 +327,12 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal" id="cancelScrapingMapping">Batal</button>
-                <button type="button" class="btn btn-primary" id="processScrapingMapping">Proses Data</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" id="cancelScrapingMapping">
+                    <i class="fas fa-times mr-2"></i>Batal
+                </button>
+                <button type="button" class="btn btn-primary" id="processScrapingMapping">
+                    <i class="fas fa-check mr-2"></i>Proses Data
+                </button>
             </div>
         </div>
     </div>

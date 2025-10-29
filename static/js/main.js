@@ -219,6 +219,11 @@ function initializeClassificationPage() {
     });
 }
 
+function showManualClassification() {
+    // Redirect to manual classification page
+    window.location.href = '/classification/classify?type=manual';
+}
+
 function classifyData(dataId, dataType, button) {
     const originalText = button.innerHTML;
     showLoading(button);

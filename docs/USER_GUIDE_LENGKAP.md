@@ -1,146 +1,374 @@
-# PANDUAN PENGGUNA WASKITA
+# 📚 PANDUAN PENGGUNA LENGKAP WASKITA
 
-**Tujuan**: Dokumen ini memberikan instruksi lengkap untuk membantu pengguna akhir memahami dan menggunakan Waskita secara efisien. Panduan ini mencakup deskripsi fitur utama, prosedur penyiapan, panduan penggunaan, tips pemecahan masalah, dan informasi dukungan.
+**Waskita** adalah sistem berbasis web yang menggunakan Machine Learning untuk mengklasifikasikan konten media sosial sebagai **Radikal** atau **Non-Radikal** dengan akurasi hingga 92% menggunakan 3 model Naive Bayes dan Word2Vec embedding.
 
-## 1. Perkenalan
+---
 
-Waskita adalah sistem berbasis web yang dirancang untuk mengklasifikasikan konten media sosial sebagai **Radikal** atau **Non-Radikal** menggunakan teknologi Machine Learning. Aplikasi ini menggunakan algoritma Naive Bayes yang telah dilatih dengan dataset khusus untuk mendeteksi konten radikal dengan tingkat akurasi tinggi.
+## 🚀 Memulai
 
-Panduan ini bertujuan untuk memandu Anda melalui proses instalasi, penggunaan, dan pemeliharaan sistem Waskita secara menyeluruh.
+### Persyaratan Sistem
+- **Python**: 3.11.x (TIDAK mendukung 3.12/3.13)
+- **RAM**: Minimal 4GB (Direkomendasikan: 8GB untuk model ML)
+- **Browser**: Chrome 90+, Firefox 88+, Safari 14+, Edge 90+
+- **Koneksi Internet**: Diperlukan untuk web scraping dan email OTP
 
-## 2. Persyaratan Sistem
+### Akses Aplikasi
+1. **Buka browser** dan akses `http://localhost:5000`
+2. **Login** dengan kredensial:
+   - **Admin**: `admin` / `admin123` (ubah setelah login pertama)
+   - **User Baru**: Daftar melalui sistem OTP email
 
-Sebelum menginstal dan menggunakan Waskita, pastikan komputer atau server Anda memenuhi persyaratan sistem berikut:
+---
 
-• **Sistem Operasi**: Windows 10/11, macOS 10.15+, atau Ubuntu 18.04+
-• **Python**: Versi 3.11.x SAJA (TIDAK mendukung versi 3.12/3.13 karena masalah kompatibilitas dengan Gensim)
-• **RAM**: Minimal 4GB (Direkomendasikan: 8GB atau lebih)
-• **Penyimpanan**: Minimal 2GB ruang kosong
-• **Docker**: Docker Desktop 4.0 atau lebih baru
-• **Browser**: Chrome 90+, Firefox 88+, Safari 14+
-## 3. Petunjuk Instalasi
+## 🎯 DASHBOARD UTAMA
 
-Pada bagian ini, kami akan menjelaskan cara menginstal dan menyiapkan aplikasi Waskita pada sistem Anda. Terdapat dua metode instalasi yang dapat Anda pilih sesuai dengan kebutuhan dan kemampuan teknis Anda.
+### Statistik Real-time
+Dashboard menampilkan 4 metrik utama:
+- **📤 Data Upload**: Total data yang diupload manual
+- **🕷️ Data Scraping**: Total data dari web scraping
+- **🧹 Data Cleaned**: Total data yang sudah dibersihkan
+- **🧠 Terklasifikasi**: Total data yang sudah diklasifikasi
 
-Waskita dapat diinstal dan dijalankan dengan dua cara: menggunakan Docker (direkomendasikan) atau instalasi lokal. Docker menyederhanakan proses instalasi dan menghindari masalah kompatibilitas, sementara instalasi lokal memberikan fleksibilitas lebih untuk pengembangan.
+### Quick Actions
+- **Upload Data**: Upload file CSV/XLSX
+- **Scraping Data**: Scraping dari media sosial
+- **Kelola Dataset**: Manajemen dataset
+- **Klasifikasi**: Klasifikasi konten AI
 
-### **Instalasi dengan Docker (Direkomendasikan):**
+### Status Sistem
+- **Word2Vec Model**: Status model embedding
+- **Naive Bayes Models**: Status 3 model klasifikasi (x/3)
+- **Database Connection**: Status koneksi database
 
-Metode ini sangat disarankan karena lebih sederhana dan menghindari masalah kompatibilitas antar sistem:
+---
 
-1. Unduh paket instalasi dari [repository Waskita](https://github.com/username/waskita).
-2. Buka terminal atau command prompt dan jalankan perintah `git clone https://github.com/username/waskita.git`.
-3. Masuk ke direktori proyek dengan perintah `cd waskita`.
-4. Salin file konfigurasi dengan perintah `cp .env.example .env.docker` dan sesuaikan pengaturan jika diperlukan.
-5. Jalankan perintah `docker-compose up -d --build` untuk membangun dan menjalankan aplikasi.
-6. Akses aplikasi di browser melalui alamat `http://localhost:5000`.
+## 📊 FITUR UTAMA
 
-### **Instalasi Lokal:**
+### 1. 📤 UPLOAD DATASET
 
-Metode ini cocok untuk pengembang atau pengguna yang ingin melakukan kustomisasi lebih lanjut:
+#### Format File yang Didukung
+- **CSV**: Dengan encoding UTF-8, UTF-8-BOM, Latin1
+- **Excel**: Format .xlsx dan .xls
+- **Kolom Wajib**: `content` (berisi teks yang akan diklasifikasi)
+- **Kolom Opsional**: `username`, `url`, `platform`
 
-1. Unduh paket instalasi dari [repository Waskita](https://github.com/username/waskita).
-2. Buka terminal atau command prompt dan jalankan perintah `git clone https://github.com/username/waskita.git`.
-3. Masuk ke direktori proyek dengan perintah `cd waskita`.
-4. Buat virtual environment dengan perintah `python -m venv venv` dan aktifkan.
-5. Instal semua dependensi dengan perintah `pip install -r requirements.txt`.
-6. Salin file konfigurasi dengan perintah `cp .env.example .env.local` dan sesuaikan pengaturan.
-7. Jalankan aplikasi dengan perintah `python app.py`.
+#### Langkah Upload
+1. **Navigasi**: Dashboard → Upload Data
+2. **Pilih File**: Klik "Choose File" dan pilih dataset
+3. **Validasi**: Sistem otomatis validasi format dan duplikasi
+4. **Konfirmasi**: Review data preview sebelum upload
+5. **Proses**: Data disimpan ke database dengan timestamp
 
-## 4. Memulai
+#### Validasi Keamanan
+- **File Size**: Maksimal 50MB per file
+- **MIME Type**: Validasi tipe file yang aman
+- **Content Scan**: Deteksi malware dan virus
+- **Duplicate Check**: Otomatis deteksi konten duplikat
 
-Setelah berhasil menginstal aplikasi Waskita, bagian ini akan memandu Anda untuk mulai menggunakan sistem. Ikuti langkah-langkah berikut untuk memulai penggunaan aplikasi:
+### 2. 🕷️ WEB SCRAPING
 
-1. **Menjalankan Aplikasi**: Luncurkan aplikasi dengan menjalankan perintah `docker-compose up -d --build` (jika menggunakan Docker) atau `python app.py` (jika instalasi lokal).
-2. **Autentikasi**: Masuk dengan kredensial Anda jika sudah memiliki akun, atau daftar sebagai pengguna baru melalui halaman registrasi.
-3. **Konfigurasi Awal**: Ikuti panduan penyiapan untuk mengonfigurasi preferensi awal sesuai kebutuhan Anda.
-## 5. Ikhtisar Fitur
+#### Platform yang Didukung
+- **Twitter/X**: Scraping tweets berdasarkan keyword
+- **Facebook**: Posts publik dan komentar
+- **Instagram**: Posts dan caption
+- **TikTok**: Video descriptions dan komentar
 
-Aplikasi Waskita menyediakan berbagai fitur canggih untuk membantu Anda mengklasifikasikan konten media sosial. Berikut adalah fitur-fitur utama yang tersedia dalam sistem:
+#### Setup Scraping
+1. **Konfigurasi API**: Dapatkan Apify API token
+2. **Set Environment**: Tambahkan `APIFY_API_TOKEN` ke `.env`
+3. **Pilih Platform**: Pilih platform target scraping
+4. **Input Keyword**: Masukkan kata kunci pencarian
+5. **Set Parameters**: Tentukan jumlah data dan rentang tanggal
 
-• **Upload Dataset**: Mengimpor data dari file CSV/XLSX untuk dianalisis
-• **Web Scraping**: Secara otomatis mengambil data dari berbagai platform media sosial
-• **Data Cleaning**: Pembersihan otomatis konten (emoji, tautan, karakter khusus)
-• **Klasifikasi AI**: Menggunakan 3 model Naive Bayes untuk mencapai akurasi tinggi
-• **Analisis Probabilitas**: Menampilkan tingkat kepercayaan klasifikasi (0-100%)
-• **Export Hasil**: Mengunduh hasil analisis dalam format CSV/Excel
-• **Multi-User**: Sistem berbasis peran (Admin & User) untuk manajemen akses
-• **Dark/Light Mode**: Antarmuka yang dapat disesuaikan sesuai preferensi pengguna
+#### Fitur Advanced
+- **Date Range**: Scraping berdasarkan rentang tanggal
+- **Max Results**: Batasi jumlah hasil (default: 25)
+- **Real-time Progress**: Monitor progress scraping
+- **Error Handling**: Otomatis retry jika gagal
 
-## 6. Petunjuk Penggunaan
+### 3. 🧹 DATA CLEANING
 
-Bagian ini menjelaskan langkah-langkah terperinci untuk menggunakan fitur-fitur utama aplikasi Waskita. Ikuti panduan ini untuk memaksimalkan penggunaan sistem.
+#### Proses Otomatis
+- **Remove Emoji**: Hapus semua emoji dan emoticon
+- **Clean URLs**: Hapus link dan URL
+- **Remove Mentions**: Hapus @username dan #hashtag
+- **Special Characters**: Hapus karakter khusus dan angka
+- **Normalize Text**: Konversi ke lowercase dan trim whitespace
 
-### **Upload Dataset**
+#### Preprocessing Indonesia
+- **Stopwords**: Hapus kata-kata umum bahasa Indonesia
+- **Stemming**: Konversi ke kata dasar (opsional)
+- **Tokenization**: Pisahkan kata untuk Word2Vec
 
-Fitur ini memungkinkan Anda mengimpor data dari file CSV atau XLSX untuk dianalisis oleh sistem:
+#### Batch Processing
+- **Bulk Clean**: Proses ribuan data sekaligus
+- **Progress Tracking**: Monitor progress real-time
+- **Error Recovery**: Lanjutkan jika ada data error
 
-1. **Persiapan File**: Pastikan file Anda dalam format CSV atau XLSX dan memiliki kolom `content` yang berisi teks yang akan dianalisis.
-2. **Proses Upload**: Buka menu `Data Management` → `Upload Dataset`, pilih file dari komputer Anda, beri nama dataset, dan klik tombol `Upload`.
-3. **Validasi Data**: Sistem akan secara otomatis memvalidasi format file dan mendeteksi duplikasi data sebelum mengimpor.
+### 4. 🧠 KLASIFIKASI AI
 
-### **Web Scraping**
+#### Model Machine Learning
+- **Word2Vec**: Model embedding 300 dimensi
+- **Naive Bayes 1**: Model klasifikasi utama
+- **Naive Bayes 2**: Model validasi silang
+- **Naive Bayes 3**: Model ensemble
 
-Fitur ini memungkinkan Anda mengumpulkan data secara otomatis dari berbagai platform media sosial:
+#### Proses Klasifikasi
+1. **Pilih Dataset**: Pilih data yang sudah dibersihkan
+2. **Model Selection**: Pilih model yang akan digunakan
+3. **Batch Process**: Klasifikasi otomatis semua data
+4. **Real-time Progress**: Monitor progress per model
+5. **Results**: Lihat hasil dengan probabilitas
 
-1. **Setup Scraping**: Buka menu `Data Management` → `Web Scraping`, pilih platform (Twitter, Facebook, dll.), masukkan kata kunci pencarian, atur rentang tanggal, dan tentukan jumlah maksimal data.
-2. **Mulai Scraping**: Klik tombol `Start Scraping` untuk memulai proses pengambilan data.
-3. **Monitoring**: Pantau kemajuan dan hasil scraping secara real-time melalui indikator progres yang ditampilkan.
+#### Output Klasifikasi
+- **Prediksi**: Radikal / Non-Radikal
+- **Probabilitas Radikal**: Persentase kemungkinan radikal
+- **Probabilitas Non-Radikal**: Persentase kemungkinan non-radikal
+- **Confidence Score**: Tingkat kepercayaan model
 
-### **Data Cleaning**
+### 5. 📁 EXPORT HASIL
 
-Fitur ini membersihkan data mentah agar siap untuk proses klasifikasi:
+#### Format Export
+- **CSV**: Format comma-separated values
+- **Excel**: Format .xlsx dengan formatting
+- **Include Data**: Teks asli, hasil klasifikasi, probabilitas semua model
 
-1. **Akses Data Cleaning**: Buka menu `Data Management` → `Clean Data` dan pilih dataset yang ingin dibersihkan.
-2. **Proses Otomatis**: Sistem akan secara otomatis membersihkan emoji, URL, mention, dan karakter khusus dari teks.
-3. **Terapkan Perubahan**: Klik tombol `Apply Cleaning` untuk menyimpan data yang sudah dibersihkan ke dalam sistem.
+#### Struktur Export
+```
+ID | Username | Konten | URL | Tipe Data | Tanggal |
+Model 1 - Prediksi | Model 1 - Prob Radikal | Model 1 - Prob Non-Radikal |
+Model 2 - Prediksi | Model 2 - Prob Radikal | Model 2 - Prob Non-Radikal |
+Model 3 - Prediksi | Model 3 - Prob Radikal | Model 3 - Prob Non-Radikal
+```
 
-### **Klasifikasi**
+### 6. 📈 DATASET MANAGEMENT
 
-Fitur ini menganalisis data yang telah dibersihkan untuk mengklasifikasikannya sebagai Radikal atau Non-Radikal:
+#### Fitur Management
+- **Create Dataset**: Buat dataset baru dengan nama dan deskripsi
+- **View Details**: Lihat detail data raw, cleaned, dan classified
+- **Statistics**: Statistik lengkap per dataset
+- **Delete Dataset**: Hapus dataset beserta semua data terkait
 
-1. **Pilih Data**: Buka menu `Classification` → `Classify Data` dan pilih data yang sudah dibersihkan.
-2. **Mulai Klasifikasi**: Klik tombol `Start Classification` untuk memulai proses analisis.
-3. **Lihat Hasil**: Hasil klasifikasi akan ditampilkan dalam bentuk tabel beserta tingkat probabilitas untuk setiap entri data.
-## 7. Panduan Mengatasi Masalah
+#### Tabs Dataset Detail
+- **Raw Data**: Data mentah dari upload/scraping
+- **Cleaned Data**: Data yang sudah dibersihkan
+- **Classification Results**: Hasil klasifikasi semua model
 
-Dalam penggunaan aplikasi Waskita, Anda mungkin mengalami beberapa kendala teknis. Bagian ini menyediakan solusi untuk masalah umum yang mungkin Anda hadapi. Jika Anda mengalami masalah, silakan periksa tabel di bawah ini untuk menemukan kemungkinan penyebab dan solusinya:
+---
 
-| Masalah | Penyebab | Solusi |
-| --- | --- | --- |
-| Gagal login | Password salah | Periksa kembali password Anda atau gunakan fitur lupa password untuk mengatur ulang. |
-| Upload gagal | Format file salah | Pastikan file dalam format CSV atau XLSX dan memiliki struktur kolom yang benar. |
-| Scraping error | Koneksi internet terputus | Periksa koneksi internet Anda dan coba lagi setelah koneksi stabil. |
-| Klasifikasi lambat | Dataset terlalu besar | Gunakan dataset yang lebih kecil atau pecah menjadi beberapa bagian untuk pemrosesan lebih cepat. |
+## 🔐 KEAMANAN & AUTENTIKASI
 
-## 8. Pertanyaan yang Sering Diajukan (FAQ)
+### Sistem OTP Email
+- **Registrasi**: Verifikasi email dengan OTP 6 digit
+- **Keamanan**: OTP berlaku 10 menit
+- **Resend**: Bisa kirim ulang OTP setelah 1 menit
+- **Admin Approval**: Admin harus approve registrasi baru
 
-Berikut adalah jawaban untuk pertanyaan yang sering diajukan oleh pengguna Waskita. Jika pertanyaan Anda tidak terjawab di sini, silakan hubungi tim dukungan kami.
+### Role-Based Access
+- **Admin**: Akses penuh + approve user baru
+- **User**: Akses fitur klasifikasi dan data management
+- **Security**: Rate limiting 500 request/hari, 200/jam
 
-• **Apakah aplikasi ini gratis?**
-  Ya, Waskita adalah aplikasi open-source yang dapat digunakan secara gratis. Anda dapat mengunduh, menginstal, dan menggunakan semua fiturnya tanpa biaya.
+### Fitur Keamanan
+- **CSRF Protection**: Perlindungan dari serangan CSRF
+- **Input Validation**: Sanitasi semua input pengguna
+- **File Upload Security**: Validasi MIME type dan virus scan
+- **Security Headers**: HTTP security headers otomatis
+- **Activity Logging**: Log semua aktivitas pengguna
 
-• **Berapa akurasi model klasifikasi?**
-  Akurasi model berkisar antara 85-92% tergantung pada jenis konten dan kualitas data pelatihan. Sistem menggunakan tiga model Naive Bayes independen untuk meningkatkan akurasi melalui voting mayoritas.
+---
 
-• **Bisakah menambah platform scraping lain?**
-  Ya, sistem dirancang secara modular sehingga memungkinkan untuk menambahkan platform media sosial baru dengan mudah. Pengembang dapat mengintegrasikan API baru ke dalam sistem yang ada.
+## 📱 ANTARMUKA PENGGUNA
 
-• **Apakah data aman dan privat?**
-  Ya, semua data disimpan secara lokal di server Anda dan tidak dikirim ke pihak ketiga. Waskita memprioritaskan keamanan dan privasi data pengguna.
+### Responsive Design
+- **Desktop**: Layout penuh dengan sidebar
+- **Tablet**: Layout adaptif dengan collapsible menu
+- **Mobile**: Layout mobile-first dengan bottom navigation
 
-## 9. Dukungan dan Kontak
+### Accessibility
+- **Screen Reader**: Support ARIA labels dan descriptions
+- **Keyboard Navigation**: Navigasi penuh dengan keyboard
+- **High Contrast**: Mode kontras tinggi
+- **Font Scaling**: Support zoom browser hingga 200%
 
-Jika Anda memerlukan bantuan lebih lanjut atau memiliki pertanyaan yang tidak terjawab dalam panduan ini, silakan hubungi tim dukungan kami melalui:
+### Modern UI Features
+- **Real-time Updates**: Progress bars dan notifications
+- **Interactive Charts**: Chart.js untuk visualisasi data
+- **Modal Dialogs**: Detail data dalam modal popup
+- **Toast Notifications**: Notifikasi sukses/error yang elegant
 
-• **Email**: support@waskita.com
-• **Situs Web**: https://github.com/waskita
-• **Forum Komunitas**: Bergabunglah dengan forum diskusi kami untuk berbagi pengalaman dan mendapatkan bantuan dari pengguna lain.
+---
 
-## 10. Riwayat Revisi
+## 🔧 TROUBLESHOOTING
 
-Tabel di bawah ini mencatat perubahan yang dilakukan pada aplikasi Waskita dari waktu ke waktu. Pastikan Anda selalu menggunakan versi terbaru untuk mendapatkan fitur dan perbaikan keamanan terkini.
+### Masalah Upload
+**Q: File tidak bisa diupload?**
+- ✅ Pastikan format CSV/XLSX
+- ✅ Ukuran file < 50MB
+- ✅ File memiliki kolom 'content'
+- ✅ Encoding UTF-8
 
-| Versi | Tanggal | Perubahan |
-| --- | --- | --- |
-| 1.0.0 | 2024-05-20 | Rilis awal aplikasi dengan fitur dasar klasifikasi konten. |
+**Q: Data duplikat terdeteksi?**
+- ✅ Sistem otomatis skip data duplikat
+- ✅ Check kolom content yang sama
+- ✅ Lihat log untuk detail duplikasi
+
+### Masalah Scraping
+**Q: Scraping gagal?**
+- ✅ Pastikan APIFY_API_TOKEN valid
+- ✅ Check koneksi internet
+- ✅ Pastikan kredit Apify mencukupi
+- ✅ Coba keyword yang berbeda
+
+**Q: Hasil scraping kosong?**
+- ✅ Keyword terlalu spesifik
+- ✅ Platform tidak memiliki data publik
+- ✅ Batasan API platform
+
+### Masalah Klasifikasi
+**Q: Model tidak load?**
+- ✅ Pastikan file model ada di folder `models/`
+- ✅ Check RAM minimal 4GB
+- ✅ Restart aplikasi
+- ✅ Contact admin untuk file model
+
+**Q: Klasifikasi lambat?**
+- ✅ Proses batch memerlukan waktu
+- ✅ RAM tidak mencukupi
+- ✅ Tutup aplikasi lain
+- ✅ Kurangi jumlah data per batch
+
+### Masalah Login
+**Q: OTP tidak diterima?**
+- ✅ Check folder spam email
+- ✅ Pastikan email valid
+- ✅ Tunggu hingga 5 menit
+- ✅ Coba resend OTP
+
+**Q: Login gagal terus?**
+- ✅ Pastikan username/password benar
+- ✅ Account sudah diapprove admin
+- ✅ Clear browser cache
+- ✅ Coba browser berbeda
+
+---
+
+## 💡 TIPS PENGGUNAAN
+
+### Workflow Optimal
+1. **Setup**: Login → Check model status di dashboard
+2. **Data Input**: Upload dataset ATAU scraping dari media sosial
+3. **Preprocessing**: Otomatis cleaning saat upload/scraping
+4. **Classification**: Pilih dataset → Run klasifikasi
+5. **Analysis**: Review hasil di dashboard dan dataset details
+6. **Export**: Download hasil untuk analisis lanjutan
+
+### Best Practices
+- **Dataset Size**: Optimal 100-10,000 data per batch
+- **Keyword Scraping**: Gunakan keyword spesifik untuk hasil relevan
+- **Model Validation**: Gunakan 3 model untuk validasi silang
+- **Regular Backup**: Export hasil secara berkala
+- **Monitor Resources**: Check RAM usage saat proses besar
+
+### Interpretasi Hasil
+- **Probabilitas > 70%**: Prediksi sangat yakin
+- **Probabilitas 50-70%**: Prediksi cukup yakin
+- **Probabilitas < 50%**: Prediksi kurang yakin, perlu review manual
+- **Konsensus Model**: Jika 2-3 model setuju, hasil lebih akurat
+
+---
+
+## 📞 DUKUNGAN
+
+### Bantuan Teknis
+- **Email**: [admin@waskita.com](mailto:admin@waskita.com)
+- **Documentation**: Lihat folder `docs/` untuk panduan lengkap
+- **GitHub Issues**: Report bug di repository GitHub
+
+### Pelatihan
+- **User Training**: Tersedia pelatihan penggunaan sistem
+- **Admin Training**: Pelatihan khusus administrator
+- **Custom Training**: Pelatihan sesuai kebutuhan organisasi
+
+---
+
+## 📋 CHECKLIST PENGGUNAAN
+
+### Setup Awal
+- [ ] ✅ Login berhasil dengan kredensial
+- [ ] ✅ Dashboard menampilkan statistik
+- [ ] ✅ Model status "Loaded" (Word2Vec + 3 Naive Bayes)
+- [ ] ✅ Test upload file sample
+- [ ] ✅ Test klasifikasi manual
+
+### Penggunaan Harian
+- [ ] ✅ Monitor statistik dashboard
+- [ ] ✅ Check aktivitas terbaru
+- [ ] ✅ Backup hasil klasifikasi
+- [ ] ✅ Review data yang diragukan
+- [ ] ✅ Update dataset secara berkala
+
+### Maintenance
+- [ ] ✅ Check disk space untuk upload
+- [ ] ✅ Monitor RAM usage
+- [ ] ✅ Update password secara berkala
+- [ ] ✅ Review security logs
+- [ ] ✅ Backup database
+
+---
+
+**🎉 Selamat menggunakan Waskita! Sistem klasifikasi konten media sosial yang aman, akurat, dan mudah digunakan.**
+- **Statistik**: Total data, akurasi, distribusi klasifikasi
+- **Grafik**: Visualisasi hasil real-time
+- **Model Status**: Monitor status loading model ML
+
+## 🔧 Troubleshooting
+
+| Masalah | Solusi |
+|---------|--------|
+| **Login gagal** | Gunakan admin/admin123 atau reset password |
+| **Upload gagal** | Pastikan format CSV/XLSX dengan kolom 'content' |
+| **Model tidak load** | Pastikan file model ada di folder models/ |
+| **Scraping error** | Check Apify API token dan koneksi internet |
+| **Klasifikasi lambat** | Gunakan dataset lebih kecil (<1000 baris) |
+| **Memory error** | Restart aplikasi, close aplikasi lain |
+
+## 🎯 Tips Penggunaan
+
+### Untuk Hasil Optimal:
+1. **Data Quality**: Gunakan teks bahasa Indonesia yang jelas
+2. **Dataset Size**: Mulai dengan <500 baris untuk testing
+3. **Cleaning**: Selalu lakukan data cleaning sebelum klasifikasi
+4. **Model Status**: Pastikan semua model "Loaded" di dashboard
+
+### Workflow Recommended:
+1. Upload dataset → 2. Clean data → 3. Classify → 4. Export hasil
+
+## 📊 Interpretasi Hasil
+
+### Klasifikasi Output:
+- **Radikal**: Konten berpotensi mengandung unsur radikalisme
+- **Non-Radikal**: Konten normal/aman
+- **Probabilitas**: 0-100% (semakin tinggi = semakin yakin)
+
+### Threshold Rekomendasi:
+- **>80%**: Hasil sangat yakin
+- **60-80%**: Hasil cukup yakin  
+- **<60%**: Perlu review manual
+
+## 🆘 Dukungan
+
+### Jika Mengalami Masalah:
+1. Check troubleshooting di atas
+2. Restart aplikasi
+3. Check log error di terminal
+4. Hubungi pengembang dengan detail error
+
+### Informasi Sistem:
+- **Open Source**: Gratis digunakan
+- **Data Privacy**: Semua data disimpan lokal
+- **Security**: Tidak ada data dikirim ke server eksternal
+
+---
+
+**Catatan**: Panduan ini untuk versi terbaru Waskita. Pastikan menggunakan versi yang sesuai.

@@ -14,12 +14,18 @@ class EmailService:
     """
     
     def __init__(self):
+        # Use environment variables for email configuration
         self.smtp_server = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
         self.smtp_port = int(os.getenv('MAIL_PORT', '587'))
         self.smtp_username = os.getenv('MAIL_USERNAME')
         self.smtp_password = os.getenv('MAIL_PASSWORD')
-        self.from_email = os.getenv('MAIL_DEFAULT_SENDER', self.smtp_username)
+        self.from_email = os.getenv('MAIL_DEFAULT_SENDER')
         self.app_name = os.getenv('APP_NAME', 'Waskita')
+        
+        # Validate configuration on initialization
+        config_errors = self.validate_config()
+        if config_errors:
+            current_app.logger.warning(f"Email Configuration issues: {'; '.join(config_errors)}")
     
     def send_email(self, to_email, subject, html_content, text_content=None):
         """
@@ -289,6 +295,23 @@ class EmailService:
         </body>
         </html>
         """
+    
+    def validate_config(self):
+        """
+        Validate email configuration
+        """
+        errors = []
+        
+        if not self.smtp_server:
+            errors.append("MAIL_SERVER not configured")
+        if not self.smtp_username:
+            errors.append("MAIL_USERNAME not configured")
+        if not self.smtp_password:
+            errors.append("MAIL_PASSWORD not configured")
+        if not self.from_email:
+            errors.append("MAIL_DEFAULT_SENDER not configured")
+            
+        return errors
 
 # Initialize email service
 email_service = EmailService()

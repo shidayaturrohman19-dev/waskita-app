@@ -6,6 +6,9 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV FLASK_ENV=production
 
+# Create non-root user
+RUN groupadd -r waskita && useradd -r -g waskita waskita
+
 # Set work directory
 WORKDIR /app
 
@@ -16,13 +19,16 @@ RUN apt-get update \
         gcc \
         python3-dev \
         libpq-dev \
-    && rm -rf /var/lib/apt/lists/*
+        curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
 # Copy requirements and install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip \
+    && pip install --no-cache-dir -r requirements.txt
 
-# Copy project (includes models directory now)
+# Copy project files
 COPY . .
 
 # Copy admin initialization script
@@ -32,8 +38,14 @@ COPY init_admin.sh .
 # Make shell script executable
 RUN chmod +x init_admin.sh
 
-# Create necessary directories
-RUN mkdir -p uploads logs static/uploads data
+# Create necessary directories with proper permissions
+RUN mkdir -p uploads logs static/uploads data \
+    && chown -R waskita:waskita /app \
+    && chmod -R 755 /app \
+    && chmod -R 777 uploads logs static/uploads data
+
+# Switch to non-root user
+USER waskita
 
 # Expose port
 EXPOSE 5000

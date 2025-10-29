@@ -35,6 +35,7 @@ except ImportError:
 from sqlalchemy import func, desc, text
 from models import db, User, RawData, RawDataScraper, CleanDataUpload, CleanDataScraper, ClassificationResult, DatasetStatistics, Dataset
 from utils import clean_text, vectorize_text, classify_content, scrape_with_apify, admin_required, active_user_required, format_datetime, check_content_duplicate, check_cleaned_content_duplicate, check_cleaned_content_duplicate_by_dataset, generate_activity_log
+from security_utils import SecurityValidator, generate_secure_filename, log_security_event, add_security_headers
 
 def init_routes(app, word2vec_model_param, naive_bayes_models_param):
     # Store models in app config for global access
@@ -63,9 +64,31 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             return redirect(url_for('dashboard'))
         
         if request.method == 'POST':
-            username = request.form.get('username')
-            password = request.form.get('password')
+            # Sanitize and validate input
+            username = SecurityValidator.sanitize_input(
+                request.form.get('username', ''), max_length=50
+            ).strip()
+            password = request.form.get('password', '')  # Don't sanitize password, just validate
             remember = bool(request.form.get('remember'))
+            
+            # Validate inputs
+            if not username:
+                log_security_event(
+                    "LOGIN_ATTEMPT_INVALID", 
+                    "Login attempt with empty username",
+                    ip_address=request.remote_addr
+                )
+                flash('Username tidak boleh kosong!', 'error')
+                return render_template('auth/login.html', form=FlaskForm())
+            
+            if not SecurityValidator.validate_username(username):
+                log_security_event(
+                    "LOGIN_ATTEMPT_INVALID", 
+                    f"Login attempt with invalid username format: {username}",
+                    ip_address=request.remote_addr
+                )
+                flash('Format username tidak valid!', 'error')
+                return render_template('auth/login.html', form=FlaskForm())
             
             user = User.query.filter_by(username=username).first()
             
@@ -75,6 +98,14 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                 db.session.commit()
                 
                 login_user(user, remember=remember)
+                
+                # Log successful login
+                log_security_event(
+                    "LOGIN_SUCCESS", 
+                    f"Successful login for user: {user.username}",
+                    user_id=user.id,
+                    ip_address=request.remote_addr
+                )
                 
                 # Log activity
                 generate_activity_log(
@@ -89,6 +120,12 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                 flash('Login berhasil!', 'success')
                 return redirect(next_page) if next_page else redirect(url_for('dashboard'))
             else:
+                # Log failed login attempt
+                log_security_event(
+                    "LOGIN_FAILED", 
+                    f"Failed login attempt for username: {username}",
+                    ip_address=request.remote_addr
+                )
                 flash('Username atau password salah!', 'error')
         
         # Create a simple form class for CSRF token
@@ -202,75 +239,140 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                 flash('Tidak ada file yang dipilih!', 'error')
                 return redirect(request.url)
             
-            if file and allowed_file(file.filename):
-                filename = secure_filename(file.filename)
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            # Use new security validation
+            is_valid, message, file_info = SecurityValidator.validate_file_upload(file)
+            if not is_valid:
+                flash(f'Error validasi file: {message}', 'error')
+                log_security_event(
+                    "FILE_UPLOAD_REJECTED", 
+                    f"File upload rejected: {message} | File: {file.filename}",
+                    user_id=current_user.id,
+                    ip_address=request.remote_addr
+                )
+                return redirect(request.url)
+            
+            try:
+                # Generate secure filename and path
+                filepath, unique_filename = generate_secure_filename(
+                    file.filename, 
+                    app.config['UPLOAD_FOLDER']
+                )
+                
+                # Create upload directory if not exists
+                os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
                 file.save(filepath)
                 
-                try:
-                    # Read file
-                    if filename.endswith('.csv'):
-                        df = pd.read_csv(filepath)
-                    else:
-                        df = pd.read_excel(filepath)
+                # Log successful upload
+                log_security_event(
+                    "FILE_UPLOAD_SUCCESS", 
+                    f"File uploaded successfully: {file.filename} -> {unique_filename}",
+                    user_id=current_user.id,
+                    ip_address=request.remote_addr
+                )
+                
+                # Read file with enhanced error handling
+                if file_info['mime_type'] in ['text/csv', 'text/plain', 'application/csv']:
+                    # Try different encodings for CSV files
+                    encodings_to_try = ['utf-8', 'utf-8-sig', 'latin1', 'cp1252', 'iso-8859-1']
+                    df = None
+                    last_error = None
                     
-                    # Process and save data
-                    success_count = 0
-                    for _, row in df.iterrows():
-                        # Auto-detect platform from URL or use default
-                        detected_platform = 'manual'  # Default for manual uploads
-                        url = row.get('url', '')
-                        if url:
-                            if 'twitter.com' in url or 'x.com' in url:
-                                detected_platform = 'twitter'
-                            elif 'facebook.com' in url:
-                                detected_platform = 'facebook'
-                            elif 'tiktok.com' in url:
-                                detected_platform = 'tiktok'
-                            elif 'instagram.com' in url:
-                                detected_platform = 'instagram'
-                        
-                        raw_data = RawData(
-                            username=row.get('username', ''),
-                            content=row.get('content', ''),
-                            url=url,
-                            platform=detected_platform,
-                            uploaded_by=current_user.id
-                        )
-                        db.session.add(raw_data)
-                        success_count += 1
+                    for encoding in encodings_to_try:
+                        try:
+                            df = pd.read_csv(filepath, encoding=encoding)
+                            app.logger.info(f"Successfully read CSV with encoding: {encoding}")
+                            break
+                        except (UnicodeDecodeError, UnicodeError) as e:
+                            last_error = e
+                            continue
+                        except Exception as e:
+                            try:
+                                df = pd.read_csv(filepath, encoding=encoding, on_bad_lines='skip')
+                                app.logger.info(f"Successfully read CSV with encoding {encoding} (skipping bad lines)")
+                                break
+                            except Exception as e2:
+                                last_error = e2
+                                continue
                     
-                    db.session.commit()
+                    if df is None:
+                        raise Exception(f"Could not read CSV file with any encoding. Last error: {str(last_error)}")
+                else:
+                    df = pd.read_excel(filepath)
+                
+                # Process and save data with input sanitization
+                success_count = 0
+                for _, row in df.iterrows():
+                    # Auto-detect platform from URL or use default
+                    detected_platform = 'manual'  # Default for manual uploads
+                    url = row.get('url', '')
                     
-                    # Update statistics
-                    update_statistics()
+                    # Sanitize inputs
+                    username = SecurityValidator.sanitize_input(str(row.get('username', '')), max_length=100)
+                    content = SecurityValidator.sanitize_input(str(row.get('content', '')), max_length=5000)
+                    url = SecurityValidator.sanitize_input(str(url), max_length=500)
                     
-                    # Log aktivitas upload
-                    from utils import generate_activity_log
-                    generate_activity_log(
-                        action='upload',
-                        description=f'Berhasil mengupload {success_count} data dari file {file.filename}',
-                        user_id=current_user.id,
-                        details={
-                            'filename': file.filename,
-                            'success_count': success_count,
-                            'platform_detected': detected_platform
-                        },
-                        icon='fa-upload',
-                        color='success'
+                    if url:
+                        if 'twitter.com' in url or 'x.com' in url:
+                            detected_platform = 'twitter'
+                        elif 'facebook.com' in url:
+                            detected_platform = 'facebook'
+                        elif 'tiktok.com' in url:
+                            detected_platform = 'tiktok'
+                        elif 'instagram.com' in url:
+                            detected_platform = 'instagram'
+                    
+                    raw_data = RawData(
+                        username=username,
+                        content=content,
+                        url=url,
+                        platform=detected_platform,
+                        uploaded_by=current_user.id,
+                        file_size=file_info['file_size'],
+                        original_filename=file_info['original_filename']
                     )
-                    
-                    flash(f'Berhasil mengupload {success_count} data!', 'success')
-                    
-                except Exception as e:
-                    db.session.rollback()
-                    flash(f'Error memproses file: {str(e)}', 'error')
-                finally:
-                    # Clean up uploaded file
-                    if os.path.exists(filepath):
-                        os.remove(filepath)
-            else:
-                flash('Format file tidak didukung!', 'error')
+                    db.session.add(raw_data)
+                    success_count += 1
+                
+                db.session.commit()
+                
+                # Update statistics
+                update_statistics()
+                
+                # Log aktivitas upload
+                from utils import generate_activity_log
+                generate_activity_log(
+                    action='upload',
+                    description=f'Berhasil mengupload {success_count} data dari file {file.filename}',
+                    user_id=current_user.id,
+                    details={
+                        'filename': file.filename,
+                        'success_count': success_count,
+                        'platform_detected': detected_platform,
+                        'file_size': file_info['file_size'],
+                        'mime_type': file_info['mime_type']
+                    },
+                    icon='fa-upload',
+                    color='success'
+                )
+                
+                flash(f'Berhasil mengupload {success_count} data!', 'success')
+                
+            except Exception as e:
+                db.session.rollback()
+                error_msg = f'Error memproses file: {str(e)}'
+                flash(error_msg, 'error')
+                
+                # Log error
+                log_security_event(
+                    "FILE_UPLOAD_ERROR", 
+                    f"File processing error: {error_msg} | File: {file.filename}",
+                    user_id=current_user.id,
+                    ip_address=request.remote_addr
+                )
+            finally:
+                # Clean up uploaded file
+                if 'filepath' in locals() and os.path.exists(filepath):
+                    os.remove(filepath)
         
         return render_template('data/upload.html')
     
@@ -278,11 +380,46 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
     @login_required
     def data_scraping():
         if request.method == 'POST':
-            platform = request.form.get('platform')
-            keyword = request.form.get('keyword')
-            date_from = request.form.get('date_from')
-            date_to = request.form.get('date_to')
-            max_results = int(request.form.get('max_results', 25))
+            # Sanitize and validate inputs
+            platform = SecurityValidator.sanitize_input(
+                request.form.get('platform', ''), max_length=50
+            ).strip()
+            keyword = SecurityValidator.sanitize_input(
+                request.form.get('keyword', ''), max_length=200
+            ).strip()
+            date_from = SecurityValidator.sanitize_input(
+                request.form.get('date_from', ''), max_length=20
+            ).strip()
+            date_to = SecurityValidator.sanitize_input(
+                request.form.get('date_to', ''), max_length=20
+            ).strip()
+            
+            # Validate max_results input
+            try:
+                max_results = int(request.form.get('max_results', 25))
+                if max_results < 1 or max_results > 1000:  # Set reasonable limits
+                    max_results = 25
+            except (ValueError, TypeError):
+                max_results = 25
+            
+            # Validate required fields
+            if not platform or not keyword:
+                log_security_event(
+                    "SCRAPING_INVALID_INPUT", 
+                    f"Scraping attempt with invalid input - platform: {platform}, keyword: {keyword}",
+                    user_id=current_user.id,
+                    ip_address=request.remote_addr
+                )
+                flash('Platform dan keyword harus diisi!', 'error')
+                return render_template('data/scraping.html')
+            
+            # Log scraping attempt
+            log_security_event(
+                "SCRAPING_ATTEMPT", 
+                f"Scraping attempt - platform: {platform}, keyword: {keyword}, max_results: {max_results}",
+                user_id=current_user.id,
+                ip_address=request.remote_addr
+            )
             try:
                 # Create new dataset automatically based on keyword
                 dataset_name = f"Scraper Data {platform.title()} - {keyword}"
@@ -549,16 +686,18 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                 # Try to get from upload data first
                 sample_upload = RawData.query.filter_by(dataset_id=dataset.id).first()
                 if sample_upload:
-                    sample_username = sample_upload.username
-                    sample_url = sample_upload.url
-                    sample_content = sample_upload.content
+                    # Handle 'nan' string values
+                    sample_username = sample_upload.username if sample_upload.username and str(sample_upload.username).lower() != 'nan' else None
+                    sample_url = sample_upload.url if sample_upload.url and str(sample_upload.url).lower() != 'nan' else None
+                    sample_content = sample_upload.content if sample_upload.content and str(sample_upload.content).lower() != 'nan' else None
                 else:
                     # If no upload data, try scraper data
                     sample_scraper = RawDataScraper.query.filter_by(dataset_id=dataset.id).first()
                     if sample_scraper:
-                        sample_username = sample_scraper.username
-                        sample_url = sample_scraper.url
-                        sample_content = sample_scraper.content
+                        # Handle 'nan' string values
+                        sample_username = sample_scraper.username if sample_scraper.username and str(sample_scraper.username).lower() != 'nan' else None
+                        sample_url = sample_scraper.url if sample_scraper.url and str(sample_scraper.url).lower() != 'nan' else None
+                        sample_content = sample_scraper.content if sample_scraper.content and str(sample_scraper.content).lower() != 'nan' else None
                 
                 # Count clean data (upload + scraper)
                 clean_upload_count = db.session.execute(
@@ -800,9 +939,17 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                 text("SELECT COUNT(DISTINCT CONCAT(data_type, '_', data_id)) FROM classification_results")
             ).scalar() or 0
         
+        # Calculate counts for template
+        clean_upload_count = len(clean_upload_data)
+        clean_scraper_count = len(clean_scraper_data)
+        total_data_count = clean_upload_count + clean_scraper_count
+        
         return render_template('classification/index.html',
                              clean_upload_data=clean_upload_data,
                              clean_scraper_data=clean_scraper_data,
+                             clean_upload_count=clean_upload_count,
+                             clean_scraper_count=clean_scraper_count,
+                             total_data_count=total_data_count,
                              selected_dataset=selected_dataset,
                              classified_count=classified_count)
 
@@ -818,6 +965,180 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
     def admin_login_redirect():
         return redirect(url_for('login'))
     
+    @app.route('/api/clean_data/<data_type>')
+    @login_required
+    def get_clean_data(data_type):
+        """
+        API endpoint untuk mengambil data bersih berdasarkan tipe
+        """
+        try:
+            if data_type == 'upload':
+                # Ambil data dari dataset upload
+                result = db.session.execute(text("""
+                    SELECT cdu.id, cdu.platform, cdu.username, cdu.content, 
+                           cdu.cleaned_content, cdu.created_at, d.name as dataset_name,
+                           EXISTS (
+                               SELECT 1 FROM classification_results cr 
+                               WHERE cr.data_type = 'upload' AND cr.data_id = cdu.id
+                           ) as is_classified
+                    FROM clean_data_upload cdu
+                    LEFT JOIN datasets d ON cdu.dataset_id = d.id
+                    WHERE cdu.cleaned_content IS NOT NULL
+                    ORDER BY cdu.created_at DESC
+                """))
+                
+                data = [{
+                    'id': row.id,
+                    'platform': row.platform,
+                    'username': row.username,
+                    'content': row.content,
+                    'cleaned_content': row.cleaned_content,
+                    'created_at': row.created_at.isoformat() if row.created_at else None,
+                    'dataset_name': row.dataset_name,
+                    'is_classified': bool(row.is_classified)
+                } for row in result]
+                
+                return jsonify({'success': True, 'data': data})
+                
+            elif data_type == 'scraper':
+                # Ambil data dari dataset scraper
+                result = db.session.execute(text("""
+                    SELECT cds.id, cds.platform, cds.username, cds.content, 
+                           cds.cleaned_content, cds.created_at, d.name as dataset_name,
+                           EXISTS (
+                               SELECT 1 FROM classification_results cr 
+                               WHERE cr.data_type = 'scraper' AND cr.data_id = cds.id
+                           ) as is_classified
+                    FROM clean_data_scraper cds
+                    LEFT JOIN datasets d ON cds.dataset_id = d.id
+                    WHERE cds.cleaned_content IS NOT NULL
+                    ORDER BY cds.created_at DESC
+                """))
+                
+                data = [{
+                    'id': row.id,
+                    'platform': row.platform,
+                    'username': row.username,
+                    'content': row.content,
+                    'cleaned_content': row.cleaned_content,
+                    'created_at': row.created_at.isoformat() if row.created_at else None,
+                    'dataset_name': row.dataset_name,
+                    'is_classified': bool(row.is_classified)
+                } for row in result]
+                
+                return jsonify({'success': True, 'data': data})
+            
+            else:
+                return jsonify({'success': False, 'message': 'Tipe data tidak valid'}), 400
+            
+        except Exception as e:
+            current_app.logger.error(f"Error in get_clean_data: {str(e)}")
+            return jsonify({'success': False, 'message': 'Terjadi kesalahan saat mengambil data'}), 500
+
+    @app.route('/classification/classify')
+    @login_required
+    @active_user_required
+    def classify():
+        """
+        Endpoint untuk halaman klasifikasi manual dan batch
+        """
+        classification_type = request.args.get('type', 'batch')
+        
+        # Get model status
+        word2vec_model = current_app.config.get('WORD2VEC_MODEL')
+        naive_bayes_models = current_app.config.get('NAIVE_BAYES_MODELS', {})
+        
+        # Prepare model status data
+        word2vec_status = word2vec_model is not None
+        word2vec_info = "Model Word2Vec siap digunakan" if word2vec_status else "Model Word2Vec tidak tersedia"
+        
+        nb1_status = naive_bayes_models.get('model1') is not None
+        nb1_info = "Model Naive Bayes 1 siap digunakan" if nb1_status else "Model Naive Bayes 1 tidak tersedia"
+        
+        nb2_status = naive_bayes_models.get('model2') is not None
+        nb2_info = "Model Naive Bayes 2 siap digunakan" if nb2_status else "Model Naive Bayes 2 tidak tersedia"
+        
+        nb3_status = naive_bayes_models.get('model3') is not None
+        nb3_info = "Model Naive Bayes 3 siap digunakan" if nb3_status else "Model Naive Bayes 3 tidak tersedia"
+        
+        if classification_type == 'manual':
+            # For manual classification, get actual data count instead of N/A
+            from models import CleanDataUpload, CleanDataScraper
+            
+            # Count clean data ready for classification
+            clean_upload_count = CleanDataUpload.query.count()
+            clean_scraper_count = CleanDataScraper.query.count()
+            clean_data_count = clean_upload_count + clean_scraper_count
+            
+            return render_template('classification/classify.html', 
+                                 type='manual',
+                                 word2vec_status=word2vec_status,
+                                 word2vec_info=word2vec_info,
+                                 nb1_status=nb1_status,
+                                 nb1_info=nb1_info,
+                                 nb2_status=nb2_status,
+                                 nb2_info=nb2_info,
+                                 nb3_status=nb3_status,
+                                 nb3_info=nb3_info,
+                                 clean_data_count=clean_data_count,
+                                 classified_count='N/A',
+                                 radical_count='N/A',
+                                 non_radical_count='N/A',
+                                 recent_classifications=[])
+        elif classification_type == 'batch':
+            # Get statistics for batch classification
+            from models import CleanDataUpload, CleanDataScraper, ClassificationResult
+            from sqlalchemy import func
+            
+            # Count clean data ready for classification
+            clean_upload_count = CleanDataUpload.query.count()
+            clean_scraper_count = CleanDataScraper.query.count()
+            clean_data_count = clean_upload_count + clean_scraper_count
+            
+            # Count classified data
+            classified_upload_count = db.session.query(func.count(ClassificationResult.id)).filter(
+                ClassificationResult.data_type == 'upload'
+            ).scalar() or 0
+            
+            classified_scraper_count = db.session.query(func.count(ClassificationResult.id)).filter(
+                ClassificationResult.data_type == 'scraper'
+            ).scalar() or 0
+            
+            classified_count = classified_upload_count + classified_scraper_count
+            
+            # Count radical and non-radical content
+            radical_count = db.session.query(func.count(ClassificationResult.id)).filter(
+                ClassificationResult.final_prediction == 'radikal'
+            ).scalar() or 0
+            
+            non_radical_count = db.session.query(func.count(ClassificationResult.id)).filter(
+                ClassificationResult.final_prediction == 'non-radikal'
+            ).scalar() or 0
+            
+            # Get recent classifications for batch mode
+            recent_classifications = ClassificationResult.query.order_by(
+                ClassificationResult.created_at.desc()
+            ).limit(5).all()
+            
+            return render_template('classification/classify.html', 
+                                 type='batch',
+                                 word2vec_status=word2vec_status,
+                                 word2vec_info=word2vec_info,
+                                 nb1_status=nb1_status,
+                                 nb1_info=nb1_info,
+                                 nb2_status=nb2_status,
+                                 nb2_info=nb2_info,
+                                 nb3_status=nb3_status,
+                                 nb3_info=nb3_info,
+                                 clean_data_count=clean_data_count,
+                                 classified_count=classified_count,
+                                 radical_count=radical_count,
+                                 non_radical_count=non_radical_count,
+                                 recent_classifications=recent_classifications)
+        else:
+            flash('Tipe klasifikasi tidak valid!', 'error')
+            return redirect(url_for('classification'))
+
     @app.route('/classification/classify/<data_type>/<int:data_id>')
     @login_required
     def classify_data(data_type, data_id):
@@ -997,10 +1318,12 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             # Sort datasets by name
             final_datasets.sort(key=lambda x: x['dataset_name'])
             
-            return render_template('classification/results.html', datasets=final_datasets)
+            return render_template('classification/results.html', 
+                                 datasets=final_datasets, 
+                                 current_date=datetime.now().date())
         except Exception as e:
             flash(f'Error mengambil hasil klasifikasi: {str(e)}', 'error')
-            return render_template('classification/results.html', results=[])
+            return render_template('classification/results.html', results=[], current_date=datetime.now().date())
     
     @app.route('/classification/batch')
     @login_required
@@ -1138,13 +1461,26 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
     @admin_required
     def admin_add_user():
         try:
-            username = request.form.get('username')
-            email = request.form.get('email')
-            password = request.form.get('password')
-            role = request.form.get('role', 'user')
+            # Sanitize input data
+            username = SecurityValidator.sanitize_input(
+                request.form.get('username', ''), max_length=50
+            )
+            email = SecurityValidator.sanitize_input(
+                request.form.get('email', ''), max_length=100
+            )
+            password = request.form.get('password', '')  # Don't sanitize password
+            role = SecurityValidator.sanitize_input(
+                request.form.get('role', 'user'), max_length=20
+            )
             
             # Validation
             if not username or not email or not password:
+                log_security_event(
+                    "USER_CREATION_INVALID", 
+                    "Admin user creation attempt with missing fields",
+                    user_id=current_user.id,
+                    ip_address=request.remote_addr
+                )
                 return jsonify({'success': False, 'message': 'Semua field harus diisi!'})
             
             if len(username) < 3:
@@ -1166,10 +1502,24 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             db.session.add(user)
             db.session.commit()
             
+            # Log successful user creation
+            log_security_event(
+                "USER_CREATED", 
+                f"Admin created new user: {username} with role: {role}",
+                user_id=current_user.id,
+                ip_address=request.remote_addr
+            )
+            
             return jsonify({'success': True, 'message': 'User berhasil ditambahkan!'})
             
         except Exception as e:
             db.session.rollback()
+            log_security_event(
+                "USER_CREATION_ERROR", 
+                f"Error creating user: {str(e)}",
+                user_id=current_user.id,
+                ip_address=request.remote_addr
+            )
             return jsonify({'success': False, 'message': f'Error: {str(e)}'})
     
     @app.route('/admin/user/<int:user_id>/edit', methods=['POST'])
@@ -1179,13 +1529,26 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
         try:
             user = User.query.get_or_404(user_id)
             
-            username = request.form.get('username')
-            email = request.form.get('email')
-            role = request.form.get('role', 'user')
+            # Sanitize input data
+            username = SecurityValidator.sanitize_input(
+                request.form.get('username', ''), max_length=50
+            )
+            email = SecurityValidator.sanitize_input(
+                request.form.get('email', ''), max_length=100
+            )
+            role = SecurityValidator.sanitize_input(
+                request.form.get('role', 'user'), max_length=20
+            )
             is_active = request.form.get('is_active') == 'true'
             
             # Validation
             if not username or not email:
+                log_security_event(
+                    "USER_EDIT_INVALID", 
+                    f"Admin user edit attempt with missing fields for user ID: {user_id}",
+                    user_id=current_user.id,
+                    ip_address=request.remote_addr
+                )
                 return jsonify({'success': False, 'message': 'Username dan email harus diisi!'})
             
             if len(username) < 3:
@@ -1320,11 +1683,19 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
         clean_scraper_count = result.scalar()
         
         # Calculate user statistics with proper field names for template
+        manual_uploads = RawData.query.filter_by(uploaded_by=current_user.id).count()
+        scraping_count = RawDataScraper.query.filter_by(scraped_by=current_user.id).count()
+        cleaned_data = CleanDataUpload.query.filter_by(cleaned_by=current_user.id).count() + clean_scraper_count
+        total_classifications = db.session.execute(text("SELECT COUNT(*) FROM classification_results WHERE classified_by = :user_id"), {'user_id': current_user.id}).scalar()
+        
         user_stats = {
-            'manual_uploads': RawData.query.filter_by(uploaded_by=current_user.id).count(),
-            'scraping_count': RawDataScraper.query.filter_by(scraped_by=current_user.id).count(),
-            'cleaned_data': CleanDataUpload.query.filter_by(cleaned_by=current_user.id).count() + clean_scraper_count,
-            'total_classifications': db.session.execute(text("SELECT COUNT(*) FROM classification_results WHERE classified_by = :user_id"), {'user_id': current_user.id}).scalar()
+            'manual_uploads': manual_uploads,
+            'scraping_count': scraping_count,
+            'cleaned_data': cleaned_data,
+            'total_classifications': total_classifications,
+            # Add fields that are used in profile.html template
+            'total_uploads': manual_uploads + scraping_count,  # Total upload = manual + scraping
+            'total_processed': cleaned_data  # Data diproses = cleaned data
         }
         
         # Get recent activities for the user
@@ -1352,12 +1723,25 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
     def edit_profile():
         """Update user profile information"""
         try:
-            email = request.form.get('email')
-            full_name = request.form.get('full_name')
-            bio = request.form.get('bio')
+            # Sanitize input data
+            email = SecurityValidator.sanitize_input(
+                request.form.get('email', ''), max_length=100
+            )
+            full_name = SecurityValidator.sanitize_input(
+                request.form.get('full_name', ''), max_length=100
+            )
+            bio = SecurityValidator.sanitize_input(
+                request.form.get('bio', ''), max_length=500
+            )
             
             # Validation
             if not email:
+                log_security_event(
+                    "PROFILE_EDIT_INVALID", 
+                    "Profile edit attempt with empty email",
+                    user_id=current_user.id,
+                    ip_address=request.remote_addr
+                )
                 return jsonify({'success': False, 'message': 'Email tidak boleh kosong'}), 400
             
             # Check if email already exists (excluding current user)
@@ -1517,9 +1901,8 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
     @login_required
     @active_user_required
     def upload_data():
-        """Handle file upload"""
+        """Handle file upload with enhanced security validation"""
         try:
-
             if 'file' not in request.files:
                 return jsonify({'success': False, 'message': 'Tidak ada file yang dipilih'}), 400
             
@@ -1527,24 +1910,40 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             if file.filename == '':
                 return jsonify({'success': False, 'message': 'Tidak ada file yang dipilih'}), 400
             
-            if not allowed_file(file.filename):
-                return jsonify({'success': False, 'message': 'Format file tidak didukung. Gunakan CSV atau XLSX'}), 400
+            # Use new security validation instead of allowed_file
+            is_valid, message, file_info = SecurityValidator.validate_file_upload(file)
+            if not is_valid:
+                log_security_event(
+                    "FILE_UPLOAD_REJECTED", 
+                    f"API file upload rejected: {message} | File: {file.filename}",
+                    user_id=current_user.id,
+                    ip_address=request.remote_addr
+                )
+                return jsonify({'success': False, 'message': f'Validasi file gagal: {message}'}), 400
             
-            # Save file
-            filename = secure_filename(file.filename)
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            filename = f"{timestamp}_{filename}"
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            # Generate secure filename and path
+            filepath, unique_filename = generate_secure_filename(
+                file.filename, 
+                app.config['UPLOAD_FOLDER']
+            )
             
             # Create upload directory if not exists
             os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
             file.save(filepath)
             
+            # Log successful upload
+            log_security_event(
+                "API_FILE_UPLOAD_SUCCESS", 
+                f"API file uploaded successfully: {file.filename} -> {unique_filename}",
+                user_id=current_user.id,
+                ip_address=request.remote_addr
+            )
+            
             # Get file size in bytes
             file_size = os.path.getsize(filepath)
             
             # Read and process file with proper encoding handling
-            if filename.endswith('.csv'):
+            if file_info['mime_type'] in ['text/csv', 'text/plain', 'application/csv']:
                 # Try different encodings for CSV files
                 encodings_to_try = ['utf-8', 'utf-8-sig', 'latin1', 'cp1252', 'iso-8859-1']
                 df = None
@@ -1578,8 +1977,7 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             # Store file temporarily and show column mapping page
 
             
-            # Get sample data for preview (first 5 rows)
-            # Replace NaN values with empty strings to avoid JSON serialization issues
+            # Get sample data for preview (first 5 rows) with input sanitization
             sample_df = df.head(5).fillna('')
             
             # Clean sample data to ensure JSON serialization works properly
@@ -1594,16 +1992,13 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                         # Convert to string and handle Unicode properly
                         try:
                             str_value = str(value)
-                            # Remove only null bytes and normalize line breaks
-                            str_value = str_value.replace('\x00', '').replace('\r\n', ' ').replace('\r', ' ').replace('\n', ' ')
-                            # Limit length to prevent huge JSON responses
-                            if len(str_value) > 200:
-                                str_value = str_value[:200] + '...'
+                            # Sanitize the value using security function
+                            str_value = SecurityValidator.sanitize_input(str_value, max_length=200)
                             clean_row[str(col)] = str_value
                         except (UnicodeEncodeError, UnicodeDecodeError) as e:
                             # Handle Unicode errors gracefully
                             app.logger.warning(f"Unicode error in column {col}: {str(e)}")
-                            clean_row[str(col)] = repr(value)  # Use repr to safely represent the value
+                            clean_row[str(col)] = SecurityValidator.sanitize_input(repr(value), max_length=200)
                         except Exception as e:
                             app.logger.warning(f"Error processing value in column {col}: {str(e)}")
                             clean_row[str(col)] = '[Error processing value]'
@@ -1611,24 +2006,32 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
             
             # Store file info in session for later processing
             session['upload_file_path'] = filepath
-            session['upload_filename'] = filename
+            session['upload_filename'] = unique_filename
             session['upload_file_size'] = file_size
             session['upload_columns'] = list(df.columns)
             session['upload_sample_data'] = sample_data
-            session['upload_description'] = request.form.get('description', '')
-            session['upload_source'] = request.form.get('source', 'manual')
+            # Sanitize form inputs
+            session['upload_description'] = SecurityValidator.sanitize_input(
+                request.form.get('description', ''), max_length=500
+            )
+            session['upload_source'] = SecurityValidator.sanitize_input(
+                request.form.get('source', 'manual'), max_length=50
+            )
             # Get dataset name from form or use filename as fallback
-            dataset_name_input = request.form.get('dataset_name', '').strip()
+            dataset_name_input = SecurityValidator.sanitize_input(
+                request.form.get('dataset_name', '').strip(), max_length=100
+            )
             if not dataset_name_input:  # If empty or None
-                # Use filename without timestamp and extension as dataset name
-                dataset_name_input = filename.replace(f'{timestamp}_', '').split('.')[0]
+                # Use original filename without extension as dataset name
+                dataset_name_input = os.path.splitext(file.filename)[0]
+                dataset_name_input = SecurityValidator.sanitize_input(dataset_name_input, max_length=100)
             session['upload_dataset_name'] = dataset_name_input
             
             # Clean column names to ensure JSON serialization works properly
             clean_columns = []
             for col in df.columns:
-                # Convert to string and clean column names
-                clean_col = str(col).replace('\x00', '').replace('\r', ' ').replace('\n', ' ').strip()
+                # Convert to string and sanitize column names
+                clean_col = SecurityValidator.sanitize_input(str(col), max_length=100)
                 clean_columns.append(clean_col)
             
             return jsonify({
@@ -1636,7 +2039,7 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                 'show_mapping': True,
                 'columns': clean_columns,
                 'sample_data': sample_data,
-                'filename': filename
+                'filename': unique_filename
             })
             
         except Exception as e:
@@ -2464,14 +2867,31 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
     def classify_manual_text():
         """Classify manual text input with all 3 models"""
         try:
-            # Get text from request
+            # Get and sanitize text from request
             if request.is_json:
-                text = request.json.get('text', '').strip()
+                raw_text = request.json.get('text', '').strip()
             else:
-                text = request.form.get('text', '').strip()
+                raw_text = request.form.get('text', '').strip()
+            
+            # Sanitize input text
+            text = SecurityValidator.sanitize_input(raw_text, max_length=5000)
             
             if not text:
+                log_security_event(
+                    "TEXT_CLASSIFICATION_INVALID", 
+                    "Text classification attempt with empty text",
+                    user_id=current_user.id,
+                    ip_address=request.remote_addr
+                )
                 return jsonify({'success': False, 'message': 'Teks tidak boleh kosong'}), 400
+            
+            # Log classification attempt
+            log_security_event(
+                "TEXT_CLASSIFICATION_ATTEMPT", 
+                f"Manual text classification attempt - text length: {len(text)}",
+                user_id=current_user.id,
+                ip_address=request.remote_addr
+            )
             
             # Clean the text
             cleaned_text = clean_text(text)
@@ -3048,13 +3468,13 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                 classified_upload_data = db.session.execute(
                     text("SELECT cr.id, cr.data_type, cr.data_id, cr.model_name, cr.prediction, cr.probability_radikal, cr.probability_non_radikal, cr.created_at, cdu.cleaned_content as content, cdu.username, cdu.url FROM classification_results cr JOIN clean_data_upload cdu ON cr.data_type = 'upload' AND cr.data_id = cdu.id JOIN raw_data rd ON cdu.raw_data_id = rd.id WHERE rd.dataset_id = :dataset_id ORDER BY cr.created_at DESC"),
                     {'dataset_id': dataset_id}
-                ).fetchall()
+                ).mappings().fetchall()
             
             if clean_scraper_data:
                 classified_scraper_data = db.session.execute(
                     text("SELECT cr.id, cr.data_type, cr.data_id, cr.model_name, cr.prediction, cr.probability_radikal, cr.probability_non_radikal, cr.created_at, cds.cleaned_content as content, cds.username, cds.url FROM classification_results cr JOIN clean_data_scraper cds ON cr.data_type = 'scraper' AND cr.data_id = cds.id JOIN raw_data_scraper rds ON cds.raw_data_scraper_id = rds.id WHERE rds.dataset_id = :dataset_id ORDER BY cr.created_at DESC"),
                     {'dataset_id': dataset_id}
-                ).fetchall()
+                ).mappings().fetchall()
             
             return render_template('dataset/details.html', 
                                  dataset=dataset,
@@ -3101,13 +3521,13 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
                 classified_upload_data = db.session.execute(
                     text("SELECT cr.* FROM classification_results cr JOIN clean_data_upload cdu ON cr.data_type = 'upload' AND cr.data_id = cdu.id JOIN raw_data rd ON cdu.raw_data_id = rd.id WHERE rd.dataset_id = :dataset_id"),
                     {'dataset_id': dataset_id}
-                ).fetchall()
+                ).mappings().fetchall()
             
             if clean_scraper_data:
                 classified_scraper_data = db.session.execute(
                     text("SELECT cr.* FROM classification_results cr JOIN clean_data_scraper cds ON cr.data_type = 'scraper' AND cr.data_id = cds.id JOIN raw_data_scraper rds ON cds.raw_data_scraper_id = rds.id WHERE rds.dataset_id = :dataset_id"),
                     {'dataset_id': dataset_id}
-                ).fetchall()
+                ).mappings().fetchall()
             
             return render_template('dataset/detail_modal.html', 
                                  dataset=dataset,
@@ -4752,6 +5172,10 @@ def init_routes(app, word2vec_model_param, naive_bayes_models_param):
     
     # Helper functions
     def allowed_file(filename):
+        """
+        DEPRECATED: Use SecurityValidator.validate_file_upload() instead
+        This function is kept for backward compatibility but should be replaced
+        """
         return '.' in filename and \
                filename.rsplit('.', 1)[1].lower() in {'csv', 'xlsx', 'xls'}
     

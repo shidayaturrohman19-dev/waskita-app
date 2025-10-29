@@ -272,7 +272,7 @@ def classify_content(text_vector, naive_bayes_model):
         return 'non-radikal', [0.0, 1.0]  # [prob_radikal, prob_non_radikal]
     
     # Handle zero vector (when no words found in vocabulary)
-    if hasattr(text_vector, 'any') and not text_vector.any():
+    if hasattr(text_vector, 'any') and not np.any(text_vector):
         return 'non-radikal', [0.0, 1.0]  # [prob_radikal, prob_non_radikal]
     
     try:
