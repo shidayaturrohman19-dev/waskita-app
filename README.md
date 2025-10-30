@@ -37,6 +37,49 @@ docker-compose up -d
 - ✅ Nginx reverse proxy aktif
 - ✅ Setup selesai dalam 5 menit
 
+**🔧 Kebutuhan Database PostgreSQL:**
+- PostgreSQL 12 atau lebih baru
+- Database utama dan database test
+- User database dengan hak akses penuh ke kedua database
+- Tabel-tabel yang diperlukan:
+  - users: Menyimpan data pengguna dan admin
+  - datasets: Menyimpan informasi dataset
+  - raw_data: Menyimpan data mentah dari upload manual
+  - raw_data_scraper: Menyimpan data mentah dari scraping
+  - clean_data_upload: Menyimpan data bersih dari upload manual
+  - clean_data_scraper: Menyimpan data bersih dari scraping
+  - classification_results: Menyimpan hasil klasifikasi
+
+**🎯 Catatan Konfigurasi untuk Instalasi Lokal:**
+- ✅ Pastikan PostgreSQL sudah terinstall dan berjalan di sistem Anda
+- ✅ Sesuaikan konfigurasi database di file `.env` dengan kredensial PostgreSQL lokal Anda
+- ✅ Untuk konfigurasi email, gunakan App Password jika menggunakan Gmail dengan 2FA
+- ✅ Pastikan semua model ML tersedia di direktori yang benar sesuai konfigurasi
+- ✅ Untuk development, Anda dapat mengatur `FLASK_DEBUG=True` dan `FLASK_ENV=development`
+- ✅ Jika mengalami masalah dengan setup database otomatis, gunakan langkah manual
+
+**🔧 Konfigurasi Penting di .env untuk Instalasi Lokal:**
+```bash
+# Database
+DATABASE_URL=postgresql://waskita_user:your_password@localhost:5432/waskita_db
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+DATABASE_NAME=waskita_db
+DATABASE_USER=waskita_user
+DATABASE_PASSWORD=your_secure_password
+
+# Flask
+SECRET_KEY=your-super-secret-key-change-this-in-production
+FLASK_DEBUG=True  # Untuk development
+FLASK_ENV=development  # Untuk development
+
+# Model ML
+WORD2VEC_MODEL_PATH=models/embeddings/wiki_word2vec_csv_updated.model
+NAIVE_BAYES_MODEL1_PATH=models/navesbayes/naive_bayes_model1.pkl
+NAIVE_BAYES_MODEL2_PATH=models/navesbayes/naive_bayes_model2.pkl
+NAIVE_BAYES_MODEL3_PATH=models/navesbayes/naive_bayes_model3.pkl
+```
+
 ### Development Lokal (Manual Setup)
 ```bash
 # 1. Clone repository
@@ -55,8 +98,22 @@ venv\Scripts\activate  # Windows
 # 4. Install dependencies
 pip install -r requirements.txt
 
-# 5. Setup database
+# 5. Setup database PostgreSQL
 python setup_postgresql.py
+# Atau setup database secara manual:
+# - Buat database: createdb waskita_db
+# - Buat user: createuser -P waskita_user
+# - Berikan hak akses: GRANT ALL PRIVILEGES ON DATABASE waskita_db TO waskita_user;
+
+# 6. Pastikan model ML tersedia di direktori yang benar
+# - models/embeddings/wiki_word2vec_csv_updated.model
+# - models/navesbayes/naive_bayes_model1.pkl
+# - models/navesbayes/naive_bayes_model2.pkl
+# - models/navesbayes/naive_bayes_model3.pkl
+
+# 7. Jalankan aplikasi
+python app.py
+```
 
 # 6. Jalankan aplikasi
 python app.py
@@ -184,48 +241,192 @@ chmod +x init_admin.sh && ./init_admin.sh
 
 ### Environment Variables
 
-Buat file `.env` dengan konfigurasi berikut:
+Salin file template dan sesuaikan konfigurasi:
 
 ```bash
-# Database Configuration
-DATABASE_URL=postgresql://user:password@localhost/waskita_db
+# Copy template environment
+cp .env.example .env
+# Edit file .env sesuai kebutuhan Anda
+```
 
-# Security Keys
-SECRET_KEY=your-super-secret-key-here
-SECURITY_PASSWORD_SALT=your-unique-salt-here
+Struktur lengkap file `.env`:
 
-# Email Configuration (Gmail SMTP)
+```bash
+# =============================================================================
+# DATABASE CONFIGURATION
+# =============================================================================
+DATABASE_URL=postgresql://waskita_user:your_password@localhost:5432/waskita_db
+TEST_DATABASE_URL=postgresql://waskita_user:your_password@localhost:5432/waskita_test_db
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+DATABASE_NAME=waskita_db
+DATABASE_USER=waskita_user
+DATABASE_PASSWORD=your_secure_password
+
+# PostgreSQL Database Settings (untuk Docker)
+POSTGRES_USER=waskita_user
+POSTGRES_PASSWORD=your_secure_password
+POSTGRES_DB=waskita_db
+
+# =============================================================================
+# FLASK CONFIGURATION
+# =============================================================================
+# Generate: python -c "import secrets; print(secrets.token_hex(32))"
+SECRET_KEY=your-super-secret-key-change-this-in-production
+FLASK_DEBUG=False
+FLASK_ENV=production
+
+# =============================================================================
+# SECURITY CONFIGURATION
+# =============================================================================
+WTF_CSRF_ENABLED=True
+WTF_CSRF_TIME_LIMIT=3600
+WTF_CSRF_SECRET_KEY=your-csrf-secret-key-change-this
+JWT_SECRET_KEY=your-jwt-secret-key-change-this
+WASKITA_API_KEY=your-api-key-change-this
+
+# =============================================================================
+# FILE UPLOAD CONFIGURATION
+# =============================================================================
+UPLOAD_FOLDER=uploads
+MAX_CONTENT_LENGTH=16777216
+
+# =============================================================================
+# WORD2VEC MODEL CONFIGURATION
+# =============================================================================
+WORD2VEC_MODEL_PATH=models/embeddings/wiki_word2vec_csv_updated.model
+NAIVE_BAYES_MODEL1_PATH=models/navesbayes/naive_bayes_model1.pkl
+NAIVE_BAYES_MODEL2_PATH=models/navesbayes/naive_bayes_model2.pkl
+NAIVE_BAYES_MODEL3_PATH=models/navesbayes/naive_bayes_model3.pkl
+
+# =============================================================================
+# EMAIL CONFIGURATION (Gmail SMTP)
+# =============================================================================
+# Untuk Gmail: Aktifkan 2FA dan buat App Password
 MAIL_SERVER=smtp.gmail.com
 MAIL_PORT=587
 MAIL_USE_TLS=True
+MAIL_USE_SSL=False
 MAIL_USERNAME=your-email@gmail.com
-MAIL_PASSWORD=your-app-password
+MAIL_PASSWORD=your-16-digit-app-password
+MAIL_DEFAULT_SENDER=your-email@gmail.com
 
-# Application Settings
-FLASK_ENV=development
-FLASK_DEBUG=True
+# =============================================================================
+# ADMIN CONFIGURATION
+# =============================================================================
+ADMIN_EMAIL=admin@waskita.com
+ADMIN_EMAILS=admin@waskita.com,admin2@waskita.com
+
+# =============================================================================
+# OTP SYSTEM CONFIGURATION
+# =============================================================================
+OTP_LENGTH=6
+OTP_EXPIRY_MINUTES=10
+MAX_OTP_ATTEMPTS=3
+LOCKOUT_DURATION_MINUTES=30
+
+# =============================================================================
+# REGISTRATION SETTINGS
+# =============================================================================
+REGISTRATION_ENABLED=True
+AUTO_APPROVE_REGISTRATION=False
+
+# =============================================================================
+# APPLICATION URLS
+# =============================================================================
+BASE_URL=http://localhost:5000
+
+# =============================================================================
+# DOCKER CONFIGURATION
+# =============================================================================
+WEB_PORT=5000
+CREATE_SAMPLE_DATA=false
+REDIS_URL=redis://localhost:6379/0
+
+# =============================================================================
+# EMAIL NOTIFICATION SETTINGS
+# =============================================================================
+SEND_EMAIL_NOTIFICATIONS=True
+EMAIL_RETRY_ATTEMPTS=3
+EMAIL_RETRY_DELAY_SECONDS=5
+
+# =============================================================================
+# APIFY API CONFIGURATION
+# =============================================================================
+APIFY_API_KEY=your-apify-api-key
+APIFY_FACEBOOK_ACTOR=apify/facebook-posts-scraper
+APIFY_TWITTER_ACTOR=apify/twitter-scraper
+APIFY_INSTAGRAM_ACTOR=apify/instagram-scraper
+APIFY_TIKTOK_ACTOR=apify/tiktok-scraper
+APIFY_YOUTUBE_ACTOR=apify/youtube-scraper
+
+# =============================================================================
+# OPTIONAL SOCIAL MEDIA API KEYS
+# =============================================================================
+TWITTER_API_KEY=your-twitter-api-key
+TWITTER_API_SECRET=your-twitter-api-secret
+TWITTER_ACCESS_TOKEN=your-twitter-access-token
+TWITTER_ACCESS_SECRET=your-twitter-access-secret
+
+# =============================================================================
+# REDIS CONFIGURATION
+# =============================================================================
+REDIS_URL=redis://localhost:6379/0
+
+# =============================================================================
+# PAGINATION CONFIGURATION
+# =============================================================================
+ITEMS_PER_PAGE=10
+
+# =============================================================================
+# LOGGING CONFIGURATION
+# =============================================================================
+LOG_LEVEL=INFO
+LOG_FILE=logs/waskita.log
+
+# =============================================================================
+# CLEANUP CONFIGURATION
+# =============================================================================
+CLEANUP_EXPIRED_REQUESTS_HOURS=24
+KEEP_COMPLETED_REQUESTS_DAYS=30
+
+# =============================================================================
+# DOCKER PORT CONFIGURATION
+# =============================================================================
+WEB_PORT=5000
+NGINX_PORT=80
 ```
 
 ### Database Setup
 
 ```bash
-# PostgreSQL (Recommended)
-createdb waskita_db
+# PostgreSQL (Recommended) - Otomatis dengan setup script
 python setup_postgresql.py
 
-# Atau gunakan SQLite untuk development
+# Manual PostgreSQL setup
+createdb waskita_db
+createdb waskita_test
+
+# Untuk development dengan SQLite (tidak direkomendasikan untuk produksi)
 # DATABASE_URL=sqlite:///waskita.db
 ```
 
 ### Model Configuration
 
 ```bash
-# Download required models
-mkdir -p models
-# Place your trained models:
-# - word2vec_model.bin
-# - naive_bayes_model.pkl
-# - vectorizer.pkl
+# Struktur direktori model yang diperlukan
+mkdir -p models/embeddings
+mkdir -p models/navesbayes
+
+# Model files yang harus ada:
+# models/embeddings/wiki_word2vec_csv_updated.model
+# models/navesbayes/naive_bayes_model1.pkl
+# models/navesbayes/naive_bayes_model2.pkl  
+# models/navesbayes/naive_bayes_model3.pkl
+
+# Path model dikonfigurasi di .env:
+# WORD2VEC_MODEL_PATH=models/embeddings/wiki_word2vec_csv_updated.model
+# NAIVE_BAYES_MODEL1_PATH=models/navesbayes/naive_bayes_model1.pkl
 ```
 
 ---
@@ -375,16 +576,22 @@ Input Text → Preprocessing → Word2Vec Embedding → Naive Bayes Classifier �
 
 ```bash
 # Generate secure keys
-python -c "import secrets; print(secrets.token_urlsafe(32))"
+python -c "import secrets; print('SECRET_KEY=' + secrets.token_hex(32))"
 
-# Environment variables
+# Environment variables untuk produksi
 export FLASK_ENV=production
 export FLASK_DEBUG=False
-export SECRET_KEY="your-production-secret-key"
+export SECRET_KEY="your-production-secret-key-here"
+export DATABASE_URL="postgresql://user:password@localhost:5432/waskita_prod"
 
-# HTTPS Configuration (Nginx)
+# Konfigurasi HTTPS (Nginx)
 ssl_certificate /path/to/cert.pem;
 ssl_certificate_key /path/to/key.pem;
+
+# Konfigurasi keamanan tambahan
+export WTF_CSRF_ENABLED=True
+export SESSION_COOKIE_SECURE=True
+export SESSION_COOKIE_HTTPONLY=True
 ```
 
 ### Audit & Monitoring
@@ -412,6 +619,8 @@ GET /admin/stats     # Security statistics
 | **[SECURITY_OTP_GUIDE.md](docs/SECURITY_OTP_GUIDE.md)** | Konfigurasi keamanan dan OTP | Admin, Developer |
 | **[LAPORAN_AUDIT_KEAMANAN.md](docs/LAPORAN_AUDIT_KEAMANAN.md)** | Audit keamanan dan testing | Security Team |
 | **[models/README.md](models/README.md)** | Konfigurasi model ML | Data Scientist |
+| **[CATATAN_KONFIGURASI_LENGKAP.txt](CATATAN_KONFIGURASI_LENGKAP.txt)** | Konfigurasi lengkap aplikasi | Developer, Admin |
+| **[.env.example](.env.example)** | Contoh konfigurasi environment | Developer |
 
 ### API Documentation
 
@@ -436,7 +645,12 @@ Response:
 **Q: Model tidak ditemukan?**
 ```bash
 # Download dan letakkan model di folder models/
-# Pastikan file: word2vec_model.bin, naive_bayes_model.pkl
+# Pastikan file: wiki_word2vec_csv_updated.model, naive_bayes_model1.pkl, naive_bayes_model2.pkl, naive_bayes_model3.pkl
+# Struktur direktori:
+# models/embeddings/wiki_word2vec_csv_updated.model
+# models/navesbayes/naive_bayes_model1.pkl
+# models/navesbayes/naive_bayes_model2.pkl
+# models/navesbayes/naive_bayes_model3.pkl
 ```
 
 **Q: Database connection error?**
