@@ -287,6 +287,12 @@ api_keys.txt
 tokens.txt
 setup_notes.txt
 
+# Personal configuration notes (local only)
+CATATAN_KONFIGURASI_ASLI.txt
+PANDUAN_KONFIGURASI_PERUBAHAN.txt
+*_CATATAN_*.txt
+*_NOTES_*.txt
+
 # Temporary files that might contain sensitive data
 temp/
 tmp/
