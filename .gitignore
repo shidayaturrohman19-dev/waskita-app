@@ -119,6 +119,11 @@ DEVELOPMENT_SYNC_GUIDE.md
 DEV_GUIDE.md
 LOCAL_SETUP_GUIDE.md
 
+# Sensitive configuration files (DO NOT UPLOAD TO GITHUB)
+CATATAN_KONFIGURASI_LENGKAP.txt
+*_CREDENTIALS.txt
+*.credentials
+
 # Spyder project settings
 .spyderproject
 .spyproject
