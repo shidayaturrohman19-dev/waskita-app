@@ -69,8 +69,8 @@ python app.py
 ## 📚 Dokumentasi Lengkap
 
 ### 📖 Panduan Utama
-- **[🐳 Docker Setup Guide](docs/SETUP_DOCKER_FIRST.md)** - Panduan setup, user guide, dan deployment terpusat
-- **[🔒 Security Guide](docs/SECURITY_COMPREHENSIVE_GUIDE.md)** - Panduan keamanan, audit report, dan API documentation
+- **[🚀 Setup Apps Guide](docs/SETUP_APPS.md)** - Panduan setup lokal dan Docker, user guide, dan deployment terpusat
+- **[🔒 Security Guide](docs/SECURITY_GUIDE.md)** - Panduan keamanan, audit report, dan API documentation
 
 ---
 
