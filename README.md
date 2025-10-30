@@ -57,13 +57,19 @@ Aplikasi web berbasis Flask yang menggunakan Machine Learning untuk mengklasifik
 ### Dashboard Utama
 ```
 ┌─────────────────────────────────────────────┐
-│  📊 Dashboard Analytics                     │
-│  ├── Total Klasifikasi: 1,234              │
-│  ├── Akurasi Model: 89.5%                  │
-│  ├── Pengguna Aktif: 45                    │
-│  └── Dataset Tersedia: 12                  │
+│  📊 Dashboard Analytics (Contoh)            │
+│  ├── Total Klasifikasi: [Dinamis]          │
+│  ├── Akurasi Model: ~85-92%                │
+│  ├── Pengguna Aktif: [Real-time]           │
+│  └── Dataset Tersedia: [Berdasarkan Upload]│
 └─────────────────────────────────────────────┘
 ```
+
+> **📝 Catatan:** Data di atas adalah contoh tampilan dashboard. Nilai aktual akan berubah secara dinamis berdasarkan:
+> - **Total Klasifikasi**: Jumlah teks yang telah diklasifikasi oleh sistem
+> - **Akurasi Model**: Performa model berdasarkan testing dataset (rentang 85-92%)
+> - **Pengguna Aktif**: Jumlah pengguna yang sedang online atau aktif dalam periode tertentu
+> - **Dataset Tersedia**: Jumlah dataset yang telah diupload dan tersedia untuk klasifikasi
 
 ### Proses Klasifikasi
 ```
@@ -191,7 +197,7 @@ POST /register
 POST /verify-otp
 {
     "email": "user@example.com",
-    "otp": "123456"
+    "otp": "[6-digit-code]"
 }
 ```
 
@@ -294,7 +300,7 @@ Input Text → Preprocessing → Word2Vec → Naive Bayes → Output
 
 ✅ **Proteksi Web**
 - CSRF protection dengan Flask-WTF
-- Rate limiting (500/day, 200/hour)
+- Rate limiting ([Konfigurasi]/hari, [Konfigurasi]/jam)
 - Input validation dan sanitization
 - XSS protection
 
@@ -364,8 +370,8 @@ POST /api/classify
 Response:
 {
     "prediction": "Non-Radikal",
-    "confidence": 0.89,
-    "processing_time": 0.15
+    "confidence": "[0.0-1.0]",
+    "processing_time": "[seconds]"
 }
 ```
 
@@ -460,10 +466,10 @@ Permission is hereby granted, free of charge, to any person obtaining a copy...
 
 ### Response Time
 
-- **Critical Issues**: < 24 jam
-- **Bug Reports**: 2-3 hari kerja
-- **Feature Requests**: 1-2 minggu
-- **General Questions**: 1-2 hari kerja
+- **Critical Issues**: < [X] jam
+- **Bug Reports**: [X] hari kerja
+- **Feature Requests**: [X] minggu
+- **General Questions**: [X] hari kerja
 
 ---
 

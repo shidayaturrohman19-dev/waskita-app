@@ -6,9 +6,9 @@ Panduan lengkap untuk keamanan aplikasi dan sistem OTP (One-Time Password) Waski
 
 ### Default Credentials (WAJIB DIGANTI!)
 **Development Only - JANGAN gunakan di production:**
-- **Admin**: `admin` / `admin123`
-- **Database**: `waskita_user` / `waskita_password`
-- **Test User**: `testuser` / `test123`
+- **Admin**: `[username]` / `[password]`
+- **Database**: `[db_user]` / `[db_password]`
+- **Test User**: `[test_username]` / `[test_password]`
 
 ### 🚨 Checklist Keamanan Production
 
@@ -27,11 +27,11 @@ Panduan lengkap untuk keamanan aplikasi dan sistem OTP (One-Time Password) Waski
 # Generate SECRET_KEY (32 bytes)
 python -c "import secrets; print('SECRET_KEY=' + secrets.token_hex(32))"
 
-# Generate strong password (20 karakter)
-python -c "import secrets, string; chars = string.ascii_letters + string.digits + '!@#$%^&*'; print(''.join(secrets.choice(chars) for _ in range(20)))"
+# Generate strong password ([X] karakter)
+python -c "import secrets, string; chars = string.ascii_letters + string.digits + '!@#$%^&*'; print(''.join(secrets.choice(chars) for _ in range([X])))"
 
 # Generate database password
-python -c "import secrets, string; chars = string.ascii_letters + string.digits; print('DB_PASSWORD=' + ''.join(secrets.choice(chars) for _ in range(16)))"
+python -c "import secrets, string; chars = string.ascii_letters + string.digits; print('DB_PASSWORD=' + ''.join(secrets.choice(chars) for _ in range([X])))"
 ```
 
 ---
@@ -43,7 +43,7 @@ Sistem OTP Waskita menggunakan email untuk verifikasi registrasi user baru denga
 
 ### Fitur OTP System
 - ✅ **Email verification** untuk registrasi user baru
-- ✅ **6-digit OTP code** dengan expiry 10 menit
+- ✅ **[X]-digit OTP code** dengan expiry [X] menit
 - ✅ **Rate limiting** untuk mencegah spam
 - ✅ **Secure token generation** menggunakan `secrets` module
 - ✅ **Gmail SMTP integration** dengan App Password
@@ -95,9 +95,9 @@ MAIL_USERNAME=your-email@gmail.com
 MAIL_PASSWORD=your-16-digit-app-password
 
 # OTP Configuration
-OTP_EXPIRY_MINUTES=10
-OTP_LENGTH=6
-MAX_OTP_ATTEMPTS=3
+OTP_EXPIRY_MINUTES=[X]
+OTP_LENGTH=[X]
+MAX_OTP_ATTEMPTS=[X]
 ```
 
 ### 3. Testing Email Setup

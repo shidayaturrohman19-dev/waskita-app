@@ -54,8 +54,8 @@ Login ke sistem dengan username dan password.
 **Request Body:**
 ```json
 {
-  "username": "admin",
-  "password": "admin123",
+  "username": "[username]",
+  "password": "[password]",
   "remember": false
 }
 ```
@@ -66,10 +66,10 @@ Login ke sistem dengan username dan password.
   "status": "success",
   "message": "Login berhasil",
   "data": {
-    "user_id": 1,
-    "username": "admin",
-    "role": "admin",
-    "last_login": "2024-01-01T10:00:00Z"
+    "user_id": "[user_id]",
+    "username": "[username]",
+    "role": "[role]",
+    "last_login": "[timestamp]"
   }
 }
 ```
@@ -95,12 +95,12 @@ Daftar akun baru dengan verifikasi OTP email.
 **Request Body:**
 ```json
 {
-  "username": "newuser",
-  "email": "user@example.com",
-  "password": "password123",
-  "confirm_password": "password123",
-  "full_name": "User Name",
-  "organization": "Company Name"
+  "username": "[new_username]",
+  "email": "[user@example.com]",
+  "password": "[password]",
+  "confirm_password": "[password]",
+  "full_name": "[Full Name]",
+  "organization": "[Organization Name]"
 }
 ```
 
@@ -110,9 +110,9 @@ Daftar akun baru dengan verifikasi OTP email.
   "status": "success",
   "message": "OTP telah dikirim ke email Anda",
   "data": {
-    "request_id": 123,
-    "email": "user@example.com",
-    "expires_at": "2024-01-01T10:10:00Z"
+    "request_id": "[request_id]",
+    "email": "[user@example.com]",
+    "expires_at": "[timestamp]"
   }
 }
 ```
@@ -132,30 +132,30 @@ Mendapatkan statistik dashboard utama.
   "status": "success",
   "data": {
     "statistics": {
-      "total_upload": 1250,
-      "total_scraping": 850,
-      "total_cleaned": 2100,
-      "total_classified": 1800
+      "total_upload": "[Dinamis]",
+      "total_scraping": "[Dinamis]",
+      "total_cleaned": "[Dinamis]",
+      "total_classified": "[Dinamis]"
     },
     "platform_distribution": {
-      "Twitter": 45,
-      "Facebook": 25,
-      "Instagram": 20,
-      "TikTok": 10
+      "Twitter": "[%]",
+      "Facebook": "[%]",
+      "Instagram": "[%]",
+      "TikTok": "[%]"
     },
     "recent_activities": [
       {
-        "id": 1,
-        "user": "admin",
-        "action": "Upload Dataset",
-        "timestamp": "2024-01-01T09:30:00Z",
-        "details": "Uploaded 100 records"
+        "id": "[id]",
+        "user": "[username]",
+        "action": "[Action Type]",
+        "timestamp": "[timestamp]",
+        "details": "[Activity details]"
       }
     ],
     "system_status": {
-      "word2vec_model": "loaded",
-      "naive_bayes_models": "3/3",
-      "database": "connected"
+      "word2vec_model": "[status]",
+      "naive_bayes_models": "[X/X]",
+      "database": "[status]"
     }
   }
 }
@@ -173,8 +173,8 @@ Upload file CSV/XLSX untuk klasifikasi.
 **Request (multipart/form-data):**
 ```
 file: [CSV/XLSX file]
-dataset_name: "Dataset Name"
-description: "Dataset description"
+dataset_name: "[Dataset Name]"
+description: "[Dataset description]"
 ```
 
 **Response:**
@@ -183,11 +183,11 @@ description: "Dataset description"
   "status": "success",
   "message": "File berhasil diupload",
   "data": {
-    "upload_id": 123,
-    "filename": "dataset.csv",
-    "total_records": 500,
-    "duplicates_found": 5,
-    "valid_records": 495
+    "upload_id": "[upload_id]",
+    "filename": "[filename.csv]",
+    "total_records": "[count]",
+    "duplicates_found": "[count]",
+    "valid_records": "[count]"
   }
 }
 ```
@@ -199,7 +199,7 @@ Mendapatkan daftar data mentah yang diupload.
 
 **Query Parameters:**
 - `page`: Nomor halaman (default: 1)
-- `per_page`: Jumlah data per halaman (default: 50)
+- `per_page`: Jumlah data per halaman (default: [X])
 - `search`: Kata kunci pencarian
 
 **Response:**
@@ -209,19 +209,19 @@ Mendapatkan daftar data mentah yang diupload.
   "data": {
     "items": [
       {
-        "id": 1,
-        "content": "Contoh teks konten",
-        "username": "user123",
-        "url": "https://example.com",
-        "platform": "Twitter",
-        "created_at": "2024-01-01T10:00:00Z"
+        "id": "[id]",
+        "content": "[Contoh teks konten]",
+        "username": "[username]",
+        "url": "[https://example.com]",
+        "platform": "[Platform]",
+        "created_at": "[timestamp]"
       }
     ],
     "pagination": {
-      "page": 1,
-      "per_page": 50,
-      "total": 500,
-      "pages": 10
+      "page": "[page]",
+      "per_page": "[per_page]",
+      "total": "[total]",
+      "pages": "[pages]"
     }
   }
 }
@@ -248,8 +248,8 @@ Hapus multiple data sekaligus.
 **Request Body:**
 ```json
 {
-  "data_ids": [1, 2, 3, 4, 5],
-  "data_type": "raw_data"
+  "data_ids": "[1, 2, 3, 4, 5]",
+  "data_type": "[data_type]"
 }
 ```
 
@@ -257,7 +257,7 @@ Hapus multiple data sekaligus.
 ```json
 {
   "status": "success",
-  "message": "5 data berhasil dihapus"
+  "message": "[X] data berhasil dihapus"
 }
 ```
 

@@ -79,7 +79,7 @@ Aplikasi Waskita telah berhasil mengimplementasikan standar keamanan enterprise-
 
 ### 7. **Rate Limiting & DDoS Protection** ⭐⭐ (DIPERBAIKI)
 - ✅ **Flask-Limiter:** Rate limiting per IP dan per user
-- ✅ **Tiered Limits:** 500/day, 200/hour, 50/minute untuk endpoint sensitif
+- ✅ **Tiered Limits:** [Konfigurasi]/day, [Konfigurasi]/hour, [Konfigurasi]/minute untuk endpoint sensitif
 - ✅ **Adaptive Rate Limiting:** Dynamic adjustment berdasarkan load
 - ✅ **IP Whitelisting:** Support untuk trusted IPs
 - ✅ **Request Throttling:** Gradual slowdown untuk suspicious activity
@@ -187,9 +187,9 @@ def add_security_headers(response):
 #### ✅ **Rate Limiting - SELESAI**
 ```python
 # ✅ SUDAH DIIMPLEMENTASI: Advanced rate limiting
-@limiter.limit("50 per minute", per_method=True)
-@limiter.limit("200 per hour", per_method=True)  
-@limiter.limit("500 per day", per_method=True)
+@limiter.limit("[X] per minute", per_method=True)
+@limiter.limit("[X] per hour", per_method=True)  
+@limiter.limit("[X] per day", per_method=True)
 ```
 
 ### **SECURITY TESTING FRAMEWORK** ✅
