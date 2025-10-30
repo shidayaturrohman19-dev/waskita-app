@@ -35,13 +35,25 @@ Write-Host ""
 
 # Check Docker installation
 Write-Host "Memeriksa Docker installation..." -ForegroundColor Yellow
+
+# Check if Docker is installed
 docker --version > $null 2>&1
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "Error: Docker tidak terinstall atau tidak berjalan!" -ForegroundColor Red
+    Write-Host "Error: Docker tidak terinstall!" -ForegroundColor Red
     Write-Host "Silakan install Docker Desktop terlebih dahulu." -ForegroundColor Yellow
     exit 1
 }
 
+# Check if Docker daemon is running
+docker info > $null 2>&1
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Error: Docker Desktop tidak berjalan!" -ForegroundColor Red
+    Write-Host "Silakan jalankan Docker Desktop terlebih dahulu, lalu coba lagi." -ForegroundColor Yellow
+    Write-Host "Tunggu hingga Docker Desktop selesai starting up." -ForegroundColor Gray
+    exit 1
+}
+
+# Check Docker Compose
 docker-compose --version > $null 2>&1
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Error: Docker Compose tidak tersedia!" -ForegroundColor Red
@@ -49,7 +61,7 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-Write-Host "✓ Docker dan Docker Compose tersedia" -ForegroundColor Green
+Write-Host "Docker dan Docker Compose tersedia dan berjalan" -ForegroundColor Green
 
 # Clean installation if requested
 if ($Clean) {
@@ -61,7 +73,7 @@ if ($Clean) {
     Write-Host "Menghapus volume database lama..." -ForegroundColor Gray
     docker volume rm waskita_postgres_data -f 2>$null
     
-    Write-Host "✓ Pembersihan selesai" -ForegroundColor Green
+    Write-Host "Pembersihan selesai" -ForegroundColor Green
 }
 
 # Determine environment
@@ -87,7 +99,16 @@ if ($Production) {
 # Check environment file
 if (-not (Test-Path $envFile)) {
     Write-Host "Warning: File $envFile tidak ditemukan!" -ForegroundColor Yellow
-    Write-Host "Menggunakan konfigurasi default..." -ForegroundColor Gray
+    
+    if (Test-Path ".env.example") {
+        Write-Host "Membuat file .env dari .env.example..." -ForegroundColor Yellow
+        Copy-Item ".env.example" $envFile
+        Write-Host "File .env berhasil dibuat dari template" -ForegroundColor Green
+    } else {
+        Write-Host "Error: File .env.example tidak ditemukan!" -ForegroundColor Red
+        Write-Host "Silakan buat file .env secara manual atau pastikan .env.example tersedia." -ForegroundColor Yellow
+        exit 1
+    }
 }
 
 # Build and start
@@ -119,7 +140,7 @@ Start-Sleep -Seconds 10
 Write-Host "Memeriksa status services..." -ForegroundColor Yellow
 $containers = docker-compose ps --services --filter "status=running"
 if ($containers -match "app" -and $containers -match "db") {
-    Write-Host "✓ Services berjalan dengan baik" -ForegroundColor Green
+    Write-Host "Services berjalan dengan baik" -ForegroundColor Green
 } else {
     Write-Host "Warning: Beberapa services mungkin belum siap" -ForegroundColor Yellow
     Write-Host "Gunakan 'docker-compose logs' untuk memeriksa detail" -ForegroundColor Gray
@@ -149,7 +170,7 @@ Write-Host "Default Login:" -ForegroundColor White
 Write-Host "- Username: admin" -ForegroundColor Green
 Write-Host "- Password: admin123" -ForegroundColor Green
 Write-Host ""
-Write-Host "⚠️  PENTING: Ubah password default setelah login pertama!" -ForegroundColor Yellow
+Write-Host "PENTING: Ubah password default setelah login pertama!" -ForegroundColor Yellow
 Write-Host ""
 
 # Useful commands
@@ -161,7 +182,7 @@ Write-Host "- Status:         docker-compose ps" -ForegroundColor Gray
 Write-Host ""
 
 if ($Clean) {
-    Write-Host "✨ Fresh installation dengan data bersih berhasil!" -ForegroundColor Green
+    Write-Host "Fresh installation dengan data bersih berhasil!" -ForegroundColor Green
 } else {
-    Write-Host "✨ Build berhasil! Aplikasi siap digunakan." -ForegroundColor Green
+    Write-Host "Build berhasil! Aplikasi siap digunakan." -ForegroundColor Green
 }

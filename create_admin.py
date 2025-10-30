@@ -77,11 +77,17 @@ def create_sample_datasets():
                 continue
             
             # Buat dataset baru
+            # Dapatkan admin user untuk uploaded_by
+            admin_user = User.query.filter_by(username='admin').first()
+            if not admin_user:
+                print(f"  ✗ Admin user tidak ditemukan untuk dataset '{dataset_info['name']}'")
+                continue
+                
             dataset = Dataset(
                 name=dataset_info['name'],
                 description=dataset_info['description'],
-                source=dataset_info['source'],
-                total_data=dataset_info['total_data'],
+                uploaded_by=admin_user.id,
+                total_records=dataset_info['total_data'],
                 created_at=datetime.utcnow(),
                 updated_at=datetime.utcnow()
             )
@@ -108,16 +114,19 @@ def create_sample_raw_data(dataset_id, count, source):
     """Membuat sample raw data untuk dataset"""
     from utils import generate_sample_data
     
-    sample_data = generate_sample_data(count, source)
+    # Generate sample data dengan keyword default
+    keyword = "teknologi"  # Default keyword untuk sample data
+    sample_data = generate_sample_data(source, keyword)
+    
+    # Ambil hanya sejumlah count yang dibutuhkan
+    sample_data = sample_data[:count]
     
     for data in sample_data:
         raw_data = RawData(
             dataset_id=dataset_id,
             content=data['content'],
             username=data['username'],
-            timestamp=data['timestamp'],
             platform=source,
-            engagement_count=data.get('engagement_count', 0),
             created_at=datetime.utcnow()
         )
         db.session.add(raw_data)
