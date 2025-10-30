@@ -69,14 +69,8 @@ python app.py
 ## 📚 Dokumentasi Lengkap
 
 ### 📖 Panduan Utama
-- **[🐳 Docker Setup Guide](docs/SETUP_DOCKER_FIRST.md)** - Panduan setup Docker lengkap (REKOMENDASI)
-- **[🔒 Security Guide](docs/SECURITY_COMPREHENSIVE_GUIDE.md)** - Panduan keamanan dan audit lengkap
-- **[👤 User Guide](docs/USER_GUIDE_LENGKAP.md)** - Panduan penggunaan aplikasi
-- **[🚀 Deployment Guide](docs/DEPLOYMENT_GUIDE.md)** - Panduan deployment production
-
-### 🔧 Dokumentasi Teknis
-- **[📡 API Documentation](docs/API_DOCUMENTATION.md)** - Dokumentasi API endpoints
-- **[📊 Audit Report](docs/LAPORAN_AUDIT_KEAMANAN.md)** - Laporan audit keamanan
+- **[🐳 Docker Setup Guide](docs/SETUP_DOCKER_FIRST.md)** - Panduan setup, user guide, dan deployment terpusat
+- **[🔒 Security Guide](docs/SECURITY_COMPREHENSIVE_GUIDE.md)** - Panduan keamanan, audit report, dan API documentation
 
 ---
 
@@ -167,7 +161,7 @@ docker-compose up -d --build
 
 ```bash
 # Windows PowerShell
-.\fresh-build.ps1
+.\install-build.ps1
 
 # Linux/Mac
 chmod +x init_admin.sh && ./init_admin.sh
