@@ -14,10 +14,10 @@ class Config:
     
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
-    MAX_CONTENT_LENGTH = [X] * 1024 * 1024  # [X]MB max file size
+    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
     
     # Session configuration
-    PERMANENT_SESSION_LIFETIME = timedelta(hours=[X])
+    PERMANENT_SESSION_LIFETIME = timedelta(hours=24)
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
@@ -26,7 +26,7 @@ class Config:
     ALLOWED_EXTENSIONS = {'csv', 'xlsx', 'xls'}
     
     # Pagination
-    POSTS_PER_PAGE = [X]
+    POSTS_PER_PAGE = 20
     
     # Localization
     LANGUAGES = {'id': 'Bahasa Indonesia', 'en': 'English'}
@@ -36,7 +36,7 @@ class Config:
     
     # CSRF Protection
     WTF_CSRF_ENABLED = os.environ.get('WTF_CSRF_ENABLED', 'True').lower() == 'true'
-    WTF_CSRF_TIME_LIMIT = int(os.environ.get('WTF_CSRF_TIME_LIMIT', '[X]'))
+    WTF_CSRF_TIME_LIMIT = int(os.environ.get('WTF_CSRF_TIME_LIMIT', '3600'))
     
     # Model paths - relative to app directory for containerization compatibility
     WORD2VEC_MODEL_PATH = os.getenv('WORD2VEC_MODEL_PATH', 
