@@ -167,9 +167,9 @@ def create_tables_and_admin(db_config):
         return False
 
 def update_env_file(db_config):
-    """Update file .env.local dengan konfigurasi database"""
+    """Update file .env dengan konfigurasi database"""
     try:
-        print("\n📝 Mengupdate file .env.local...")
+        print("\n📝 Mengupdate file .env...")
         
         env_content = f"""# Database Configuration - PostgreSQL Only
 # IMPORTANT: Change these credentials in production!
@@ -245,14 +245,14 @@ LOG_FILE=logs/waskita.log
 WASKITA_API_KEY=generate_your_own_api_key_here
 """
         
-        with open('.env.local', 'w', encoding='utf-8') as f:
+        with open('.env', 'w', encoding='utf-8') as f:
             f.write(env_content)
         
-        print("✅ File .env.local berhasil diupdate")
+        print("✅ File .env berhasil diupdate")
         return True
         
     except Exception as e:
-        print(f"❌ Error saat update .env.local: {e}")
+        print(f"❌ Error saat update .env: {e}")
         return False
 
 def main():
@@ -264,7 +264,7 @@ def main():
     print("2. Membuat user database")
     print("3. Membuat tabel dari schema")
     print("4. Membuat user admin default")
-    print("5. Mengupdate file .env.local")
+    print("5. Mengupdate file .env")
     print()
     
     confirm = input("Lanjutkan? (y/N): ").strip().lower()
@@ -283,9 +283,9 @@ def main():
         print("❌ Setup tabel dan admin gagal")
         return
     
-    # Step 3: Update .env.local
+    # Step 3: Update .env
     if not update_env_file(db_config):
-        print("❌ Update .env.local gagal")
+        print("❌ Update .env gagal")
         return
     
     print("\n" + "=" * 50)
@@ -293,11 +293,11 @@ def main():
     print("=" * 50)
     print("✅ Database PostgreSQL siap digunakan")
     print("✅ User admin telah dibuat")
-    print("✅ File .env.local telah diupdate")
+    print("✅ File .env telah diupdate")
     print()
     print("📋 Langkah selanjutnya:")
     print("1. Install dependencies: pip install -r requirements.txt")
-    print("2. Setup Apify API token di .env.local")
+    print("2. Setup Apify API token di .env")
     print("3. Jalankan aplikasi: python app.py")
     print()
     print("🔗 Akses aplikasi di: http://localhost:5000")

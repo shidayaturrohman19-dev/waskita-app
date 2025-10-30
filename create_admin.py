@@ -12,7 +12,7 @@ from flask import Flask
 from dotenv import load_dotenv
 
 # Load environment variables
-load_dotenv('.env.local')
+load_dotenv('.env')
 
 # Add the project root to Python path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

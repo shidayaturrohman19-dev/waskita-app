@@ -8,11 +8,82 @@ Aplikasi web berbasis Flask yang menggunakan Machine Learning untuk mengklasifik
 
 ---
 
+## 🚀 Quick Start
+
+### 🐳 Docker (Rekomendasi - Setup 1 Langkah)
+```bash
+# 1. Clone repository
+git clone https://github.com/shidayaturrohman19-dev/waskita-app.git
+cd waskita-app
+
+# 2. Setup environment
+cp .env.example .env
+
+# 3. Jalankan semua services (database, app, nginx)
+docker-compose up -d
+
+# ✅ SELESAI! Aplikasi siap digunakan
+# http://localhost:5000 (aplikasi)
+# http://localhost:80 (nginx proxy)
+```
+
+**🎯 Keunggulan Docker Setup:**
+- ✅ Database PostgreSQL otomatis terkonfigurasi
+- ✅ Admin user otomatis dibuat
+- ✅ Sample data otomatis dimuat
+- ✅ Semua dependencies terinstall
+- ✅ Nginx reverse proxy aktif
+- ✅ Setup selesai dalam 5 menit
+
+### Development Lokal (Manual Setup)
+```bash
+# 1. Clone repository
+git clone https://github.com/shidayaturrohman19-dev/waskita-app.git
+cd waskita-app
+
+# 2. Copy dan setup environment
+cp .env.example .env
+# Edit .env sesuai kebutuhan (database, email, dll)
+
+# 3. Setup virtual environment
+python -m venv venv
+venv\Scripts\activate  # Windows
+# source venv/bin/activate  # Linux/Mac
+
+# 4. Install dependencies
+pip install -r requirements.txt
+
+# 5. Setup database
+python setup_postgresql.py
+
+# 6. Jalankan aplikasi
+python app.py
+```
+
+**🎯 Setelah setup, login dengan:**
+- **Admin**: admin@waskita.com / admin123
+- **User**: user@test.com / user123
+
+---
+
+## 📚 Dokumentasi Lengkap
+
+### 📖 Panduan Utama
+- **[🐳 Docker Setup Guide](docs/SETUP_DOCKER_FIRST.md)** - Panduan setup Docker lengkap (REKOMENDASI)
+- **[🔒 Security Guide](docs/SECURITY_COMPREHENSIVE_GUIDE.md)** - Panduan keamanan dan audit lengkap
+- **[👤 User Guide](docs/USER_GUIDE_LENGKAP.md)** - Panduan penggunaan aplikasi
+- **[🚀 Deployment Guide](docs/DEPLOYMENT_GUIDE.md)** - Panduan deployment production
+
+### 🔧 Dokumentasi Teknis
+- **[📡 API Documentation](docs/API_DOCUMENTATION.md)** - Dokumentasi API endpoints
+- **[📊 Audit Report](docs/LAPORAN_AUDIT_KEAMANAN.md)** - Laporan audit keamanan
+
+---
+
 ## Daftar Isi
 
 - [Fitur](#fitur)
 - [Arsitektur Teknis](#arsitektur-teknis)
-- [Instalasi](#instalasi)
 - [Konfigurasi](#konfigurasi)
 - [Setup Development](#setup-development)
 - [Dokumentasi API](#dokumentasi-api)
@@ -77,27 +148,6 @@ Input Text → Preprocessing → Model Prediction → Results
      ↓              ↓              ↓            ↓
 "Teks media"  → Clean Text  → [0.85, 0.15] → "Non-Radikal"
 ```
-
----
-
-## 🚀 Instalasi Cepat
-
-### Metode 1: Pengembangan Lokal
-
-```bash
-# Clone repository
-git clone https://github.com/kaptenusop/waskita.git
-cd waskita
-
-# Setup virtual environment
-python -m venv venv
-venv\Scripts\activate  # Windows
-# source venv/bin/activate  # Linux/Mac
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Setup database
 python setup_postgresql.py
 
 # Jalankan aplikasi
