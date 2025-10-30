@@ -1,7 +1,6 @@
 # Environment files
-.env.local
-.env.docker
 .env
+.env.docker
 
 # Database files (PostgreSQL only - no local database files needed)
 # Note: Application uses PostgreSQL exclusively
