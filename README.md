@@ -1,10 +1,12 @@
-# Waskita - Sistem Klasifikasi Konten Media Sosial
+# Waskita - Sistem Klasifikasi Konten Media Sosial Berbasis Machine Learning
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![Flask](https://img.shields.io/badge/Flask-2.0+-green.svg)](https://flask.palletsprojects.com/)
 
-Aplikasi web berbasis Flask yang menggunakan Machine Learning untuk mengklasifikasikan konten media sosial sebagai **Radikal** atau **Non-Radikal** menggunakan algoritma Naive Bayes. Proyek ini dikembangkan untuk tujuan penelitian dan pengembangan akademik.
+**Waskita** merupakan sistem penelitian berbasis web yang mengimplementasikan pendekatan *Machine Learning* untuk klasifikasi otomatis konten media sosial. Sistem ini menggunakan algoritma *Naive Bayes* dengan *Word2Vec embedding* untuk mengidentifikasi dan mengkategorikan konten sebagai **Radikal** atau **Non-Radikal**. 
+
+Penelitian ini dikembangkan sebagai kontribusi akademik dalam bidang *Natural Language Processing* (NLP) dan analisis sentimen untuk deteksi konten ekstremis di platform media sosial Indonesia.
 
 ---
 
@@ -76,44 +78,48 @@ python app.py
 
 ## Daftar Isi
 
+- [🚀 Quick Start](#-quick-start)
+- [📚 Dokumentasi Lengkap](#-dokumentasi-lengkap)
 - [Fitur](#fitur)
-- [Arsitektur Teknis](#arsitektur-teknis)
-- [Konfigurasi](#konfigurasi)
-- [Setup Development](#setup-development)
-- [Dokumentasi API](#dokumentasi-api)
-- [Keamanan](#keamanan)
-- [Testing](#testing)
-- [Kontribusi](#kontribusi)
-- [Lisensi](#lisensi)
+- [🎬 Demo & Screenshots](#-demo--screenshots)
+- [⚙️ Konfigurasi](#️-konfigurasi)
+- [📖 Penggunaan](#-penggunaan)
+- [🏗️ Arsitektur Sistem](#️-arsitektur-sistem)
+- [🔒 Keamanan](#-keamanan)
+- [🤝 Kontribusi](#-kontribusi)
+- [📄 Lisensi](#-lisensi)
+- [🆘 Dukungan & Kontak](#-dukungan--kontak)
+- [🏆 Acknowledgments](#-acknowledgments)
+- [Disclaimer](#disclaimer)
 
 ---
 
-## Fitur
+## Fitur Penelitian
 
-### Machine Learning
-- 3 Model Naive Bayes dengan Word2Vec embedding
-- Akurasi 85-92% dalam klasifikasi konten
-- Preprocessing otomatis dengan pembersihan teks Indonesia
-- Batch processing untuk dataset besar
+### Metodologi Machine Learning
+- Implementasi 3 model *Naive Bayes* dengan *Word2Vec embedding* untuk representasi semantik
+- Tingkat akurasi klasifikasi mencapai 85-92% berdasarkan evaluasi dataset uji
+- Sistem *preprocessing* otomatis dengan teknik pembersihan teks bahasa Indonesia
+- Kemampuan *batch processing* untuk analisis dataset skala besar
 
-### Keamanan & Autentikasi
-- Sistem OTP via email untuk registrasi
-- Role-based access (Admin/User) dengan middleware keamanan
-- Rate limiting (500/hari, 200/jam)
-- CSRF protection dan session security
-- Audit logging untuk semua aktivitas
+### Sistem Keamanan & Autentikasi
+- Implementasi sistem *One-Time Password* (OTP) melalui email untuk verifikasi registrasi
+- Arsitektur *role-based access control* (Admin/User) dengan *middleware* keamanan berlapis
+- Mekanisme *rate limiting* (500 request/hari, 200 request/jam) untuk mencegah penyalahgunaan
+- Perlindungan *Cross-Site Request Forgery* (CSRF) dan keamanan sesi
+- Sistem *audit logging* komprehensif untuk pelacakan aktivitas penelitian
 
-### Manajemen Data
-- Upload multi-format: CSV, XLSX, TXT
-- Dataset management dengan soft delete
-- Data validation dan preprocessing otomatis
-- Export results dalam format CSV/Excel
+### Manajemen Data Penelitian
+- Dukungan multi-format input: CSV, XLSX, TXT untuk fleksibilitas dataset
+- Sistem manajemen dataset dengan *soft delete* untuk integritas data
+- Validasi data otomatis dan *preprocessing* pipeline terintegrasi
+- Ekspor hasil analisis dalam format CSV/Excel untuk analisis lanjutan
 
-### Dashboard & Analytics
-- Real-time statistics dan visualisasi
-- Classification history dengan filtering
-- User management untuk admin
-- System monitoring dan health checks
+### Dashboard Analitik & Visualisasi
+- Statistik *real-time* dan visualisasi hasil klasifikasi
+- Riwayat klasifikasi dengan sistem *filtering* dan pencarian
+- Panel manajemen pengguna untuk administrator penelitian
+- *System monitoring* dan *health checks* untuk stabilitas sistem
 
 ---
 
@@ -295,40 +301,46 @@ GET /admin/audit-logs
 
 ---
 
-## 🏗️ Arsitektur Sistem
+## 🏗️ Arsitektur Sistem Penelitian
 
-### Stack Teknologi
+### Stack Teknologi Penelitian
 
 ```
-Frontend:  Bootstrap 5 + jQuery + Chart.js
-Backend:   Flask + SQLAlchemy + PostgreSQL
-ML:        Scikit-learn + Pandas + NumPy + NLTK
-Security:  Flask-Login + OTP + CSRF Protection
-Deploy:    Docker + Nginx + Gunicorn
+Frontend:  Bootstrap 5 + jQuery + Chart.js (Antarmuka Penelitian)
+Backend:   Flask + SQLAlchemy + PostgreSQL (Infrastruktur Data)
+ML:        Scikit-learn + Pandas + NumPy + NLTK (Pipeline Analisis)
+Security:  Flask-Login + OTP + CSRF Protection (Keamanan Penelitian)
+Deploy:    Docker + Nginx + Gunicorn (Deployment Terdistribusi)
 ```
 
-### Struktur Database
+### Skema Database Penelitian
 
 ```sql
--- Users & Authentication
+-- Manajemen Pengguna & Autentikasi
 users (id, username, email, password_hash, role, is_verified)
 otp_codes (id, email, code, expires_at, is_used)
 
--- Classification Data
+-- Data Penelitian & Klasifikasi
 raw_data (id, text, label, user_id, created_at)
 classification_results (id, text, prediction, confidence, user_id)
 
--- System Logs
+-- Audit Trail Penelitian
 audit_logs (id, user_id, action, details, timestamp)
 ```
 
-### Model Architecture
+### Arsitektur Model Machine Learning
 
 ```
-Input Text → Preprocessing → Word2Vec → Naive Bayes → Output
-     ↓             ↓            ↓           ↓         ↓
-"Text input" → Clean Text → Vectors → Probability → Label
+Input Text → Preprocessing → Word2Vec Embedding → Naive Bayes Classifier → Output
+     ↓             ↓              ↓                    ↓                ↓
+"Teks Input" → Normalisasi → Vektor Semantik → Probabilitas Kelas → Label Prediksi
 ```
+
+**Metodologi Klasifikasi:**
+1. **Tahap Preprocessing**: Tokenisasi, normalisasi, dan pembersihan teks bahasa Indonesia
+2. **Feature Extraction**: Transformasi teks ke representasi vektor menggunakan Word2Vec
+3. **Classification**: Implementasi algoritma Naive Bayes untuk prediksi kategori
+4. **Evaluation**: Validasi model menggunakan metrik akurasi, precision, dan recall
 
 ---
 
@@ -527,26 +539,40 @@ Permission is hereby granted, free of charge, to any person obtaining a copy...
 
 ---
 
-## Disclaimer
+## Disclaimer Penelitian
 
-Aplikasi ini dikembangkan untuk tujuan penelitian dan edukasi.
+Sistem **Waskita** dikembangkan sebagai instrumen penelitian akademik dalam bidang *Natural Language Processing* dan analisis konten media sosial.
 
-- Pastikan kepatuhan terhadap regulasi yang berlaku
-- Lakukan testing menyeluruh sebelum deployment produksi
-- Gunakan dengan bijak dan bertanggung jawab
-- Tim pengembang tidak bertanggung jawab atas penyalahgunaan
+**Ketentuan Penggunaan Penelitian:**
+- Sistem ini dirancang khusus untuk keperluan penelitian dan pengembangan akademik
+- Implementasi dalam lingkungan produksi memerlukan evaluasi dan validasi tambahan
+- Pengguna bertanggung jawab untuk memastikan kepatuhan terhadap regulasi dan etika penelitian yang berlaku
+- Hasil klasifikasi harus diinterpretasikan dalam konteks penelitian dan bukan sebagai keputusan final
+- Tim peneliti tidak bertanggung jawab atas implementasi atau interpretasi hasil di luar konteks akademik
+
+**Rekomendasi Penelitian:**
+- Lakukan validasi silang (*cross-validation*) dengan dataset independen
+- Pertimbangkan bias dan limitasi model dalam interpretasi hasil
+- Dokumentasikan metodologi dan parameter yang digunakan untuk reproduktibilitas
+- Patuhi prinsip etika penelitian dalam penggunaan data dan publikasi hasil
 
 ---
 
-## Kontribusi
+## Kontribusi Penelitian
 
-Kontribusi untuk pengembangan proyek ini sangat diterima. Silakan:
+Kontribusi untuk pengembangan penelitian ini sangat diterima dari komunitas akademik. Silakan:
 
-1. Fork repository ini
-2. Buat branch untuk fitur baru (`git checkout -b feature/nama-fitur`)
-3. Commit perubahan (`git commit -m 'Menambahkan fitur baru'`)
-4. Push ke branch (`git push origin feature/nama-fitur`)
-5. Buat Pull Request
+1. Fork repository penelitian ini
+2. Buat branch untuk pengembangan fitur (`git checkout -b research/nama-fitur`)
+3. Commit perubahan dengan dokumentasi yang jelas (`git commit -m 'Menambahkan metodologi baru'`)
+4. Push ke branch (`git push origin research/nama-fitur`)
+5. Buat Pull Request dengan penjelasan kontribusi penelitian
+
+**Panduan Kontribusi Akademik:**
+- Sertakan dokumentasi metodologi yang digunakan
+- Tambahkan referensi literatur yang relevan
+- Lakukan pengujian statistik untuk validasi hasil
+- Patuhi standar penulisan kode dan dokumentasi penelitian
 
 ---
 
@@ -556,4 +582,4 @@ Proyek ini dilisensikan di bawah MIT License - lihat file [LICENSE](LICENSE) unt
 
 ---
 
-*Dikembangkan untuk keperluan penelitian dan pengembangan akademik*
+*Dikembangkan sebagai kontribusi penelitian akademik dalam bidang Natural Language Processing dan Machine Learning untuk analisis konten media sosial Indonesia*
