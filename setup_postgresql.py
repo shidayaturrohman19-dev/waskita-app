@@ -216,13 +216,14 @@ FLASK_ENV=development
 FLASK_DEBUG=True
 
 # =============================================================================
-# SECURITY CONFIGURATION
+# SECURITY SETTINGS
 # =============================================================================
 WTF_CSRF_ENABLED=True
 WTF_CSRF_TIME_LIMIT=3600
 WTF_CSRF_SECRET_KEY={csrf_key}
 JWT_SECRET_KEY={jwt_key}
 WASKITA_API_KEY={api_key}
+SESSION_COOKIE_SECURE=False
 
 # =============================================================================
 # FILE UPLOAD CONFIGURATION
@@ -276,6 +277,22 @@ AUTO_APPROVE_REGISTRATION=False
 # APPLICATION URLS
 # =============================================================================
 BASE_URL=http://localhost:5000
+LOCAL_NETWORK_URL=http://192.168.0.199:5000
+PRODUCTION_URL=https://{domain_name}
+
+# =============================================================================
+# SSL CONFIGURATION
+# =============================================================================
+# SSL Settings - Set to False untuk development, True untuk production
+SSL_ENABLED=False
+SSL_CERT_PATH=cert.pem
+SSL_KEY_PATH=key.pem
+
+
+
+# Let's Encrypt Configuration (free SSL certificates)
+LETSENCRYPT_EMAIL={admin_email}
+LETSENCRYPT_DOMAIN={domain_name}
 
 # =============================================================================
 # EMAIL NOTIFICATION SETTINGS

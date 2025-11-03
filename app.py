@@ -186,7 +186,26 @@ if __name__ == '__main__':
     try:
         # Use debug mode from environment variable
         debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
-        app.run(debug=debug_mode, host='0.0.0.0', port=5000)
+        
+        # Check if SSL is enabled
+        ssl_enabled = os.environ.get('SSL_ENABLED', 'False').lower() == 'true'
+        
+        if ssl_enabled:
+            # Get SSL certificate and key paths
+            ssl_cert = os.environ.get('SSL_CERT_PATH', 'cert.pem')
+            ssl_key = os.environ.get('SSL_KEY_PATH', 'key.pem')
+            
+            # Check if certificate files exist
+            if os.path.exists(ssl_cert) and os.path.exists(ssl_key):
+                logger.info(f"Starting server with SSL using certificate: {ssl_cert}")
+                app.run(debug=debug_mode, host='0.0.0.0', port=5000, 
+                        ssl_context=(ssl_cert, ssl_key))
+            else:
+                logger.warning(f"SSL certificate files not found. Running without SSL.")
+                app.run(debug=debug_mode, host='0.0.0.0', port=5000)
+        else:
+            logger.info("Starting server without SSL")
+            app.run(debug=debug_mode, host='0.0.0.0', port=5000)
     except KeyboardInterrupt:
         logger.info("Shutting down application...")
         cleanup_scheduler.stop_scheduler()
