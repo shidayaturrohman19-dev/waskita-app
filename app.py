@@ -9,6 +9,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from datetime import datetime
 from dotenv import load_dotenv
+from flask_talisman import Talisman
 
 # Load environment variables from .env file
 load_dotenv(override=True)  # Use override=True to ensure .env values take precedence
@@ -64,6 +65,38 @@ security_middleware = SecurityMiddleware(app)
 
 # Initialize CSRF protection
 csrf = CSRFProtect(app)
+
+# Initialize Talisman for SSL security
+if app.config.get('SSL_ENABLED', False):
+    # Configure Talisman with settings from environment variables
+    talisman = Talisman(
+        app,
+        force_https=True,
+        strict_transport_security=app.config.get('HSTS_ENABLED', True),
+        strict_transport_security_max_age=app.config.get('HSTS_SECONDS', 31536000),
+        strict_transport_security_include_subdomains=app.config.get('HSTS_INCLUDE_SUBDOMAINS', True),
+        strict_transport_security_preload=app.config.get('HSTS_PRELOAD', False),
+        content_security_policy={
+            'default-src': ["'self'"],
+            'script-src': ["'self'", "'unsafe-inline'", 'cdn.jsdelivr.net', 'code.jquery.com'],
+            'style-src': ["'self'", "'unsafe-inline'", 'cdn.jsdelivr.net', 'fonts.googleapis.com'],
+            'font-src': ["'self'", 'fonts.gstatic.com'],
+            'img-src': ["'self'", 'data:'],
+        },
+        content_security_policy_nonce_in=['script-src', 'style-src'],
+        feature_policy={
+            'geolocation': "'none'",
+            'camera': "'none'",
+            'microphone': "'none'"
+        }
+    )
+else:
+    # In development mode, initialize Talisman but disable most security features
+    talisman = Talisman(
+        app,
+        force_https=False,
+        content_security_policy=None,
+    )
 
 # Initialize rate limiter
 limiter = Limiter(
@@ -185,27 +218,86 @@ if __name__ == '__main__':
     
     try:
         # Use debug mode from environment variable
-        debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
+        debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() in ('true', '1', 't')
         
-        # Check if SSL is enabled
-        ssl_enabled = os.environ.get('SSL_ENABLED', 'False').lower() == 'true'
+        # Baca konfigurasi SSL dari .env
+        # Reload .env untuk memastikan nilai terbaru terbaca
+        from dotenv import load_dotenv, dotenv_values
+        
+        # Muat ulang .env dengan override
+        load_dotenv(override=True)
+        
+        # Baca langsung dari file .env sebagai backup
+        env_values = dotenv_values('.env')
+        
+        # Baca nilai SSL_ENABLED dengan fallback ke file langsung
+        ssl_enabled_value = os.environ.get('SSL_ENABLED') or env_values.get('SSL_ENABLED', 'False')
+        ssl_mode_value = os.environ.get('SSL_MODE') or env_values.get('SSL_MODE', 'adhoc')
+        
+        logger.info(f"SSL_ENABLED value from environment: {os.environ.get('SSL_ENABLED')}")
+        logger.info(f"SSL_ENABLED value from .env file: {env_values.get('SSL_ENABLED')}")
+        logger.info(f"Final SSL_ENABLED value: {ssl_enabled_value}")
+        
+        # Konversi string ke boolean
+        ssl_enabled = ssl_enabled_value.lower() in ('true', '1', 't', 'yes') if ssl_enabled_value else False
+        ssl_mode = ssl_mode_value
+        
+        # Log konfigurasi SSL
+        logger.info(f"SSL Configuration - Enabled: {ssl_enabled}, Mode: {ssl_mode}")
+        
+        # Konfigurasi SSL berdasarkan mode yang dipilih
+        ssl_context = None
         
         if ssl_enabled:
-            # Get SSL certificate and key paths
-            ssl_cert = os.environ.get('SSL_CERT_PATH', 'cert.pem')
-            ssl_key = os.environ.get('SSL_KEY_PATH', 'key.pem')
+            if ssl_mode == 'adhoc':
+                try:
+                    import ssl
+                    from OpenSSL import SSL
+                    ssl_context = 'adhoc'
+                    logger.info("Starting server with adhoc SSL certificate")
+                except ImportError:
+                    logger.warning("pyOpenSSL not installed. Installing it now...")
+                    import subprocess
+                    subprocess.check_call(['pip', 'install', 'pyopenssl'])
+                    ssl_context = 'adhoc'
+                    logger.info("pyOpenSSL installed. Starting server with adhoc SSL certificate")
             
-            # Check if certificate files exist
-            if os.path.exists(ssl_cert) and os.path.exists(ssl_key):
-                logger.info(f"Starting server with SSL using certificate: {ssl_cert}")
-                app.run(debug=debug_mode, host='0.0.0.0', port=5000, 
-                        ssl_context=(ssl_cert, ssl_key))
-            else:
-                logger.warning(f"SSL certificate files not found. Running without SSL.")
-                app.run(debug=debug_mode, host='0.0.0.0', port=5000)
+            elif ssl_mode == 'self-signed' or ssl_mode == 'custom':
+                cert_path = os.environ.get('SSL_CERT_PATH', '')
+                key_path = os.environ.get('SSL_KEY_PATH', '')
+                
+                if os.path.exists(cert_path) and os.path.exists(key_path):
+                    ssl_context = (cert_path, key_path)
+                    logger.info(f"Starting server with {ssl_mode} SSL certificate")
+                else:
+                    logger.warning(f"SSL certificate files not found at {cert_path} and {key_path}. Falling back to HTTP.")
+                    ssl_context = None
+            
+            elif ssl_mode == 'letsencrypt':
+                domain = os.environ.get('LETSENCRYPT_DOMAIN', '')
+                cert_path = f"/etc/letsencrypt/live/{domain}/fullchain.pem"
+                key_path = f"/etc/letsencrypt/live/{domain}/privkey.pem"
+                
+                if os.path.exists(cert_path) and os.path.exists(key_path):
+                    ssl_context = (cert_path, key_path)
+                    logger.info("Starting server with Let's Encrypt SSL certificate")
+                else:
+                    logger.warning(f"Let's Encrypt certificate files not found for domain {domain}. Falling back to HTTP.")
+                    ssl_context = None
+            
+            else:  # ssl_mode == 'disabled' or any other value
+                ssl_context = None
+                logger.info("SSL mode not recognized or disabled. Starting server without SSL")
         else:
-            logger.info("Starting server without SSL")
-            app.run(debug=debug_mode, host='0.0.0.0', port=5000)
+            logger.info("SSL disabled in configuration. Starting server without SSL")
+        
+        # Run the app
+        app.run(
+            host='0.0.0.0',
+            port=5000,
+            debug=debug_mode,
+            ssl_context=ssl_context
+        )
     except KeyboardInterrupt:
         logger.info("Shutting down application...")
         cleanup_scheduler.stop_scheduler()

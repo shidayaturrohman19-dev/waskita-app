@@ -283,14 +283,23 @@ PRODUCTION_URL=https://{domain_name}
 # =============================================================================
 # SSL CONFIGURATION
 # =============================================================================
-# SSL Settings - Set to False untuk development, True untuk production
+# SSL Settings - Set to True to enable HTTPS, False to use HTTP
 SSL_ENABLED=False
-SSL_CERT_PATH=cert.pem
-SSL_KEY_PATH=key.pem
+PREFERRED_URL_SCHEME=http
 
+# SSL Mode (options: 'adhoc', 'self-signed', 'custom', 'letsencrypt', 'disabled')
+# - 'adhoc': Generates temporary certificates (development only, requires pyopenssl)
+# - 'self-signed': Uses self-signed certificates from paths below (development only)
+# - 'custom': Uses custom certificates from paths below (production)
+# - 'letsencrypt': Uses Let's Encrypt certificates (production)
+# - 'disabled': Explicitly disables SSL (same as SSL_ENABLED=False)
+SSL_MODE=adhoc
 
+# Certificate paths (used when SSL_MODE is 'self-signed' or 'custom')
+SSL_CERT_PATH=certs/cert.pem
+SSL_KEY_PATH=certs/key.pem
 
-# Let's Encrypt Configuration (free SSL certificates)
+# Let's Encrypt Configuration (free CA-validated SSL certificates)
 LETSENCRYPT_EMAIL={admin_email}
 LETSENCRYPT_DOMAIN={domain_name}
 
@@ -313,19 +322,6 @@ APIFY_TIKTOK_ACTOR=clockworks/free-tiktok-scraper
 APIFY_TIMEOUT=30
 APIFY_MAX_RETRIES=3
 APIFY_RETRY_DELAY=5
-
-# =============================================================================
-# SOCIAL MEDIA API KEYS (Optional)
-# =============================================================================
-TWITTER_API_KEY=your-twitter-api-key
-TWITTER_API_SECRET=your-twitter-api-secret
-TWITTER_ACCESS_TOKEN=your-twitter-access-token
-TWITTER_ACCESS_TOKEN_SECRET=your-twitter-access-token-secret
-FACEBOOK_APP_ID=your-facebook-app-id
-FACEBOOK_APP_SECRET=your-facebook-app-secret
-FACEBOOK_ACCESS_TOKEN=your-facebook-access-token
-TIKTOK_API_KEY=your-tiktok-api-key
-TIKTOK_API_SECRET=your-tiktok-api-secret
 
 # =============================================================================
 # REDIS CONFIGURATION (Optional)

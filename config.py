@@ -38,6 +38,17 @@ class Config:
     WTF_CSRF_ENABLED = os.environ.get('WTF_CSRF_ENABLED', 'True').lower() == 'true'
     WTF_CSRF_TIME_LIMIT = int(os.environ.get('WTF_CSRF_TIME_LIMIT', '3600'))
     
+    # SSL Configuration
+    SSL_ENABLED = os.environ.get('SSL_ENABLED', 'False').lower() == 'true'
+    SSL_MODE = os.environ.get('SSL_MODE', 'adhoc')
+    SSL_CERT_PATH = os.environ.get('SSL_CERT_PATH', 'cert.pem')
+    SSL_KEY_PATH = os.environ.get('SSL_KEY_PATH', 'key.pem')
+    SSL_PROTOCOL = os.environ.get('SSL_PROTOCOL', 'TLSv1_2')
+    HSTS_ENABLED = os.environ.get('HSTS_ENABLED', 'True').lower() == 'true'
+    HSTS_SECONDS = int(os.environ.get('HSTS_SECONDS', '31536000'))
+    HSTS_INCLUDE_SUBDOMAINS = os.environ.get('HSTS_INCLUDE_SUBDOMAINS', 'True').lower() == 'true'
+    HSTS_PRELOAD = os.environ.get('HSTS_PRELOAD', 'False').lower() == 'true'
+    
     # Model paths - relative to app directory for containerization compatibility
     WORD2VEC_MODEL_PATH = os.getenv('WORD2VEC_MODEL_PATH', 
         os.path.join(os.path.dirname(__file__), 'models', 'embeddings', 'wiki_word2vec_csv_updated.model'))
